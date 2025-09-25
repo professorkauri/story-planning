@@ -1,233 +1,480 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Story Timeline Viewer</title>
-  <style>
-    :root{
-      --bg:#0c111b; --card:#111827; --ink:#e5e7eb; --muted:#9aa5b1; --line:#233044;
-      --event:#0f1b32; --event-border:#66b5ff; --empty:#0c1322; --chip:#1a2235;
-      --shadow: 0 10px 30px rgba(0,0,0,.25); --radius:14px;
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0; font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;
-      color:var(--ink);
-      background:radial-gradient(1200px 600px at 20% -10%, #12203a 0%, transparent 60%),
-                 radial-gradient(900px 600px at 110% 0%, #1a2a49 0%, transparent 50%),
-                 var(--bg);
-      padding:24px;
-    }
-    .app{ max-width:1200px; margin:0 auto; }
-    header.appbar{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
-    .title{ font-size:20px; font-weight:700; letter-spacing:.2px; }
-    .btn{
-      border:1px solid var(--line); background:linear-gradient(180deg,#19243a,#121a2b);
-      color:var(--ink); padding:10px 14px; border-radius:10px; cursor:pointer; font-weight:600;
-      transition:transform .06s ease, background .2s ease; box-shadow:0 2px 0 rgba(0,0,0,.25);
-    }
-    .btn:hover{ background:linear-gradient(180deg,#1b2946,#141f33) }
-    .btn:active{ transform:translateY(1px) }
-    .card{
-      background:linear-gradient(180deg,#0d1424, #0b1220);
-      border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px;
-    }
-    .legend{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
-    .chip{
-      display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border-radius:999px;
-      border:1px solid var(--line); background:var(--chip); color:#cfe3ff; font-size:12px; white-space:nowrap;
-    }
-    .swatch{ width:12px;height:12px;border-radius:3px;background:var(--event-border);
-      box-shadow:0 0 0 3px rgba(124,192,255,.15) inset; }
-    .swatch-empty{ width:12px;height:12px;border-radius:3px;background:var(--empty); border:1px solid #1a2740; }
+<meta charset="utf-8" />
+<title>Vertical Timelines (events + character/location icons)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root{
+    --week-row-min: 44px;
+    --timeline-col-min: 260px;
+    --gap: 6px;
+    --bg: #0b0d10;
+    --ink: #eef2f6;
+    --muted: #9aa3ad;
+    --line: #1a1f26;
+    --panel: #0f1318;
+    --chip-bg: rgba(255,255,255,.06);
+    --chip-brd: rgba(255,255,255,.12);
+  }
+  html, body { height: 100%; }
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+    display:grid; grid-template-rows:auto 1fr;
+  }
+  header{
+    display:flex; align-items:baseline; gap:12px; padding:14px 16px;
+    border-bottom:1px solid var(--line);
+  }
+  header h1{ font-size:18px; margin:0; }
+  header .meta{ font-size:12px; color:var(--muted); }
+  header .err{ color:#ffb4b4; font-size:12px; }
 
-    #timelineContainer.card{ padding:0; overflow:auto; }
-    .timeline-wrap{ min-width:900px; border-radius:inherit; overflow:hidden; }
+  .viewport{ position:relative; overflow:auto; }
+  .grid{
+    display:grid;
+    gap: var(--gap);
+    padding:12px;
+    min-width:100%;
+  }
 
-    /* Table */
-    #timelineTable{ border-collapse:separate; border-spacing:0; width:100%;
-      background:linear-gradient(180deg, #0f1626, #0d1322); }
-    #timelineTable thead th{
-      position:sticky; top:0; z-index:2; background:#0e1526; color:#d7e8ff;
-      border-bottom:1px solid var(--line); padding:10px 8px; font-weight:700; text-align:center; white-space:nowrap;
-    }
-    #timelineTable thead th:first-child{
-      text-align:left; padding-left:14px; min-width:240px; position:sticky; left:0; z-index:3;
-      background:linear-gradient(180deg,#0f172a,#0e1629); border-right:1px solid var(--line);
-    }
-    #timelineTable td, #timelineTable th{ border-right:1px solid #1b2740; border-bottom:1px solid #14203a; }
-    #timelineTable tbody th.chapter-label{
-      position:sticky; left:0; z-index:1; background:linear-gradient(180deg,#0f172a,#0e1629);
-      color:#eff6ff; padding:10px 12px; border-right:1px solid var(--line); font-weight:700; text-transform:capitalize;
-    }
-    #timelineTable tbody td{ height:48px; text-align:center; background:var(--empty); padding:0; }
-    .event{
-      height:100%; width:100%; display:flex; flex-direction:column; justify-content:center; gap:2px;
-      padding:6px 10px; background:linear-gradient(180deg, var(--event), #0c1730);
-      border-left:3px solid var(--event-border); border-right:1px solid rgba(255,255,255,.06);
-      border-top:1px solid rgba(255,255,255,.06); border-bottom:1px solid rgba(255,255,255,.06);
-      color:#d8ecff; box-shadow: inset 0 0 0 1px rgba(102,181,255,.15);
-    }
-    .event b{ font-weight:800; letter-spacing:.2px; }
-    .event div{ font-size:12px; color:#cfe3ff; opacity:.9; }
-    .event:hover{ background:linear-gradient(180deg, #122246, #0e1d3a);
-      box-shadow: inset 0 0 0 1px rgba(102,181,255,.35), 0 0 0 3px rgba(124,192,255,.12); }
+  .corner{
+    position:sticky; top:0; left:0; z-index:5;
+    background: linear-gradient(180deg, rgba(11,13,16,.96), rgba(11,13,16,.9));
+    border: 1px solid var(--line);
+    padding:8px 10px; font-size:12px; color:var(--muted);
+  }
+  .wlabel{
+    position:sticky; left:0; z-index:3;
+    background: linear-gradient(90deg, rgba(14,16,20,.98), rgba(14,16,20,.92));
+    border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:flex-start;
+    font-size:12px; color:var(--muted); padding:6px 10px;
+  }
+  .thead{
+    position:sticky; top:0; z-index:4;
+    background: linear-gradient(180deg, rgba(14,16,20,.98), rgba(14,16,20,.92));
+    border:1px solid var(--line);
+    padding:8px 12px; font-weight:600; letter-spacing:.2px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .cell{
+    background: var(--panel);
+    border:1px solid var(--line);
+    border-radius:6px;
+  }
 
-    #timelineContainer::-webkit-scrollbar{ height:12px }
-    #timelineContainer::-webkit-scrollbar-track{ background:#0a1220 }
-    #timelineContainer::-webkit-scrollbar-thumb{ background:#1e2a44; border-radius:8px; border:2px solid #0a1220; }
-    #timelineContainer::-webkit-scrollbar-thumb:hover{ background:#2a3a5f }
-    @media (max-width: 900px){ #timelineTable thead th:first-child{ min-width:180px } }
-  </style>
+  .event{
+    border-radius:10px;
+    padding:8px 10px;
+    font-size:12px; line-height:1.25;
+    border:1px solid rgba(255,255,255,.08);
+    box-shadow: 0 2px 10px rgba(0,0,0,.3);
+    background: rgba(74,163,255,.14); /* base; overridden by [data-category] */
+    display:flex; flex-direction:column; gap:6px; overflow:hidden;
+  }
+  .event .topline{ display:flex; align-items:center; gap:8px; }
+  .event .thumb{
+    width:50px; height:50px; object-fit:cover; border-radius:6px;
+    border:1px solid rgba(255,255,255,.12);
+    flex: 0 0 auto;
+  }
+  .event .desc{ font-weight:600; }
+  .event .meta{ font-size:11px; color:var(--muted); }
+  .event .chips{ display:flex; flex-wrap:wrap; gap:6px; margin-top:2px; }
+  .event .chip{
+    display:inline-flex; align-items:center; gap:6px;
+    padding:4px 8px; border-radius:999px; text-decoration:none;
+    background: var(--chip-bg); border:1px solid var(--chip-brd);
+    font-size:11px; color: var(--ink);
+  }
+  .event .chip:hover{ filter: brightness(1.1); }
+  .event .chip .icon{
+    width:16px; height:16px; object-fit:cover;
+    border-radius:4px; border:1px solid rgba(255,255,255,.15);
+  }
+
+  /* Category examples — extend as needed */
+  .event[data-category="Planning"]  { background: rgba(74,163,255,.16); outline:2px solid rgba(74,163,255,.28); }
+  .event[data-category="Delivery"]  { background: rgba(87,210,164,.16); outline:2px solid rgba(87,210,164,.26); }
+  .event[data-category="Research"]  { background: rgba(246,183,86,.16); outline:2px solid rgba(246,183,86,.26); }
+  .event[data-category="Risk"]      { background: rgba(233,111,146,.16); outline:2px solid rgba(233,111,146,.26); }
+  .event[data-category="Call"]      { background: rgba(138,180,248,.16); outline:2px solid rgba(138,180,248,.26); }
+  .event[data-category="Climax"]    { background: rgba(255,144,144,.16); outline:2px solid rgba(255,144,144,.26); }
+
+  .small{ font-size:11px; padding:6px 8px; }
+</style>
 </head>
 <body>
-  <div class="app">
-    <header class="appbar">
-      <div class="title">Story Timeline Viewer</div>
-      <button id="pickFolderBtn" class="btn">📁 Pick Scripts Folder</button>
-    </header>
+<header>
+  <h1>Vertical Timelines</h1>
+  <div class="meta" id="meta">Loading…</div>
+  <div class="err" id="err"></div>
+</header>
 
-    <div class="card" style="margin-bottom:16px;">
-      <div class="legend">
-        <span class="chip"><span class="swatch"></span> Event span (weeks)</span>
-        <span class="chip"><span class="swatch-empty"></span> Empty week</span>
-        <span class="chip">Grid origin = Monday of earliest absolute event</span>
-      </div>
-    </div>
+<div class="viewport">
+  <div id="grid" class="grid" role="table" aria-label="Timelines grid"></div>
+</div>
 
-    <div id="timelineContainer" class="card">
-      <div class="timeline-wrap"></div>
-    </div>
-  </div>
+<script>
+/** ======== CONFIG ======== **/
+const TIMELINES_DIR = 'timelines/';
+const INDEX_JSON = TIMELINES_DIR + 'index.json';
 
-  <script>
-    // ---------- Helpers ----------
-    function parseEvent(line){
-      const m = line.match(/^\{(.+?)\s*\|\s*(.+?)\s*\|\s*(.+?)\}$/);
-      if(!m) return null;
-      return { title:m[1].trim(), dateOrOffset:m[2].trim(), duration:m[3].trim() };
-    }
-    function addWeeks(date, weeks){ const d=new Date(date); d.setDate(d.getDate()+weeks*7); return d; }
-    function formatLocalYMD(d){ const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), a=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${a}`; }
-    function startOfWeekMonday(d){ const x=new Date(d.getFullYear(),d.getMonth(),d.getDate()); const day=x.getDay(); const diff=(day===0?-6:1-day); x.setDate(x.getDate()+diff); x.setHours(0,0,0,0); return x; }
-    const WEEK_MS = 7*24*60*60*1000;
-  
-    document.getElementById('pickFolderBtn').onclick = async () => {
-      const dirHandle = await window.showDirectoryPicker();
-  
-      // -------- Read & parse (now with sorted chapters) --------
-      const scripts = [];
-      for await (const [scriptName, scriptHandle] of dirHandle.entries()) {
-        if (scriptHandle.kind !== 'directory') continue;
-  
-        // collect chapters, then sort by name "01_..., 02_..."
-        const chapters = [];
-        for await (const [chapterName, chapterHandle] of scriptHandle.entries()) {
-          if (chapterHandle.kind !== 'file') continue;
-          const file = await chapterHandle.getFile();
-          const text = await file.text();
-          const events = [];
-          for (const raw of text.split('\n')) {
-            const ev = parseEvent(raw.trim());
-            if (ev) events.push(ev);
-          }
-          chapters.push({ chapterName, events });
-        }
-        chapters.sort((a,b)=> a.chapterName.localeCompare(b.chapterName, undefined, {numeric:true, sensitivity:'base'}));
-        scripts.push({ scriptName, chapters });
+const EVENT_IMAGES_DIR = 'images/events/';
+const CHAR_IMAGES_DIR  = 'images/characters/';
+const LOC_IMAGES_DIR   = 'images/locations/';
+const IMAGE_EXTS = ['png','jpg','jpeg','webp','gif','svg','avif'];
+
+/* Fallback list if index.json is not present. */
+const FALLBACK_FILES = [
+  // 'hero1.csv',
+  // 'hero2.csv',
+];
+
+/** ======== STARTUP ======== **/
+(async function main(){
+  try {
+    const files = await discoverFiles();
+    if (files.length === 0) throw new Error('No CSV timelines found. Add files to /timelines or create timelines/index.json.');
+
+    // Load and parse all timelines
+    const timelines = [];
+    for (const fname of files) {
+      const csv = await fetch(TIMELINES_DIR + fname).then(r => {
+        if (!r.ok) throw new Error(`Failed to load ${fname}`);
+        return r.text();
+      });
+      const rowsRaw = parseCSV(csv).filter(r => r.some(cell => (cell||'').trim() !== ''));
+      if (rowsRaw.length === 0) continue;
+
+      // Title row = first row
+      const titleRow = rowsRaw[0];
+      const foundTitle = (titleRow.find(c => (c||'').trim() !== '') || '').trim();
+      const title = foundTitle || stripExt(fname);
+
+      // Events from row 2
+      const rows = rowsRaw.slice(1);
+
+      // Columns: Date,Duration,Description,Category,Image,Character,Location
+      const events = [];
+      for (const row of rows) {
+        const [d, dur, desc, cat, img, chars, locs] = [
+          (row[0]||'').trim(), (row[1]||'').trim(),
+          (row[2]||'').trim(), (row[3]||'').trim(),
+          (row[4]||'').trim(), (row[5]||'').trim(),
+          (row[6]||'').trim()
+        ];
+        if (!d && !dur && !desc && !cat && !img && !chars && !locs) continue;
+
+        const durationWeeks = parseRelWeeks(dur);
+        if (!durationWeeks) continue; // skip malformed
+        if (!isSpecificWeek(d) && parseRelWeeks(d) == null) continue; // skip malformed
+
+        const characters = (chars ? chars.split(/\s+/).filter(Boolean) : []);
+        const locations  = (locs ? locs.split(/\s+/).filter(Boolean) : []);
+        const imageName  = img || '';
+
+        events.push({ rawDate: d, durationWeeks, desc, category: cat, imageName, characters, locations });
       }
-  
-      // -------- Find earliest absolute date & align to Monday (week0) --------
-      let earliestAbs = null;
-      scripts.forEach(s => s.chapters.forEach(c => c.events.forEach(ev => {
-        if (/^\d{4}-\d{2}-\d{2}$/.test(ev.dateOrOffset)) {
-          const d = new Date(ev.dateOrOffset);
-          if (!earliestAbs || d < earliestAbs) earliestAbs = d;
-        }
-      })));
-      if (!earliestAbs) { alert('No absolute date found in any event!'); return; }
-      const week0 = startOfWeekMonday(earliestAbs);
-  
-      // -------- Build timelines with proper week math --------
-      const timelines = [];
-      let maxWeek = 0;
-  
-      scripts.forEach(script => {
-        const timeline = [];
-        let lastEndWeek = 0; // exclusive end index of the last event in THIS script
-  
-        script.chapters.forEach(chapter => {
-          chapter.events.forEach(ev => {
-            const durW = parseInt(ev.duration.replace(/[^0-9]/g,''), 10);
-            if (!(durW >= 1)) return;
-  
-            let startWeek, startDate;
-  
-            if (/^\d{4}-\d{2}-\d{2}$/.test(ev.dateOrOffset)) {
-              // ABSOLUTE: index from Monday grid
-              const abs = new Date(ev.dateOrOffset);
-              const absMon = startOfWeekMonday(abs);
-              startWeek = Math.floor((absMon - week0) / WEEK_MS);
-              startDate = abs; // show the actual date typed
-              lastEndWeek = startWeek + durW;
-  
-            } else if (/^\d+w$/i.test(ev.dateOrOffset)) {
-              // RELATIVE: 0w => immediate week after last end
-              const offset = parseInt(ev.dateOrOffset.replace(/[^0-9]/g,''), 10);
-              startWeek = lastEndWeek + offset;       // e.g. lastEnd=3, 0w -> 3, 1w -> 4
-              startDate = addWeeks(week0, startWeek); // convert week index back to a Monday date
-              lastEndWeek = startWeek + durW;
-  
-            } else {
-              return; // invalid marker
-            }
-  
-            timeline.push({
-              ...ev,
-              startWeek,
-              durationWeeks: durW,
-              scriptName: script.scriptName,
-              chapterName: chapter.chapterName.replace(/\.txt$/i,''),
-              startDate: formatLocalYMD(startDate)
-            });
-  
-            const endIdx = startWeek + durW;
-            if (endIdx > maxWeek) maxWeek = endIdx;
-          });
+
+      timelines.push({ title, events });
+    }
+
+    const resolved = timelines.map(resolveTimelineWeeks);
+    const bounds = resolved.flatMap(tl => tl.events.map(ev => [ev.startIdx, ev.startIdx + ev.durationWeeks]));
+    if (bounds.length === 0) throw new Error('No events found in any CSV.');
+    const minIdx = Math.min(...bounds.map(b => b[0]));
+    const maxIdx = Math.max(...bounds.map(b => b[1]));
+    const totalWeeks = Math.max(1, maxIdx - minIdx);
+
+    // Newest at top
+    const weekIdxs = [];
+    for (let i = maxIdx - 1; i >= minIdx; i--) weekIdxs.push(i);
+    const weekLabels = weekIdxs.map(idx => {
+      const {year, week} = idxToISOWeek(idx);
+      return `${year}-${String(week).padStart(2,'0')}`;
+    });
+
+    await renderGridVertical(resolved, weekIdxs, weekLabels);
+
+    document.getElementById('meta').textContent =
+      `Timelines: ${resolved.length} • Weeks: ${totalWeeks} • Range: ${weekLabels[weekLabels.length-1]} → ${weekLabels[0]}`;
+  } catch (e) {
+    console.error(e);
+    document.getElementById('err').textContent = e.message || String(e);
+  }
+})();
+
+/** ======== DISCOVERY ======== **/
+async function discoverFiles(){
+  try {
+    const r = await fetch(INDEX_JSON, {cache:'no-store'});
+    if (r.ok) {
+      const arr = await r.json();
+      return (Array.isArray(arr) ? arr : []).filter(s => typeof s === 'string' && s.toLowerCase().endsWith('.csv'));
+    }
+  } catch {}
+  return [...FALLBACK_FILES];
+}
+
+/** ======== DATE / WEEK HELPERS ======== **/
+function isSpecificWeek(s){ return /^\d{4}-\d{2}$/.test(s); }
+function parseRelWeeks(s){ const m = /^(\d+)\s*[wW]$/.exec(s || ''); return m ? parseInt(m[1],10) : null; }
+
+function isoWeekToDate(iso){
+  const [yStr, wStr] = iso.split('-');
+  const year = parseInt(yStr,10), week = parseInt(wStr,10);
+  const jan4 = new Date(Date.UTC(year, 0, 4));
+  const jan4Day = jan4.getUTCDay() || 7; // 1..7 (Mon..Sun)
+  const mondayWeek1 = new Date(jan4);
+  mondayWeek1.setUTCDate(jan4.getUTCDate() - (jan4Day - 1));
+  const mondayTarget = new Date(mondayWeek1);
+  mondayTarget.setUTCDate(mondayWeek1.getUTCDate() + (week - 1) * 7);
+  mondayTarget.setUTCHours(0,0,0,0);
+  return mondayTarget;
+}
+function isoWeekToIdx(iso){
+  const d = isoWeekToDate(iso);
+  const epochMonday = new Date(Date.UTC(1970,0,5));
+  return Math.floor((d - epochMonday) / (7*24*3600*1000));
+}
+function idxToISOWeek(idx){
+  const epochMonday = new Date(Date.UTC(1970,0,5));
+  const d = new Date(epochMonday);
+  d.setUTCDate(epochMonday.getUTCDate() + idx*7);
+
+  const target = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+  const day = target.getUTCDay() || 7;
+  target.setUTCDate(target.getUTCDate() + (4 - day));
+  const isoYear = target.getUTCFullYear();
+
+  const week1 = new Date(Date.UTC(isoYear,0,4));
+  const wd = week1.getUTCDay() || 7;
+  const week1Mon = new Date(week1);
+  week1Mon.setUTCDate(week1.getUTCDate() - (wd - 1));
+  const diffMs = (d - week1Mon);
+  const isoWeek = 1 + Math.floor(diffMs / (7*24*3600*1000));
+  return { year: isoYear, week: isoWeek };
+}
+
+/** ======== CSV PARSER ======== **/
+function parseCSV(text){
+  const rows = [];
+  let row = [], cur = '', inQ = false;
+  for (let i=0; i<text.length; i++){
+    const ch = text[i], nx = text[i+1];
+    if (ch === '"'){
+      if (inQ && nx === '"'){ cur += '"'; i++; }
+      else inQ = !inQ;
+    } else if (ch === ',' && !inQ){
+      row.push(cur); cur='';
+    } else if ((ch === '\n' || ch === '\r') && !inQ){
+      if (ch === '\r' && nx === '\n') i++;
+      row.push(cur); cur='';
+      rows.push(row); row=[];
+    } else cur += ch;
+  }
+  row.push(cur); rows.push(row);
+  const maxLen = Math.max(...rows.map(r => r.length));
+  return rows.map(r => r.concat(Array(Math.max(0, maxLen - r.length)).fill('')));
+}
+
+/** ======== TIMELINE RESOLUTION ======== **/
+function resolveTimelineWeeks(tl){
+  let prevEnd = null; // exclusive week index
+  const events = tl.events.map((ev) => {
+    let startIdx;
+    if (isSpecificWeek(ev.rawDate)) {
+      startIdx = isoWeekToIdx(ev.rawDate);
+    } else {
+      const rel = parseRelWeeks(ev.rawDate) || 0;
+      startIdx = (prevEnd == null) ? rel : (prevEnd + rel);
+    }
+    const durationWeeks = Math.max(1, ev.durationWeeks|0);
+    const endIdx = startIdx + durationWeeks;
+    prevEnd = endIdx;
+    return { ...ev, startIdx, durationWeeks };
+  });
+  return { title: tl.title, events };
+}
+
+/** ======== ASSET DISCOVERY (events, characters, locations) ======== **/
+const assetCache = new Map();
+/* Build a safe URL segment for a file/folder name. */
+function encSeg(s){ return encodeURIComponent(s).replace(/%2F/g, '/'); }
+
+/* Find the first existing asset URL in dir for base filename `name` with any allowed extension. */
+async function findAssetURL(dir, name){
+  if (!name) return null;
+  const key = `${dir}|${name}`;
+  if (assetCache.has(key)) return assetCache.get(key);
+
+  const base = dir + encSeg(name);
+  for (const ext of IMAGE_EXTS){
+    const url = `${base}.${ext}`;
+    try {
+      // HEAD may be blocked by some servers; fall back to GET if needed.
+      let res = await fetch(url, { method: 'HEAD', cache: 'no-store' });
+      if (!res.ok) res = await fetch(url, { method: 'GET', cache: 'no-store' });
+      if (res.ok) { assetCache.set(key, url); return url; }
+    } catch {}
+  }
+  assetCache.set(key, null);
+  return null;
+}
+
+/** ======== RENDER (VERTICAL) ======== **/
+async function renderGridVertical(timelines, weekIdxsDesc, weekLabelsDesc){
+  const grid = document.getElementById('grid');
+
+  grid.style.gridTemplateColumns = `[weeks] 120px ${timelines.map(() => `minmax(var(--timeline-col-min), 1fr)`).join(' ')}`;
+  grid.style.gridTemplateRows = weekIdxsDesc.map(() => `minmax(var(--week-row-min), auto)`).join(' ');
+
+  const corner = document.createElement('div');
+  corner.className = 'corner';
+  corner.style.gridColumn = '1 / 2';
+  corner.style.gridRow = '1 / 2';
+  corner.textContent = 'Week';
+  grid.appendChild(corner);
+
+  timelines.forEach((tl, cIdx) => {
+    const th = document.createElement('div');
+    th.className = 'thead';
+    th.textContent = tl.title;
+    th.style.gridColumn = `${2 + cIdx} / ${3 + cIdx}`;
+    th.style.gridRow = '1 / 2';
+    grid.appendChild(th);
+  });
+
+  weekLabelsDesc.forEach((label, rIdx) => {
+    const wl = document.createElement('div');
+    wl.className = 'wlabel';
+    wl.textContent = label;
+    wl.style.gridColumn = '1 / 2';
+    wl.style.gridRow = `${2 + rIdx} / ${3 + rIdx}`;
+    grid.appendChild(wl);
+
+    timelines.forEach((_, cIdx) => {
+      const bg = document.createElement('div');
+      bg.className = 'cell';
+      bg.style.gridColumn = `${2 + cIdx} / ${3 + cIdx}`;
+      bg.style.gridRow = `${2 + rIdx} / ${3 + rIdx}`;
+      grid.appendChild(bg);
+    });
+  });
+
+  const globalMin = Math.min(...timelines.flatMap(tl => tl.events.map(e => e.startIdx)));
+  const globalMax = Math.max(...timelines.flatMap(tl => tl.events.map(e => e.startIdx + e.durationWeeks)));
+
+  for (let cIdx = 0; cIdx < timelines.length; cIdx++){
+    const tl = timelines[cIdx];
+    for (const ev of tl.events){
+      const start = ev.startIdx;
+      const end = ev.startIdx + ev.durationWeeks;
+
+      const rowOfIdx = (idx) => weekIdxsDesc.indexOf(idx);
+      const visibleStartIdx = Math.min(Math.max(start, globalMin), globalMax - 1);
+      const visibleEndIdx   = Math.min(Math.max(end - 1, globalMin), globalMax - 1);
+      const vStartRow = rowOfIdx(visibleStartIdx);
+      const vEndRow   = rowOfIdx(visibleEndIdx);
+      if (vStartRow === -1 || vEndRow === -1) continue;
+
+      const el = document.createElement('div');
+      el.className = 'event';
+      el.dataset.category = ev.category || '';
+
+      const gridRowStart = 2 + Math.min(vStartRow, vEndRow);
+      const gridRowEnd   = 2 + Math.max(vStartRow, vEndRow) + 1;
+      el.style.gridColumn = `${2 + cIdx} / ${3 + cIdx}`;
+      el.style.gridRow    = `${gridRowStart} / ${gridRowEnd}`;
+
+      const {year, week} = idxToISOWeek(start);
+      const labelStart = `${year}-${String(week).padStart(2,'0')}`;
+
+      // Top line (event image + description)
+      const topline = document.createElement('div');
+      topline.className = 'topline';
+
+      if (ev.imageName){
+        findAssetURL(EVENT_IMAGES_DIR, ev.imageName).then(url => {
+          if (url){
+            const img = document.createElement('img');
+            img.className = 'thumb';
+            img.alt = ev.imageName;
+            img.loading = 'lazy';
+            img.src = url;
+            topline.prepend(img);
+          }
         });
-  
-        // Display order left-to-right
-        timeline.sort((a,b)=> a.startWeek - b.startWeek);
-        timelines.push({ scriptName: script.scriptName, timeline });
-      });
-  
-      // -------- Render table (colspan = durationWeeks) --------
-      const wrap = document.querySelector('#timelineContainer .timeline-wrap');
-      let html = '<table id="timelineTable"><thead><tr><th>Script</th>';
-      for (let w=0; w<maxWeek; w++) html += `<th>W${w+1}</th>`;
-      html += '</tr></thead><tbody>';
-  
-      timelines.forEach(({ scriptName, timeline }) => {
-        html += `<tr><th class="chapter-label">${scriptName}</th>`;
-        let cursor = 0;
-        for (const ev of timeline) {
-          while (cursor < ev.startWeek) { html += '<td></td>'; cursor++; }
-          html += `<td colspan="${ev.durationWeeks}" class="event">
-                    <div><b>${ev.title}</b></div>
-                    <div>${ev.startDate}</div>
-                    <div>${ev.scriptName} / ${ev.chapterName}</div>
-                  </td>`;
-          cursor += ev.durationWeeks;
-        }
-        while (cursor < maxWeek) { html += '<td></td>'; cursor++; }
-        html += '</tr>';
-      });
-  
-      html += '</tbody></table>';
-      wrap.innerHTML = html;
-    };
-  </script>
-  
+      }
+
+      const title = document.createElement('div');
+      title.className = 'desc';
+      title.textContent = ev.desc || '(no description)';
+      topline.appendChild(title);
+      el.appendChild(topline);
+
+      const meta = document.createElement('div');
+      meta.className = 'meta';
+      meta.textContent = `${labelStart} • ${ev.durationWeeks}w${ev.category?` • ${ev.category}`:''}`;
+      el.appendChild(meta);
+
+      // Chips (characters + locations) with icons
+      const chips = document.createElement('div');
+      chips.className = 'chips';
+
+      for (const n of ev.characters || []){
+        const a = document.createElement('a');
+        a.className = 'chip';
+        a.href = `/characters/${encodeURIComponent(n)}.html`;
+        a.title = `Character: ${n}`;
+        a.appendChild(document.createTextNode(n));
+        // prepend icon once found
+        findAssetURL(CHAR_IMAGES_DIR, n).then(url => {
+          if (url){
+            const icon = document.createElement('img');
+            icon.className = 'icon';
+            icon.alt = n;
+            icon.loading = 'lazy';
+            icon.src = url;
+            a.prepend(icon);
+          }
+        });
+        chips.appendChild(a);
+      }
+
+      for (const n of ev.locations || []){
+        const a = document.createElement('a');
+        a.className = 'chip';
+        a.href = `/locations/${encodeURIComponent(n)}.html`;
+        a.title = `Location: ${n}`;
+        a.appendChild(document.createTextNode(n));
+        // prepend icon once found
+        findAssetURL(LOC_IMAGES_DIR, n).then(url => {
+          if (url){
+            const icon = document.createElement('img');
+            icon.className = 'icon';
+            icon.alt = n;
+            icon.loading = 'lazy';
+            icon.src = url;
+            a.prepend(icon);
+          }
+        });
+        chips.appendChild(a);
+      }
+
+      if (chips.children.length) el.appendChild(chips);
+      if ((ev.durationWeeks|0) <= 1) el.classList.add('small');
+
+      grid.appendChild(el);
+    }
+  }
+}
+
+/** ======== UTILS ======== **/
+function stripExt(name){ return name.replace(/\.[^.]+$/, ''); }
+</script>
 </body>
 </html>
