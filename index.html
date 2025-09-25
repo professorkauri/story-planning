@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Story Timeline Viewer</title>
+  <style>
+    :root{
+      --bg:#0c111b; --card:#111827; --ink:#e5e7eb; --muted:#9aa5b1; --line:#233044;
+      --event:#0f1b32; --event-border:#66b5ff; --empty:#0c1322; --chip:#1a2235;
+      --shadow: 0 10px 30px rgba(0,0,0,.25); --radius:14px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;
+      color:var(--ink);
+      background:radial-gradient(1200px 600px at 20% -10%, #12203a 0%, transparent 60%),
+                 radial-gradient(900px 600px at 110% 0%, #1a2a49 0%, transparent 50%),
+                 var(--bg);
+      padding:24px;
+    }
+    .app{ max-width:1200px; margin:0 auto; }
+    header.appbar{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
+    .title{ font-size:20px; font-weight:700; letter-spacing:.2px; }
+    .btn{
+      border:1px solid var(--line); background:linear-gradient(180deg,#19243a,#121a2b);
+      color:var(--ink); padding:10px 14px; border-radius:10px; cursor:pointer; font-weight:600;
+      transition:transform .06s ease, background .2s ease; box-shadow:0 2px 0 rgba(0,0,0,.25);
+    }
+    .btn:hover{ background:linear-gradient(180deg,#1b2946,#141f33) }
+    .btn:active{ transform:translateY(1px) }
+    .card{
+      background:linear-gradient(180deg,#0d1424, #0b1220);
+      border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px;
+    }
+    .legend{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .chip{
+      display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border-radius:999px;
+      border:1px solid var(--line); background:var(--chip); color:#cfe3ff; font-size:12px; white-space:nowrap;
+    }
+    .swatch{ width:12px;height:12px;border-radius:3px;background:var(--event-border);
+      box-shadow:0 0 0 3px rgba(124,192,255,.15) inset; }
+    .swatch-empty{ width:12px;height:12px;border-radius:3px;background:var(--empty); border:1px solid #1a2740; }
+
+    #timelineContainer.card{ padding:0; overflow:auto; }
+    .timeline-wrap{ min-width:900px; border-radius:inherit; overflow:hidden; }
+
+    /* Table */
+    #timelineTable{ border-collapse:separate; border-spacing:0; width:100%;
+      background:linear-gradient(180deg, #0f1626, #0d1322); }
+    #timelineTable thead th{
+      position:sticky; top:0; z-index:2; background:#0e1526; color:#d7e8ff;
+      border-bottom:1px solid var(--line); padding:10px 8px; font-weight:700; text-align:center; white-space:nowrap;
+    }
+    #timelineTable thead th:first-child{
+      text-align:left; padding-left:14px; min-width:240px; position:sticky; left:0; z-index:3;
+      background:linear-gradient(180deg,#0f172a,#0e1629); border-right:1px solid var(--line);
+    }
+    #timelineTable td, #timelineTable th{ border-right:1px solid #1b2740; border-bottom:1px solid #14203a; }
+    #timelineTable tbody th.chapter-label{
+      position:sticky; left:0; z-index:1; background:linear-gradient(180deg,#0f172a,#0e1629);
+      color:#eff6ff; padding:10px 12px; border-right:1px solid var(--line); font-weight:700; text-transform:capitalize;
+    }
+    #timelineTable tbody td{ height:48px; text-align:center; background:var(--empty); padding:0; }
+    .event{
+      height:100%; width:100%; display:flex; flex-direction:column; justify-content:center; gap:2px;
+      padding:6px 10px; background:linear-gradient(180deg, var(--event), #0c1730);
+      border-left:3px solid var(--event-border); border-right:1px solid rgba(255,255,255,.06);
+      border-top:1px solid rgba(255,255,255,.06); border-bottom:1px solid rgba(255,255,255,.06);
+      color:#d8ecff; box-shadow: inset 0 0 0 1px rgba(102,181,255,.15);
+    }
+    .event b{ font-weight:800; letter-spacing:.2px; }
+    .event div{ font-size:12px; color:#cfe3ff; opacity:.9; }
+    .event:hover{ background:linear-gradient(180deg, #122246, #0e1d3a);
+      box-shadow: inset 0 0 0 1px rgba(102,181,255,.35), 0 0 0 3px rgba(124,192,255,.12); }
+
+    #timelineContainer::-webkit-scrollbar{ height:12px }
+    #timelineContainer::-webkit-scrollbar-track{ background:#0a1220 }
+    #timelineContainer::-webkit-scrollbar-thumb{ background:#1e2a44; border-radius:8px; border:2px solid #0a1220; }
+    #timelineContainer::-webkit-scrollbar-thumb:hover{ background:#2a3a5f }
+    @media (max-width: 900px){ #timelineTable thead th:first-child{ min-width:180px } }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="appbar">
+      <div class="title">Story Timeline Viewer</div>
+      <button id="pickFolderBtn" class="btn">📁 Pick Scripts Folder</button>
+    </header>
+
+    <div class="card" style="margin-bottom:16px;">
+      <div class="legend">
+        <span class="chip"><span class="swatch"></span> Event span (weeks)</span>
+        <span class="chip"><span class="swatch-empty"></span> Empty week</span>
+        <span class="chip">Grid origin = Monday of earliest absolute event</span>
+      </div>
+    </div>
+
+    <div id="timelineContainer" class="card">
+      <div class="timeline-wrap"></div>
+    </div>
+  </div>
+
+  <script>
+    // ---------- Helpers ----------
+    function parseEvent(line){
+      const m = line.match(/^\{(.+?)\s*\|\s*(.+?)\s*\|\s*(.+?)\}$/);
+      if(!m) return null;
+      return { title:m[1].trim(), dateOrOffset:m[2].trim(), duration:m[3].trim() };
+    }
+    function addWeeks(date, weeks){ const d=new Date(date); d.setDate(d.getDate()+weeks*7); return d; }
+    function formatLocalYMD(d){ const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), a=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${a}`; }
+    function startOfWeekMonday(d){ const x=new Date(d.getFullYear(),d.getMonth(),d.getDate()); const day=x.getDay(); const diff=(day===0?-6:1-day); x.setDate(x.getDate()+diff); x.setHours(0,0,0,0); return x; }
+    const WEEK_MS = 7*24*60*60*1000;
+  
+    document.getElementById('pickFolderBtn').onclick = async () => {
+      const dirHandle = await window.showDirectoryPicker();
+  
+      // -------- Read & parse (now with sorted chapters) --------
+      const scripts = [];
+      for await (const [scriptName, scriptHandle] of dirHandle.entries()) {
+        if (scriptHandle.kind !== 'directory') continue;
+  
+        // collect chapters, then sort by name "01_..., 02_..."
+        const chapters = [];
+        for await (const [chapterName, chapterHandle] of scriptHandle.entries()) {
+          if (chapterHandle.kind !== 'file') continue;
+          const file = await chapterHandle.getFile();
+          const text = await file.text();
+          const events = [];
+          for (const raw of text.split('\n')) {
+            const ev = parseEvent(raw.trim());
+            if (ev) events.push(ev);
+          }
+          chapters.push({ chapterName, events });
+        }
+        chapters.sort((a,b)=> a.chapterName.localeCompare(b.chapterName, undefined, {numeric:true, sensitivity:'base'}));
+        scripts.push({ scriptName, chapters });
+      }
+  
+      // -------- Find earliest absolute date & align to Monday (week0) --------
+      let earliestAbs = null;
+      scripts.forEach(s => s.chapters.forEach(c => c.events.forEach(ev => {
+        if (/^\d{4}-\d{2}-\d{2}$/.test(ev.dateOrOffset)) {
+          const d = new Date(ev.dateOrOffset);
+          if (!earliestAbs || d < earliestAbs) earliestAbs = d;
+        }
+      })));
+      if (!earliestAbs) { alert('No absolute date found in any event!'); return; }
+      const week0 = startOfWeekMonday(earliestAbs);
+  
+      // -------- Build timelines with proper week math --------
+      const timelines = [];
+      let maxWeek = 0;
+  
+      scripts.forEach(script => {
+        const timeline = [];
+        let lastEndWeek = 0; // exclusive end index of the last event in THIS script
+  
+        script.chapters.forEach(chapter => {
+          chapter.events.forEach(ev => {
+            const durW = parseInt(ev.duration.replace(/[^0-9]/g,''), 10);
+            if (!(durW >= 1)) return;
+  
+            let startWeek, startDate;
+  
+            if (/^\d{4}-\d{2}-\d{2}$/.test(ev.dateOrOffset)) {
+              // ABSOLUTE: index from Monday grid
+              const abs = new Date(ev.dateOrOffset);
+              const absMon = startOfWeekMonday(abs);
+              startWeek = Math.floor((absMon - week0) / WEEK_MS);
+              startDate = abs; // show the actual date typed
+              lastEndWeek = startWeek + durW;
+  
+            } else if (/^\d+w$/i.test(ev.dateOrOffset)) {
+              // RELATIVE: 0w => immediate week after last end
+              const offset = parseInt(ev.dateOrOffset.replace(/[^0-9]/g,''), 10);
+              startWeek = lastEndWeek + offset;       // e.g. lastEnd=3, 0w -> 3, 1w -> 4
+              startDate = addWeeks(week0, startWeek); // convert week index back to a Monday date
+              lastEndWeek = startWeek + durW;
+  
+            } else {
+              return; // invalid marker
+            }
+  
+            timeline.push({
+              ...ev,
+              startWeek,
+              durationWeeks: durW,
+              scriptName: script.scriptName,
+              chapterName: chapter.chapterName.replace(/\.txt$/i,''),
+              startDate: formatLocalYMD(startDate)
+            });
+  
+            const endIdx = startWeek + durW;
+            if (endIdx > maxWeek) maxWeek = endIdx;
+          });
+        });
+  
+        // Display order left-to-right
+        timeline.sort((a,b)=> a.startWeek - b.startWeek);
+        timelines.push({ scriptName: script.scriptName, timeline });
+      });
+  
+      // -------- Render table (colspan = durationWeeks) --------
+      const wrap = document.querySelector('#timelineContainer .timeline-wrap');
+      let html = '<table id="timelineTable"><thead><tr><th>Script</th>';
+      for (let w=0; w<maxWeek; w++) html += `<th>W${w+1}</th>`;
+      html += '</tr></thead><tbody>';
+  
+      timelines.forEach(({ scriptName, timeline }) => {
+        html += `<tr><th class="chapter-label">${scriptName}</th>`;
+        let cursor = 0;
+        for (const ev of timeline) {
+          while (cursor < ev.startWeek) { html += '<td></td>'; cursor++; }
+          html += `<td colspan="${ev.durationWeeks}" class="event">
+                    <div><b>${ev.title}</b></div>
+                    <div>${ev.startDate}</div>
+                    <div>${ev.scriptName} / ${ev.chapterName}</div>
+                  </td>`;
+          cursor += ev.durationWeeks;
+        }
+        while (cursor < maxWeek) { html += '<td></td>'; cursor++; }
+        html += '</tr>';
+      });
+  
+      html += '</tbody></table>';
+      wrap.innerHTML = html;
+    };
+  </script>
+  
+</body>
+</html>
