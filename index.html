@@ -124,6 +124,64 @@
       return img;
     }
 
+    // Try image <dir>/<name>.(exts...). If all fail, call onAllFail().
+    // Returns the <img> element immediately (it will remove itself if it ultimately fails).
+    function makeSmartImgFallback(dir, name, className, alt, onAllFail){
+      if (!name){
+        if (typeof onAllFail === 'function') onAllFail();
+        return null;
+      }
+      const img = document.createElement('img');
+      img.className = className || '';
+      img.alt = alt || name;
+      img.loading = 'lazy';
+
+      const exts = IMAGE_EXTS.slice();
+      let i = 0;
+      const tryNext = () => {
+        if (i >= exts.length){
+          img.remove();
+          if (typeof onAllFail === 'function') onAllFail();
+          return;
+        }
+        img.src = `${dir}${encSeg(name)}.${exts[i++]}`;
+      };
+      img.onerror = tryNext;
+      tryNext();
+      return img;
+    }
+
+    function prependEventMedia(el, ev){
+      const insertPlaceholder = () => {
+        const ph = document.createElement('div');
+        ph.className = 'thumb';
+        el.prepend(ph);
+      };
+
+      const tryLocation = () => {
+        const firstLoc = (ev.locations && ev.locations[0]) ? ev.locations[0] : '';
+        if (firstLoc) {
+          const locImg = makeSmartImgFallback(
+            LOC_IMAGES_DIR, firstLoc, 'thumb', firstLoc, insertPlaceholder
+          );
+          if (locImg) el.prepend(locImg);
+        } else {
+          insertPlaceholder();
+        }
+      };
+
+      if (ev.imageName){
+        const img = makeSmartImgFallback(
+          EVENT_IMAGES_DIR, ev.imageName, 'thumb', ev.imageName, tryLocation
+        );
+        if (img) el.prepend(img);
+      } else {
+        tryLocation();
+      }
+    }
+
+
+
     /** ===================== DISCOVERY ===================== **/
     async function discoverFiles(){
       try {
@@ -152,37 +210,45 @@
           const date = (row[0]||'').trim();
           const id   = (row[1]||'').trim();
           const name = (row[2]||'').trim();
-          const img  = (row[3]||'').trim();
-          const desc = (row[4]||'').trim();
-          if (!isSpecificWeek(date) || !id || !name) continue;
-          out.push({
-            weekIdx: isoWeekToIdx(date),
-            id,
-            name,
-            imageName: img || id,   // prefer explicit image slug, else ID
-            desc
-          });
+          const desc = (row[3]||'').trim();
+          if (!id || !name || !date) continue;
+
+          if (isSpecificWeek(date)) {
+            // Static: YYYY-WW
+            out.push({
+              type: 'static',
+              weekIdx: isoWeekToIdx(date),
+              id, name, desc,
+              imageName: id
+            });
+          } else if (/^\d{2}$/.test(date)) {
+            // Recurring each year on week WW
+            out.push({
+              type: 'recurring',
+              week: parseInt(date, 10),
+              id, name, desc,
+              imageName: id
+            });
+          }
+          // else ignore bad rows (header etc.)
         }
         return out;
       };
 
-      // Try reading /timelines/seasonal.csv
+      // Try file
       try {
         const r = await fetch(SEASONAL_CSV, {cache:'no-store'});
-        if (r.ok) {
-          const txt = await r.text();
-          const parsed = parseSeasonal(txt);
-          return parsed;
-        }
+        if (r.ok) return parseSeasonal(await r.text());
       } catch {}
 
-      // Fallback: inline seasonal data (for file:// or missing file)
+      // Fallback: inline
       try {
         return parseSeasonal(INLINE_SEASONAL_CSV);
       } catch {
         return [];
       }
     }
+
 
 
     /** CSV -> timeline (title row + events, with row-level validation) */
@@ -229,6 +295,48 @@
       return { title: tl.title, events };
     }
 
+    /** ===================== CORNER YEAR HELPERS ===================== **/
+    function setupCornerYearTracker(grid, corner){
+      const scroller = grid.parentElement; // .viewport
+      const weekLabels = Array.from(grid.querySelectorAll('.wlabel:not(.wlabel--seasonal)'));
+
+      function update(){
+        const topY = scroller.getBoundingClientRect().top + 1;
+
+        // Find the week row whose top is closest to the scroller top (and visible)
+        let best = null, bestDy = Infinity;
+        for (const wl of weekLabels){
+          const r = wl.getBoundingClientRect();
+          const dy = Math.abs(r.top - topY);
+          const visible = r.bottom > topY && r.top < (topY + scroller.clientHeight);
+          if (visible && dy < bestDy){
+            best = wl; bestDy = dy;
+          }
+        }
+
+        // Fallbacks if none matched visibility (e.g., at extremes)
+        if (!best){
+          let minPos = Infinity, chosen = null;
+          for (const wl of weekLabels){
+            const pos = wl.getBoundingClientRect().top - topY;
+            if (pos >= 0 && pos < minPos){ minPos = pos; chosen = wl; }
+          }
+          best = chosen || weekLabels[weekLabels.length-1] || null;
+        }
+
+        if (best){
+          const idx = parseInt(best.dataset.weekIdx, 10);
+          const { year } = idxToISOWeek(idx);
+          corner.textContent = String(year);
+        }
+      }
+
+      scroller.addEventListener('scroll', update, { passive: true });
+      window.addEventListener('resize', update);
+      update(); // initial
+    }
+
+
     /** ===================== RENDER ===================== **/
     async function renderGridVertical(timelines, seasonalMarkers = []){
       const grid = $('grid'); grid.innerHTML = '';
@@ -251,16 +359,41 @@
         }
       }
 
-      // Seasonal markers indexed by weekIdx (and filtered to visible range)
-      const seasonalByIdx = new Map();
+      // ---- Expand recurring seasonal markers across the visible year span ----
+      const { year: minYear } = idxToISOWeek(minIdx);
+      const { year: maxYear } = idxToISOWeek(maxIdx - 1);
+
+      const expandedSeasonal = [];
       for (const m of seasonalMarkers){
+        if (m.type === 'static'){
+          expandedSeasonal.push(m);
+        } else if (m.type === 'recurring'){
+          const ww = String(m.week).padStart(2, '0');
+          for (let y = minYear; y <= maxYear; y++){
+            const idx = isoWeekToIdx(`${y}-${ww}`);
+            // Only keep if inside our visible range
+            if (idx >= minIdx && idx < maxIdx){
+              expandedSeasonal.push({
+                ...m,
+                type: 'static',     // becomes concrete for this year
+                weekIdx: idx
+              });
+            }
+          }
+        }
+      }
+
+      // Group seasonals by weekIdx and count them
+      const seasonalByIdx = new Map();
+      for (const m of expandedSeasonal){
         if (!seasonalByIdx.has(m.weekIdx)) seasonalByIdx.set(m.weekIdx, []);
         seasonalByIdx.get(m.weekIdx).push(m);
       }
       const seasonalCountByIdx = new Map();
       for (const [idx, arr] of seasonalByIdx.entries()){
-        if (idx >= minIdx && idx < maxIdx) seasonalCountByIdx.set(idx, arr.length);
+        seasonalCountByIdx.set(idx, arr.length);
       }
+
 
       // Build combined rows: newest → oldest; after each week row, insert seasonal rows for that week
       const rows = []; // { type:'week', idx } | { type:'seasonal', idx, data }
@@ -307,6 +440,7 @@
 
           const wl = document.createElement('div');
           wl.className = 'wlabel';
+          wl.dataset.weekIdx = String(row.idx);
 
           const inner = document.createElement('div');
           inner.className = 'wlabel__inner';
@@ -374,6 +508,7 @@
             grid.appendChild(bg);
           });
         }
+        setupCornerYearTracker(grid, corner);
       });
 
       // ---- Events (account for seasonal rows crossed) ----
@@ -430,10 +565,7 @@ for (let cIdx = 0; cIdx < timelines.length; cIdx++){
     topline.className = 'topline';
 
     // media on top
-    let media = null;
-    if (ev.imageName) media = makeSmartImg(EVENT_IMAGES_DIR, ev.imageName, 'thumb', ev.imageName);
-    if (!media){ const ph = document.createElement('div'); ph.className = 'thumb'; media = ph; }
-    el.prepend(media);
+    prependEventMedia(el, ev);
 
     // Category → Title → Date & duration
     if (ev.category){
@@ -456,31 +588,46 @@ for (let cIdx = 0; cIdx < timelines.length; cIdx++){
     el.appendChild(topline);
 
     // Chips
-    const chips = document.createElement('div');
-    chips.className = 'chips';
+    const charChips = document.createElement('div');
+    charChips.className = 'chips chips--characters';
 
-    for (const n of ev.characters || []){
+    for (const n of ev.characters || []) {
       const a = document.createElement('a');
       a.className = 'chip';
       a.href = `characters/${encodeURIComponent(n)}.html`;
       a.title = `Character: ${n}`;
+
       const icon = makeSmartImg(CHAR_IMAGES_DIR, n, 'icon', n);
       if (icon) a.appendChild(icon);
-      const label = document.createElement('span'); label.textContent = n; a.appendChild(label);
-      chips.appendChild(a);
+
+      const label = document.createElement('span');
+      label.textContent = n;
+      a.appendChild(label);
+
+      charChips.appendChild(a);
     }
-    for (const n of ev.locations || []){
+    if (charChips.children.length) el.appendChild(charChips);
+
+    const locChips = document.createElement('div');
+    locChips.className = 'chips chips--locations';
+
+    for (const n of ev.locations || []) {
       const a = document.createElement('a');
       a.className = 'chip';
       a.href = `locations/${encodeURIComponent(n)}.html`;
       a.title = `Location: ${n}`;
-      const icon = makeSmartImg(LOC_IMAGES_DIR, n, 'icon', n);
-      if (icon) a.appendChild(icon);
-      const label = document.createElement('span'); label.textContent = n; a.appendChild(label);
-      chips.appendChild(a);
+
+      //const icon = makeSmartImg(LOC_IMAGES_DIR, n, 'icon', n);
+      //if (icon) a.appendChild(icon);
+
+      const label = document.createElement('span');
+      label.textContent = n;
+      a.appendChild(label);
+
+      locChips.appendChild(a);
     }
-    if (chips.children.length) el.appendChild(chips);
-    if ((ev.durationWeeks|0) <= 1) el.classList.add('small');
+    if (locChips.children.length) el.appendChild(locChips);
+
 
     grid.appendChild(el);
   }

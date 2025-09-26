@@ -10,54 +10,67 @@
   --g-outline: #f7f7f7;
   --g-panel: #fdfdfd;
   --g-bar: #e1e1e1;
+
+  --seasonal-line: #fff3e3;
+  --seasonal-bg: #fffcf7;
 }
 
-[data-category="Background"] {
+[data-category="OrdinaryWorld"] {
   --jcolor: #80acff;
   --jtext: white;
   --jemoji: "📚";
 }
-[data-category="Call"] {
-  --jcolor: #8f80ff;
+[data-category="CallToAdventure"] {
+  --jcolor: #80c0ff;
   --jtext: white;
   --jemoji: "📞";
 }
-[data-category="Conflict"] {
-  --jcolor: #ff80e1;
-  --jtext: white;
+[data-category="RefusalOfTheCall"] {
+  --jcolor: #80f9ff;
+  --jtext: var(--ink);
   --jemoji: "⚔️";
 }
-[data-category="Guidance"] {
-  --jcolor: #80ffaa;
+[data-category="MeetingTheMentor"] {
+  --jcolor: #80ffc8;
   --jtext: var(--ink);
   --jemoji: "🧭";
 }
-[data-category="Transition"] {
-  --jcolor: #9eff80;
+[data-category="CrossingTheThreshold"] {
+  --jcolor: #80ff93;
   --jtext: var(--ink);
   --jemoji: "➡️";
 }
-[data-category="Trial"] {
-  --jcolor: #fff080;
+[data-category="TestsAlliesEnemies"] {
+  --jcolor: #f7ff80;
   --jtext: var(--ink);
   --jemoji: "🧪";
 }
-[data-category="Preparation"] {
-  --jcolor: #ffb580;
+[data-category="ApproachToTheInmostCave"] {
+  --jcolor: #ffca80;
   --jtext: var(--ink);
   --jemoji: "🛡️";
 }
-[data-category="Climax"] {
+[data-category="TheOrdeal"] {
   --jcolor: #ff8080;
   --jtext: white;
   --jemoji: "🔥";
 }
 [data-category="Reward"] {
-  --jcolor: #80ffff;
-  --jtext: var(--ink);
+  --jcolor: #ff809c;
+  --jtext: white;
   --jemoji: "🏆";
 }
-[data-category="Return"] {
+[data-category="TheRoadBack"] {
+    --jcolor: #ff80e1;
+  --jtext: white;
+  --jemoji: "🛣️";
+}
+[data-category="Resurrection"] {
+    --jcolor: #8f80ff;
+  --jtext: white;
+  --jemoji: "🌅";
+}
+[data-category="TheReturn"] {
   --jcolor: #80acff;
   --jtext: white;
   --jemoji: "🏡";
@@ -97,14 +110,16 @@ header .err {
 }
 
 .viewport {
+    display:flex;
   position: relative;
   overflow: auto;
+  justify-content: center;
+  align-items: start;
 }
 .grid {
   display: grid;
   gap: 6px;
   padding: 12px;
-  min-width: 100%;
 }
 
 .corner {
@@ -119,7 +134,8 @@ header .err {
   border: 1px solid var(--g-bar);
   padding: 8px 10px;
   font-size: 12px;
-  color: var(--muted);
+  font-weight: 600;
+  color: var(--ink);
 }
 .wlabel {
   position: sticky;
@@ -145,7 +161,7 @@ header .err {
   border-radius: 10px;
   background: var(--g-outline);
 }
-/* If you want to show the count as a badge on the right, use the data attribute we set */
+/* If you want to show the count as a badge on the right, use the data attribute we set 
 .wlabel .wlabel__inner.has-events::after {
   content: attr(data-count);
   display: flex;
@@ -162,7 +178,7 @@ header .err {
   border-radius: 999px;
   background: white;
   border: 1px solid var(--g-bar);
-}
+}*/
 .thead {
   position: sticky;
   top: 0;
@@ -296,6 +312,17 @@ header .err {
   padding-left: 31px;
 }
 
+.event .chips.chips--locations {
+    position:absolute;
+    top:0px;
+    right:0px;
+}
+.event .chips.chips--locations .chip {
+    background: white;
+    color:var(--ink);
+    outline: 1.5px solid var(--jcolor);
+}
+
 .event .topline:before {
   content: var(--jemoji);
   display: flex;
@@ -320,13 +347,14 @@ header .err {
   /* different base if you want */
   position:relative;
   padding-left:0;
+  padding-right:0;
 }
 
 /* Seasonal background cells across timelines */
 .cell--seasonal {
 position:relative;
   background-color: transparent;
-  border-style: dashed;
+  border-style: none;
 }
 
 .cell--seasonal:after {
@@ -352,7 +380,7 @@ position:relative;
   width: calc(100% + 15px);
   height: 2px;
   margin-top: -1px;
-  background-color: var(--g-bar);
+  background-color: var(--seasonal-line);
   border-radius: 0;
   pointer-events: none;
 }
@@ -366,10 +394,9 @@ position:relative;
   gap: 5px;
   padding: 0px;
   position:relative;
-  border:1px solid var(--g-bar);
-  background-color: white;
+  border:1.5px solid var(--seasonal-line);
+  background-color: var(--seasonal-bg);
   border-radius:0 10px 10px 0;
-  border-left:0px;
   padding:5px 15px 5px 5px;
   text-align: left;
   flex-grow:1;
@@ -383,9 +410,8 @@ position:relative;
   text-transform: uppercase;
   width: 22px;
   height: 22px;
-  object-fit: cover;
+  object-fit: contain;
   border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .seasonal-name {

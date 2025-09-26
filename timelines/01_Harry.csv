@@ -1,14 +1,14 @@
 Harry Potter and the Goblet of Fire,,,,,,
 Start,Duration,Description,Category,Image,Characters,Location
-2025-02,4w," Ordinary World - living a quiet village life"," Background",Wand,HarryPotter,UnderStairs
-2w," 1w"," Call to Adventure - mysterious stranger arrives"," Call",,Hermoine,
-1w," 1w"," Refusal of the Call - doubts and fear"," Conflict",,Ron,
-4w," 1w"," Meeting the Mentor - wise elder offers guidance"," Guidance",,Snape,Hogwarts
-2w," 3w"," Crossing the Threshold - leaves village to unknown lands"," Transition",,Dumbledorf,
-0w," 2w"," Tests - Allies - Enemies - faces trials and gains companions",Trial,,HarryPotter,
-2w,7w," Approach to the Inmost Cave - enters dark forest"," Preparation",,Hermione,
-0w," 1w"," Ordeal - battles the shadow beast"," Climax",,Ron,
+2025-02,4w," Ordinary World - living a quiet village life",OrdinaryWorld,Wand,HarryPotter,UnderStairs
+2w," 1w"," Call to Adventure - mysterious stranger arrives",CallToAdventure,,Hermoine,
+1w," 1w"," Refusal of the Call - doubts and fear",RefusalOfTheCall,,Ron,
+4w," 1w"," Meeting the Mentor - wise elder offers guidance",MeetingTheMentor,,Snape,Hogwarts
+2w," 3w"," Crossing the Threshold - leaves village to unknown lands",CrossingTheThreshold,,Dumbledorf,
+0w," 2w"," Tests - Allies - Enemies - faces trials and gains companions",TestsAlliesEnemies,,HarryPotter,
+2w,7w," Approach to the Inmost Cave - enters dark forest",ApproachToTheInmostCave,,Hermione,
+0w," 1w"," Ordeal - battles the shadow beast",TheOrdeal,,Ron,
 0w,1w," Reward - gains the sacred relic"," Reward",,Snape,
-0w,3w," The Road Back - pursued by enemies"," Conflict",,Dumbledorf,
-3w,2w," Resurrection - final test of character"," Climax",,Ron,
-2w,2w," Return with the Elixir - brings knowledge to village"," Return",,HarryPotter,
+0w,3w," The Road Back - pursued by enemies",TheRoadBack,,Dumbledorf,
+3w,2w," Resurrection - final test of character",Resurrection,,Ron,
+2w,2w," Return with the Elixir - brings knowledge to village",TheReturn,,HarryPotter,Hogwarts

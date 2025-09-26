@@ -1,7 +1,7 @@
-Date,ID,Name,Image,Description
-2025-01,newyear,New Year 2025,newyear,
-2025-09,autumn,Start of Autumn,autumn,Meteorological autumn begins in NZ
-2025-22,winter,Start of Winter,winter,Meteorological winter begins in NZ
-2025-36,spring,Start of Spring,spring,Meteorological spring begins in NZ
-2025-49,summer,Start of Summer,summer,Meteorological summer begins in NZ
-2026-01,newyear,New Year 2026,
+Date,ID,Name,Description
+01,newyear,New Year,
+09,autumn,Start of Autumn,Bring on the falling leaves!
+22,winter,Start of Winter,Let it snow...
+36,spring,Start of Spring,The birds and the bees.
+49,summer,Start of Summer,Let's hit the beach!
+2025-42,event,Static Festival,One-off Festival
