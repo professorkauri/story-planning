@@ -1,13 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="utf-8" />
   <title>Vertical Timelines (events + character/location icons)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="styles/timelines.css">
 </head>
-
 <body>
   <header>
     <h1>Vertical Timelines</h1>
@@ -25,73 +23,83 @@
     const INDEX_JSON = TIMELINES_DIR + 'index.json';
 
     const EVENT_IMAGES_DIR = 'images/events/';
-    const CHAR_IMAGES_DIR = 'images/characters/';
-    const LOC_IMAGES_DIR = 'images/locations/';
-    const IMAGE_EXTS = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg', 'avif'];
+    const CHAR_IMAGES_DIR  = 'images/characters/';
+    const LOC_IMAGES_DIR   = 'images/locations/';
+    const SEASONAL_IMAGES_DIR = 'images/seasonal/';
+
+    const SEASONAL_CSV = TIMELINES_DIR + 'seasonal.csv';
+
+    const IMAGE_EXTS = ['png','jpg','jpeg','webp','gif','svg','avif'];
 
     /** Inline template for CSS testing (used only if no files can be read) */
     const INLINE_TEMPLATE_CSV =
-      `
-Harry Potter and the Goblet of Fire,,,,,,
-Start,Duration,Description,Category,Image,Characters,Location
-2025-02,2w,Ordinary World - living a quiet village life,Background,Wand,HarryPotter,UnderStairs
-2w,1w,Call to Adventure - mysterious stranger arrives,Call,,,
-1w,1w,Refusal of the Call - doubts and fear,Conflict,,,
-1w,1w,Meeting the Mentor - wise elder offers guidance,Guidance,,,Hogwarts
-2w,3w,Crossing the Threshold - leaves village to unknown lands,Transition,,,
-1w,2w,Tests - Allies - Enemies - faces trials and gains companions,Trial,,,
-2w,2w,Approach to the Inmost Cave - enters dark forest,Preparation,,,
-1w,1w,Ordeal - battles the shadow beast,Climax,,,
-1w,2w,Reward - gains the sacred relic,Reward,,,
-2w,2w,The Road Back - pursued by enemies,Conflict,,,
-1w,1w,Resurrection - final test of character,Climax,,,
-1w,2w,Return with the Elixir - brings knowledge to village,Return,,HarryPotter,
-  `;
+    `Harry Potter and the Goblet of Fire,,,,,,
+    Start,Duration,Description,Category,Image,Characters,Location
+    2025-02,2w,Ordinary World - living a quiet village life,Background,Wand,HarryPotter,UnderStairs
+    2w,1w,Call to Adventure - mysterious stranger arrives,Call,,,
+    1w,1w,Refusal of the Call - doubts and fear,Conflict,,,
+    1w,1w,Meeting the Mentor - wise elder offers guidance,Guidance,,,Hogwarts
+    2w,3w,Crossing the Threshold - leaves village to unknown lands,Transition,,,
+    1w,2w,Tests - Allies - Enemies - faces trials and gains companions,Trial,,,
+    2w,2w,Approach to the Inmost Cave - enters dark forest,Preparation,,,
+    1w,1w,Ordeal - battles the shadow beast,Climax,,,
+    1w,2w,Reward - gains the sacred relic,Reward,,,
+    2w,2w,The Road Back - pursued by enemies,Conflict,,,
+    1w,1w,Resurrection - final test of character,Climax,,,
+    1w,2w,Return with the Elixir - brings knowledge to village,Return,,HarryPotter,`;
+
+    const INLINE_SEASONAL_CSV =
+    `Date,ID,Name,Image,Description
+    2025-01,newyear,New Year 2025,newyear,First week of the year begins
+    2025-09,autumn,Start of Autumn,autumn,Meteorological autumn begins in NZ
+    2025-22,winter,Start of Winter,winter,Meteorological winter begins in NZ
+    2025-36,spring,Start of Spring,spring,Meteorological spring begins in NZ
+    2025-49,summer,Start of Summer,summer,Meteorological summer begins in NZ`;
 
     /** ===================== SMALL HELPERS ===================== **/
     const $ = (id) => document.getElementById(id);
     const setText = (id, txt) => { const el = $(id); if (el) el.textContent = txt; };
 
-    function isSpecificWeek(s) { return /^\d{4}-\d{2}$/.test(s || ''); }
-    function parseRelWeeks(s) { const m = /^(\d+)\s*[wW]$/.exec(s || ''); return m ? parseInt(m[1], 10) : null; }
-    function stripExt(name) { return name.replace(/\.[^.]+$/, ''); }
-    function encSeg(s) { return encodeURIComponent(s).replace(/%2F/g, '/'); }
+    function isSpecificWeek(s){ return /^\d{4}-\d{2}$/.test(s || ''); }
+    function parseRelWeeks(s){ const m = /^(\d+)\s*[wW]$/.exec(s || ''); return m ? parseInt(m[1],10) : null; }
+    function stripExt(name){ return name.replace(/\.[^.]+$/, ''); }
+    function encSeg(s){ return encodeURIComponent(s).replace(/%2F/g, '/'); }
 
     /* Robust ISO week helpers */
-    function isoWeekToDate(iso) {
+    function isoWeekToDate(iso){
       const [yStr, wStr] = iso.split('-'); const Y = +yStr, W = +wStr;
       const jan4 = new Date(Date.UTC(Y, 0, 4)); const d = jan4.getUTCDay() || 7;
       const monW1 = new Date(jan4); monW1.setUTCDate(jan4.getUTCDate() - (d - 1));
-      const monW = new Date(monW1); monW.setUTCDate(monW1.getUTCDate() + (W - 1) * 7); monW.setUTCHours(0, 0, 0, 0);
+      const monW  = new Date(monW1); monW.setUTCDate(monW1.getUTCDate() + (W - 1) * 7); monW.setUTCHours(0,0,0,0);
       return monW;
     }
-    function isoWeekToIdx(iso) {
-      const d = isoWeekToDate(iso); const epochMon = new Date(Date.UTC(1970, 0, 5));
-      return Math.floor((d - epochMon) / (7 * 24 * 3600 * 1000));
+    function isoWeekToIdx(iso){
+      const d = isoWeekToDate(iso); const epochMon = new Date(Date.UTC(1970,0,5));
+      return Math.floor((d - epochMon) / (7*24*3600*1000));
     }
-    function idxToISOWeek(idx) {
-      const epochMon = new Date(Date.UTC(1970, 0, 5));
-      const d = new Date(epochMon); d.setUTCDate(epochMon.getUTCDate() + idx * 7);
+    function idxToISOWeek(idx){
+      const epochMon = new Date(Date.UTC(1970,0,5));
+      const d = new Date(epochMon); d.setUTCDate(epochMon.getUTCDate() + idx*7);
       const t = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
       const day = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + (4 - day));
       const isoYear = t.getUTCFullYear();
-      const w1 = new Date(Date.UTC(isoYear, 0, 4)); const wd = w1.getUTCDay() || 7;
+      const w1 = new Date(Date.UTC(isoYear,0,4)); const wd = w1.getUTCDay() || 7;
       const w1Mon = new Date(w1); w1Mon.setUTCDate(w1.getUTCDate() - (wd - 1));
-      const diff = (d - w1Mon); const isoWeek = 1 + Math.floor(diff / (7 * 24 * 3600 * 1000));
+      const diff = (d - w1Mon); const isoWeek = 1 + Math.floor(diff / (7*24*3600*1000));
       return { year: isoYear, week: isoWeek };
     }
 
     /** CSV parse (quoted commas handled) */
-    function parseCSV(text) {
-      const rows = []; let row = [], cur = '', inQ = false;
-      for (let i = 0; i < text.length; i++) {
-        const ch = text[i], nx = text[i + 1];
-        if (ch === '"') { if (inQ && nx === '"') { cur += '"'; i++; } else inQ = !inQ; }
-        else if (ch === ',' && !inQ) { row.push(cur); cur = ''; }
-        else if ((ch === '\n' || ch === '\r') && !inQ) {
+    function parseCSV(text){
+      const rows=[]; let row=[], cur='', inQ=false;
+      for (let i=0;i<text.length;i++){
+        const ch=text[i], nx=text[i+1];
+        if (ch === '"'){ if (inQ && nx === '"'){ cur+='"'; i++; } else inQ=!inQ; }
+        else if (ch === ',' && !inQ){ row.push(cur); cur=''; }
+        else if ((ch === '\n' || ch === '\r') && !inQ){
           if (ch === '\r' && nx === '\n') i++;
-          row.push(cur); cur = ''; rows.push(row); row = [];
-        } else cur += ch;
+          row.push(cur); cur=''; rows.push(row); row=[];
+        } else cur+=ch;
       }
       row.push(cur); rows.push(row);
       const maxLen = Math.max(...rows.map(r => r.length));
@@ -99,7 +107,7 @@ Start,Duration,Description,Category,Image,Characters,Location
     }
 
     /** Make an <img> that tries extensions in order; hides itself if none exist. Works with file:// */
-    function makeSmartImg(dir, name, className, alt) {
+    function makeSmartImg(dir, name, className, alt){
       if (!name) return null;
       const img = document.createElement('img');
       img.className = className || '';
@@ -108,7 +116,7 @@ Start,Duration,Description,Category,Image,Characters,Location
       const exts = IMAGE_EXTS.slice();
       let i = 0;
       const tryNext = () => {
-        if (i >= exts.length) { img.remove(); return; }
+        if (i >= exts.length){ img.remove(); return; }
         img.src = `${dir}${encSeg(name)}.${exts[i++]}`;
       };
       img.onerror = tryNext;
@@ -117,14 +125,14 @@ Start,Duration,Description,Category,Image,Characters,Location
     }
 
     /** ===================== DISCOVERY ===================== **/
-    async function discoverFiles() {
+    async function discoverFiles(){
       try {
-        const r = await fetch(INDEX_JSON, { cache: 'no-store' });
+        const r = await fetch(INDEX_JSON, {cache:'no-store'});
         if (!r.ok) return [];
         const arr = await r.json();
         if (!Array.isArray(arr)) return [];
         const files = [];
-        for (const entry of arr) {
+        for (const entry of arr){
           if (typeof entry !== 'string') continue;
           const s = entry.trim();
           if (!s || !/\.csv$/i.test(s)) continue;
@@ -136,21 +144,62 @@ Start,Duration,Description,Category,Image,Characters,Location
       }
     }
 
+    async function loadSeasonalMarkers(){
+      const parseSeasonal = (text) => {
+        const rows = parseCSV(text).filter(r => r.some(c => (c||'').trim() !== ''));
+        const out = [];
+        for (const row of rows){
+          const date = (row[0]||'').trim();
+          const id   = (row[1]||'').trim();
+          const name = (row[2]||'').trim();
+          const img  = (row[3]||'').trim();
+          const desc = (row[4]||'').trim();
+          if (!isSpecificWeek(date) || !id || !name) continue;
+          out.push({
+            weekIdx: isoWeekToIdx(date),
+            id,
+            name,
+            imageName: img || id,   // prefer explicit image slug, else ID
+            desc
+          });
+        }
+        return out;
+      };
+
+      // Try reading /timelines/seasonal.csv
+      try {
+        const r = await fetch(SEASONAL_CSV, {cache:'no-store'});
+        if (r.ok) {
+          const txt = await r.text();
+          const parsed = parseSeasonal(txt);
+          return parsed;
+        }
+      } catch {}
+
+      // Fallback: inline seasonal data (for file:// or missing file)
+      try {
+        return parseSeasonal(INLINE_SEASONAL_CSV);
+      } catch {
+        return [];
+      }
+    }
+
+
     /** CSV -> timeline (title row + events, with row-level validation) */
-    function csvToTimeline(filename, csvText) {
-      const rowsRaw = parseCSV(csvText).filter(r => r.some(c => (c || '').trim() !== ''));
+    function csvToTimeline(filename, csvText){
+      const rowsRaw = parseCSV(csvText).filter(r => r.some(c => (c||'').trim() !== ''));
       if (!rowsRaw.length) throw new Error('CSV is empty');
       const titleRow = rowsRaw[0];
-      const title = (titleRow.find(c => (c || '').trim() !== '') || '').trim() || stripExt(filename);
+      const title = (titleRow.find(c => (c||'').trim() !== '') || '').trim() || stripExt(filename);
       const rows = rowsRaw.slice(1);
 
       const events = [];
-      for (const row of rows) {
+      for (const row of rows){
         const [d, dur, desc, cat, img, chars, locs] = [
-          (row[0] || '').trim(), (row[1] || '').trim(),
-          (row[2] || '').trim(), (row[3] || '').trim(),
-          (row[4] || '').trim(), (row[5] || '').trim(),
-          (row[6] || '').trim()
+          (row[0]||'').trim(), (row[1]||'').trim(),
+          (row[2]||'').trim(), (row[3]||'').trim(),
+          (row[4]||'').trim(), (row[5]||'').trim(),
+          (row[6]||'').trim()
         ];
         if (!d && !dur && !desc && !cat && !img && !chars && !locs) continue;
         const durationWeeks = parseRelWeeks(dur);
@@ -158,21 +207,21 @@ Start,Duration,Description,Category,Image,Characters,Location
         if (!isSpecificWeek(d) && parseRelWeeks(d) == null) continue;
 
         const characters = (chars ? chars.split(/\s+/).filter(Boolean) : []);
-        const locations = (locs ? locs.split(/\s+/).filter(Boolean) : []);
-        events.push({ rawDate: d, durationWeeks, desc, category: cat, imageName: img || '', characters, locations });
+        const locations  = (locs ? locs.split(/\s+/).filter(Boolean) : []);
+        events.push({ rawDate:d, durationWeeks, desc, category:cat, imageName:img||'', characters, locations });
       }
       if (!events.length) throw new Error('No valid events found');
       return { title, events };
     }
 
     /** Resolve relative dates */
-    function resolveTimelineWeeks(tl) {
+    function resolveTimelineWeeks(tl){
       let prevEnd = null;
       const events = tl.events.map(ev => {
         let startIdx;
         if (isSpecificWeek(ev.rawDate)) startIdx = isoWeekToIdx(ev.rawDate);
-        else { const rel = parseRelWeeks(ev.rawDate) || 0; startIdx = (prevEnd == null) ? rel : (prevEnd + rel); }
-        const durationWeeks = Math.max(1, ev.durationWeeks | 0);
+        else { const rel = parseRelWeeks(ev.rawDate) || 0; startIdx = (prevEnd==null)? rel : (prevEnd+rel); }
+        const durationWeeks = Math.max(1, ev.durationWeeks|0);
         const endIdx = startIdx + durationWeeks;
         prevEnd = endIdx;
         return { ...ev, startIdx, durationWeeks };
@@ -181,37 +230,57 @@ Start,Duration,Description,Category,Image,Characters,Location
     }
 
     /** ===================== RENDER ===================== **/
-    async function renderGridVertical(timelines) {
+    async function renderGridVertical(timelines, seasonalMarkers = []){
       const grid = $('grid'); grid.innerHTML = '';
 
-      // Global range
+      // Global week range from timelines only
       const bounds = timelines.flatMap(tl => tl.events.map(ev => [ev.startIdx, ev.startIdx + ev.durationWeeks]));
       const minIdx = Math.min(...bounds.map(b => b[0]));
       const maxIdx = Math.max(...bounds.map(b => b[1]));
       const totalWeeks = Math.max(1, maxIdx - minIdx);
 
-      const weekIdxs = []; for (let i = maxIdx - 1; i >= minIdx; i--) weekIdxs.push(i);
-      const weekLabels = weekIdxs.map(idx => {
-        const { year, week } = idxToISOWeek(idx);
-        return `${year}-${String(week).padStart(2, '0')}`;
-      });
-
-      // Build a map of active weeks -> number of overlapping events in that week
+      // Active weeks (for badge/count on week rows)
       const activeWeekCounts = new Map();
-
-      for (const tl of timelines) {
-        for (const ev of tl.events) {
+      for (const tl of timelines){
+        for (const ev of tl.events){
           const start = ev.startIdx;
-          const end = ev.startIdx + ev.durationWeeks; // exclusive
-          for (let idx = start; idx < end; idx++) {
+          const end   = ev.startIdx + ev.durationWeeks; // exclusive
+          for (let idx = start; idx < end; idx++){
             activeWeekCounts.set(idx, (activeWeekCounts.get(idx) || 0) + 1);
           }
         }
       }
 
-      // Grid template
+      // Seasonal markers indexed by weekIdx (and filtered to visible range)
+      const seasonalByIdx = new Map();
+      for (const m of seasonalMarkers){
+        if (!seasonalByIdx.has(m.weekIdx)) seasonalByIdx.set(m.weekIdx, []);
+        seasonalByIdx.get(m.weekIdx).push(m);
+      }
+      const seasonalCountByIdx = new Map();
+      for (const [idx, arr] of seasonalByIdx.entries()){
+        if (idx >= minIdx && idx < maxIdx) seasonalCountByIdx.set(idx, arr.length);
+      }
+
+      // Build combined rows: newest → oldest; after each week row, insert seasonal rows for that week
+      const rows = []; // { type:'week', idx } | { type:'seasonal', idx, data }
+      const weekRowIndex = new Map(); // weekIdx -> row index (in rows array)
+      for (let i = maxIdx - 1; i >= minIdx; i--){
+        weekRowIndex.set(i, rows.length);
+        rows.push({ type: 'week', idx: i });
+        const arr = seasonalByIdx.get(i);
+        if (arr && arr.length){
+          for (const m of arr){
+            rows.push({ type: 'seasonal', idx: i, data: m });
+          }
+        }
+      }
+
+      // Grid template uses the combined rows
       grid.style.gridTemplateColumns = `[weeks] 120px ${timelines.map(() => `minmax(var(--timeline-col-min), var(--timeline-col-max))`).join(' ')}`;
-      grid.style.gridTemplateRows = weekIdxs.map(() => `minmax(var(--week-row-min), auto)`).join(' ');
+      grid.style.gridTemplateRows = rows
+      .map(() => `minmax(var(--week-row-min), auto)`)
+      .join(' ');
 
       // Corner
       const corner = document.createElement('div');
@@ -231,160 +300,209 @@ Start,Duration,Description,Category,Image,Characters,Location
         grid.appendChild(th);
       });
 
-      // Week labels + background cells
-      weekLabels.forEach((label, rIdx) => {
-        const weekIdx = weekIdxs[rIdx]; // actual ISO-week index for this row
+      // Render rows
+      rows.forEach((row, rIdx) => {
+        if (row.type === 'week'){
+          const { year, week } = idxToISOWeek(row.idx);
 
-        const wl = document.createElement('div');
-        wl.className = 'wlabel';
+          const wl = document.createElement('div');
+          wl.className = 'wlabel';
 
-        // Inner container holds the content + state
-        const inner = document.createElement('div');
-        inner.className = 'wlabel__inner';
-        inner.textContent = label;
+          const inner = document.createElement('div');
+          inner.className = 'wlabel__inner';
+          inner.textContent = `Week ${String(week).padStart(2,'0')}`;
 
-        // add class + optional data-count on the INNER element
-        const count = activeWeekCounts.get(weekIdx) || 0;
-        if (count > 0) {
-          inner.classList.add('has-events');
-          inner.dataset.count = String(count);
+          const count = activeWeekCounts.get(row.idx) || 0;
+          if (count > 0){
+            inner.classList.add('has-events');
+            inner.dataset.count = String(count);
+          }
+
+          wl.appendChild(inner);
+          wl.style.gridColumn = '1 / 2';
+          wl.style.gridRow = `${2 + rIdx} / ${3 + rIdx}`;
+          grid.appendChild(wl);
+
+          // background cells
+          timelines.forEach((_, cIdx) => {
+            const bg = document.createElement('div');
+            bg.className = 'cell';
+            bg.style.gridColumn = `${2 + cIdx} / ${3 + cIdx}`;
+            bg.style.gridRow = `${2 + rIdx} / ${3 + rIdx}`;
+            grid.appendChild(bg);
+          });
+
+        } else {
+          // Seasonal row
+          const m = row.data;
+
+          const wl = document.createElement('div');
+          wl.className = 'wlabel wlabel--seasonal';
+
+          const inner = document.createElement('div');
+          inner.className = 'wlabel__inner wlabel__inner--seasonal';
+
+          // image
+          const img = makeSmartImg(SEASONAL_IMAGES_DIR, m.imageName, 'seasonal-thumb', m.name);
+          if (img) inner.appendChild(img);
+
+          // name
+          const nameEl = document.createElement('span');
+          nameEl.className = 'seasonal-name';
+          nameEl.textContent = m.name;
+          inner.appendChild(nameEl);
+
+          // optional description
+          if (m.desc){
+            const descEl = document.createElement('span');
+            descEl.className = 'seasonal-desc';
+            descEl.textContent = m.desc;
+            inner.appendChild(descEl);
+          }
+
+          wl.appendChild(inner);
+          wl.style.gridColumn = '1 / 2';
+          wl.style.gridRow = `${2 + rIdx} / ${3 + rIdx}`;
+          grid.appendChild(wl);
+
+          // seasonal background cells
+          timelines.forEach((_, cIdx) => {
+            const bg = document.createElement('div');
+            bg.className = 'cell cell--seasonal';
+            bg.style.gridColumn = `${2 + cIdx} / ${3 + cIdx}`;
+            bg.style.gridRow = `${2 + rIdx} / ${3 + rIdx}`;
+            grid.appendChild(bg);
+          });
         }
-
-        wl.appendChild(inner);
-
-        wl.style.gridColumn = '1 / 2';
-        wl.style.gridRow = `${2 + rIdx} / ${3 + rIdx}`;
-        grid.appendChild(wl);
-
-        timelines.forEach((_, cIdx) => {
-          const bg = document.createElement('div');
-          bg.className = 'cell';
-          bg.style.gridColumn = `${2 + cIdx} / ${3 + cIdx}`;
-          bg.style.gridRow = `${2 + rIdx} / ${3 + rIdx}`;
-          grid.appendChild(bg);
-        });
       });
 
+      // ---- Events (account for seasonal rows crossed) ----
+// ---- Events (account for seasonal rows crossed) ----
+function countSeasonalsBetween(start, endExclusive){
+  let total = 0;
+  for (let idx = start; idx < endExclusive; idx++){
+    total += seasonalCountByIdx.get(idx) || 0;
+  }
+  return total;
+}
 
-      // Events
-      const rowOfIdx = (idx) => weekIdxs.indexOf(idx);
-      for (let cIdx = 0; cIdx < timelines.length; cIdx++) {
-        const tl = timelines[cIdx];
-        for (const ev of tl.events) {
-          const start = ev.startIdx, end = ev.startIdx + ev.durationWeeks;
-          const vStart = Math.min(Math.max(start, minIdx), maxIdx - 1);
-          const vEnd = Math.min(Math.max(end - 1, minIdx), maxIdx - 1);
-          const vStartRow = rowOfIdx(vStart), vEndRow = rowOfIdx(vEnd);
-          if (vStartRow === -1 || vEndRow === -1) continue;
+for (let cIdx = 0; cIdx < timelines.length; cIdx++){
+  const tl = timelines[cIdx];
+  for (const ev of tl.events){
+    const start = ev.startIdx;
+    const endExclusive = ev.startIdx + ev.durationWeeks;
 
-          const el = document.createElement('div');
-          el.className = 'event';
-          el.dataset.category = ev.category || '';
+    // Clip to visible bounds (weeks space)
+    const visStart = Math.min(Math.max(start, minIdx), maxIdx - 1);
+    const visEndWk = Math.min(Math.max(endExclusive - 1, minIdx), maxIdx - 1);
 
-          el.style.gridColumn = `${2 + cIdx} / ${3 + cIdx}`;
-          el.style.gridRow = `${2 + Math.min(vStartRow, vEndRow)} / ${2 + Math.max(vStartRow, vEndRow) + 1}`;
+    if (!weekRowIndex.has(visStart) || !weekRowIndex.has(visEndWk)) continue;
 
-          const { year, week } = idxToISOWeek(start);
-          const labelStart = `${year}-${String(week).padStart(2, '0')}`;
+    // Determine which week is visually on top (newer week → smaller row index)
+    const topWeek    = Math.max(visStart, visEndWk);
+    const bottomWeek = Math.min(visStart, visEndWk);
+    const topRowIdx  = weekRowIndex.get(topWeek);
 
-          const topline = document.createElement('div');
-          topline.className = 'topline';
+    // Base span = number of weeks covered (ignore seasonal rows here)
+    const baseSpanWeeks = Math.abs(visEndWk - visStart) + 1;
 
-          // media stays at the very top of the card
-          let media = null;
-          if (ev.imageName) {
-            media = makeSmartImg(EVENT_IMAGES_DIR, ev.imageName, 'thumb', ev.imageName);
-          }
-          if (!media) {
-            const ph = document.createElement('div');
-            ph.className = 'thumb';
-            media = ph;
-          }
-          el.prepend(media);
+    // Add seasonal rows actually crossed between start and end (use unclipped start/end but clamp)
+    const extra = countSeasonalsBetween(
+      Math.max(Math.min(start, endExclusive), minIdx),
+      Math.min(Math.max(start, endExclusive), maxIdx)
+    );
 
-          // 1) Category (only if provided)
-          if (ev.category) {
-            const cat = document.createElement('div');
-            cat.className = 'cat';
-            cat.textContent = ev.category;
-            topline.appendChild(cat);
-          }
+    const span = baseSpanWeeks + extra;
 
-          // 2) Title
-          const title = document.createElement('div');
-          title.className = 'desc';
-          title.textContent = ev.desc || '(no description)';
-          topline.appendChild(title);
+    // Build the event card
+    const el = document.createElement('div');
+    el.className = 'event';
+    el.dataset.category = ev.category || '';
 
-          // 3) Date & duration (category removed from here)
-          const meta = document.createElement('div');
-          meta.className = 'meta';
-          meta.textContent = `${labelStart} • ${ev.durationWeeks}w`;
-          topline.appendChild(meta);
+    // Place from the top-most covered row downward for `span` rows
+    el.style.gridColumn = `${2 + cIdx} / ${3 + cIdx}`;
+    el.style.gridRow    = `${2 + topRowIdx} / ${2 + topRowIdx + span}`;
 
-          // attach topline to the event card
-          el.appendChild(topline);
+    const {year, week} = idxToISOWeek(start);
+    const labelStart = `${year}-${String(week).padStart(2,'0')}`;
 
-          const chips = document.createElement('div');
-          chips.className = 'chips';
+    const topline = document.createElement('div');
+    topline.className = 'topline';
 
-          // Characters
-          for (const n of ev.characters || []) {
-            const a = document.createElement('a');
-            a.className = 'chip';
-            a.href = `characters/${encodeURIComponent(n)}.html`;
-            a.title = `Character: ${n}`;
+    // media on top
+    let media = null;
+    if (ev.imageName) media = makeSmartImg(EVENT_IMAGES_DIR, ev.imageName, 'thumb', ev.imageName);
+    if (!media){ const ph = document.createElement('div'); ph.className = 'thumb'; media = ph; }
+    el.prepend(media);
 
-            const icon = makeSmartImg(CHAR_IMAGES_DIR, n, 'icon', n);
-            if (icon) a.appendChild(icon);
+    // Category → Title → Date & duration
+    if (ev.category){
+      const cat = document.createElement('div');
+      cat.className = 'cat';
+      cat.textContent = ev.category;
+      topline.appendChild(cat);
+    }
 
-            const label = document.createElement('span');
-            label.textContent = n;
-            a.appendChild(label);
+    const title = document.createElement('div');
+    title.className = 'desc';
+    title.textContent = ev.desc || '(no description)';
+    topline.appendChild(title);
 
-            chips.appendChild(a);
-          }
+    const meta = document.createElement('div');
+    meta.className = 'meta';
+    meta.textContent = `${labelStart} • ${ev.durationWeeks}w`;
+    topline.appendChild(meta);
 
-          // Locations
-          for (const n of ev.locations || []) {
-            const a = document.createElement('a');
-            a.className = 'chip';
-            a.href = `locations/${encodeURIComponent(n)}.html`;
-            a.title = `Location: ${n}`;
+    el.appendChild(topline);
 
-            const icon = makeSmartImg(LOC_IMAGES_DIR, n, 'icon', n);
-            if (icon) a.appendChild(icon);
+    // Chips
+    const chips = document.createElement('div');
+    chips.className = 'chips';
 
-            const label = document.createElement('span');
-            label.textContent = n;
-            a.appendChild(label);
+    for (const n of ev.characters || []){
+      const a = document.createElement('a');
+      a.className = 'chip';
+      a.href = `characters/${encodeURIComponent(n)}.html`;
+      a.title = `Character: ${n}`;
+      const icon = makeSmartImg(CHAR_IMAGES_DIR, n, 'icon', n);
+      if (icon) a.appendChild(icon);
+      const label = document.createElement('span'); label.textContent = n; a.appendChild(label);
+      chips.appendChild(a);
+    }
+    for (const n of ev.locations || []){
+      const a = document.createElement('a');
+      a.className = 'chip';
+      a.href = `locations/${encodeURIComponent(n)}.html`;
+      a.title = `Location: ${n}`;
+      const icon = makeSmartImg(LOC_IMAGES_DIR, n, 'icon', n);
+      if (icon) a.appendChild(icon);
+      const label = document.createElement('span'); label.textContent = n; a.appendChild(label);
+      chips.appendChild(a);
+    }
+    if (chips.children.length) el.appendChild(chips);
+    if ((ev.durationWeeks|0) <= 1) el.classList.add('small');
 
-            chips.appendChild(a);
-          }
-          if (chips.children.length) el.appendChild(chips);
-          if ((ev.durationWeeks | 0) <= 1) el.classList.add('small');
+    grid.appendChild(el);
+  }
+}
 
-          grid.appendChild(el);
-        }
-      }
 
       // Meta line
-      const firstLabel = (function () { const { year, week } = idxToISOWeek(minIdx); return `${year}-${String(week).padStart(2, '0')}`; })();
-      const lastLabel = (function () { const { year, week } = idxToISOWeek(maxIdx - 1); return `${year}-${String(week).padStart(2, '0')}`; })();
+      const firstLabel = (function(){ const {year, week} = idxToISOWeek(minIdx); return `${year}-${String(week).padStart(2,'0')}`; })();
+      const lastLabel  = (function(){ const {year, week} = idxToISOWeek(maxIdx - 1); return `${year}-${String(week).padStart(2,'0')}`; })();
       setText('meta', `Timelines: ${timelines.length} • Weeks: ${totalWeeks} • Range: ${firstLabel} → ${lastLabel}`);
     }
 
     /** ===================== BOOT ===================== **/
-    (async function main() {
+    (async function main(){
       try {
         let files = await discoverFiles();  // lenient
-
         const timelines = [];
 
         // Load each CSV listed in index.json, skipping failures
-        for (const fname of files) {
+        for (const fname of files){
           try {
-            const text = await fetch(TIMELINES_DIR + fname, { cache: 'no-store' }).then(r => {
+            const text = await fetch(TIMELINES_DIR + fname, {cache:'no-store'}).then(r => {
               if (!r.ok) throw new Error(`HTTP ${r.status}`);
               return r.text();
             });
@@ -397,7 +515,7 @@ Start,Duration,Description,Category,Image,Characters,Location
         // If none loaded, try template_test.csv in /timelines
         if (!timelines.length) {
           try {
-            const text = await fetch(TIMELINES_DIR + 'template_test.csv', { cache: 'no-store' }).then(r => {
+            const text = await fetch(TIMELINES_DIR + 'template_test.csv', {cache:'no-store'}).then(r => {
               if (!r.ok) throw new Error(`HTTP ${r.status}`);
               return r.text();
             });
@@ -416,7 +534,11 @@ Start,Duration,Description,Category,Image,Characters,Location
 
         // Resolve + render
         const resolved = timelines.map(resolveTimelineWeeks);
-        await renderGridVertical(resolved);
+
+        // Seasonal markers (safe if file missing)
+        const seasonal = await loadSeasonalMarkers();
+
+        await renderGridVertical(resolved, seasonal);
 
       } catch (e) {
         console.error(e);
@@ -424,7 +546,5 @@ Start,Duration,Description,Category,Image,Characters,Location
       }
     })();
   </script>
-
 </body>
-
 </html>
