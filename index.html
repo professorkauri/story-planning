@@ -22,8 +22,6 @@
 
   <script>
     /** ===================== CONFIG ===================== **/
-    const TIMELINES_DIR = 'timelines/';
-    const INDEX_JSON = TIMELINES_DIR + 'index.json';
     const JSON_PATH = 'timelines/data.json';
 
     const visualDebug = false;
@@ -33,7 +31,6 @@
     const LOC_IMAGES_DIR = 'images/locations/';
     const SEASONAL_IMAGES_DIR = 'images/seasonal/';
 
-    const SEASONAL_CSV = TIMELINES_DIR + 'seasonal.csv';
 
     const PRESET_CATEGORIES = [
       '',            // blank option
@@ -53,22 +50,7 @@
 
     const IMAGE_EXTS = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg', 'avif'];
 
-    /** Inline template for CSS testing (used only if no files can be read) */
-    const INLINE_TEMPLATE_CSV =
-      `Harry Potter and the Goblet of Fire,,,,,,
-Start,Duration,Description,Category,Image,Characters,Location
-2025-02,4w," Ordinary World - living a quiet village life",OrdinaryWorld,Wand,HarryPotter,UnderStairs
-2w," 1w"," Call to Adventure - mysterious stranger arrives",CallToAdventure,,Hermoine,
-1w," 1w"," Refusal of the Call - doubts and fear",RefusalOfTheCall,,Ron,
-4w," 1w"," Meeting the Mentor - wise elder offers guidance",MeetingTheMentor,,Snape,Hogwarts
-2w," 3w"," Crossing the Threshold - leaves village to unknown lands",CrossingTheThreshold,,Dumbledorf,
-0w," 2w"," Tests - Allies - Enemies - faces trials and gains companions",TestsAlliesEnemies,,HarryPotter,
-2w,7w," Approach to the Inmost Cave - enters dark forest",ApproachToTheInmostCave,,Hermione,
-0w," 1w"," Ordeal - battles the shadow beast",TheOrdeal,,Ron,
-0w,1w," Reward - gains the sacred relic"," Reward",,Snape,
-0w,3w," The Road Back - pursued by enemies",TheRoadBack,,Dumbledorf,
-3w,2w," Resurrection - final test of character",Resurrection,,Ron,
-2w,2w," Return with the Elixir - brings knowledge to village",TheReturn,,HarryPotter,Hogwarts`;
+    
 
     /* If you're now using the newer seasonal schema (no Image column), feel free to update this inline CSV accordingly. */
 
@@ -116,59 +98,27 @@ Start,Duration,Description,Category,Image,Characters,Location
       } catch { return null; }
     }
 
-    async function buildFromCSV() {
-      const files = await discoverFiles();
-      const timelines = [];
-      for (const f of files) {
-        try {
-          const txt = await fetch(TIMELINES_DIR + f, { cache: 'no-store' }).then(r => r.text());
-          timelines.push(csvToTimeline(f, txt));
-        } catch { }
-      }
-      const seasonal = await loadSeasonalMarkers();
-
-      return {
-        timelines: timelines.map((tl, i) => ({
-          id: stripExt(files[i] || tl.title.toLowerCase().replace(/\s+/g, '-')),
-          title: tl.title,
-          events: tl.events.map(e => ({
-            date: e.rawDate,
-            duration: `${e.durationWeeks}w`,
-            desc: e.desc,
-            category: e.category || '',
-            image: e.imageName || '',
-            characters: e.characters || [],
-            locations: e.locations || []
-          }))
-        })),
-        seasonal: seasonal.map(m =>
-          m.type === 'static'
-            ? (() => { const { year, week } = idxToISOWeek(m.weekIdx); return { date: `${year}-${String(week).padStart(2, '0')}`, id: m.id, name: m.name, desc: m.desc || '' }; })()
-            : ({ date: String(m.week).padStart(2, '0'), id: m.id, name: m.name, desc: m.desc || '' })
-        )
-      };
-    }
-
-    async function bootstrapState() {
-      // 1) Prefer the on-disk JSON
-      const jsonState = await tryLoadJSON();
-      if (jsonState) {
-        editorState = jsonState;
-        saveToLocal();                   // keep a fast local copy
+    async function bootstrapState(){
+      // Prefer disk JSON
+      const json = await tryLoadJSON();
+      if (json && Array.isArray(json.timelines)) {
+        editorState = json;
+        saveToLocal();
         return;
       }
 
-      // 2) If no JSON, try whatever you had locally
+      // Then localStorage (if you want this first, swap these two blocks)
       const local = loadFromLocal();
-      if (local) {
+      if (local && Array.isArray(local.timelines)) {
         editorState = local;
         return;
       }
 
-      // 3) Last resort: build from CSVs + seasonal.csv
-      editorState = await buildFromCSV();
+      // Fresh empty project
+      editorState = { timelines: [], seasonal: [] };
       saveToLocal();
     }
+
 
 
     /** CSV parse (quoted commas handled) */
@@ -260,112 +210,6 @@ Start,Duration,Description,Category,Image,Characters,Location
       } else {
         tryLocation();
       }
-    }
-
-    /** ===================== DISCOVERY ===================== **/
-    async function discoverFiles() {
-      try {
-        const r = await fetch(INDEX_JSON, { cache: 'no-store' });
-        if (!r.ok) return [];
-        const arr = await r.json();
-        if (!Array.isArray(arr)) return [];
-        const files = [];
-        for (const entry of arr) {
-          if (typeof entry !== 'string') continue;
-          const s = entry.trim();
-          if (!s || !/\.csv$/i.test(s)) continue;
-          if (!files.includes(s)) files.push(s);
-        }
-        return files;
-      } catch {
-        return [];
-      }
-    }
-
-    async function loadSeasonalMarkers() {
-      const parseSeasonal = (text) => {
-        const rows = parseCSV(text).filter(r => r.some(c => (c || '').trim() !== ''));
-        const out = [];
-        for (const row of rows) {
-          const date = (row[0] || '').trim();
-          const id = (row[1] || '').trim();
-          const name = (row[2] || '').trim();
-          const desc = (row[3] || '').trim();
-          if (!id || !name || !date) continue;
-
-          if (isSpecificWeek(date)) {
-            // Static: YYYY-WW
-            out.push({
-              type: 'static',
-              weekIdx: isoWeekToIdx(date),
-              id, name, desc,
-              imageName: id
-            });
-          } else if (/^\d{2}$/.test(date)) {
-            // Recurring each year on week WW
-            out.push({
-              type: 'recurring',
-              week: parseInt(date, 10),
-              id, name, desc,
-              imageName: id
-            });
-          }
-        }
-        return out;
-      };
-
-      // Try file
-      try {
-        const r = await fetch(SEASONAL_CSV, { cache: 'no-store' });
-        if (r.ok) return parseSeasonal(await r.text());
-      } catch { }
-
-      // Fallback: inline
-      try {
-        return parseSeasonal(INLINE_SEASONAL_CSV);
-      } catch {
-        return [];
-      }
-    }
-
-    async function loadProjectState() {
-      // Try JSON first
-      try {
-        const r = await fetch(JSON_PATH, { cache: 'no-store' });
-        if (r.ok) return await r.json();
-      } catch { }
-
-      // Fallback: build state from your existing CSV loaders
-      const files = await discoverFiles();
-      const timelines = [];
-      for (const f of files) {
-        try {
-          const txt = await fetch(TIMELINES_DIR + f, { cache: 'no-store' }).then(r => r.text());
-          timelines.push(csvToTimeline(f, txt));
-        } catch { }
-      }
-      const seasonal = await loadSeasonalMarkers();
-
-      return {
-        timelines: timelines.map((tl, i) => ({
-          id: stripExt(files[i] || tl.title.toLowerCase().replace(/\s+/g, '-')),
-          title: tl.title,
-          events: tl.events.map(e => ({
-            date: e.rawDate,
-            duration: `${e.durationWeeks}w`,
-            desc: e.desc,
-            category: e.category || '',
-            image: e.imageName || '',
-            characters: e.characters || [],
-            locations: e.locations || []
-          }))
-        })),
-        seasonal: seasonal.map(m =>
-          m.type === 'static'
-            ? (() => { const { year, week } = idxToISOWeek(m.weekIdx); return { date: `${year}-${String(week).padStart(2, '0')}`, id: m.id, name: m.name, desc: m.desc || '' }; })()
-            : ({ date: String(m.week).padStart(2, '0'), id: m.id, name: m.name, desc: m.desc || '' })
-        )
-      };
     }
 
     /** CSV -> timeline (title row + events, with row-level validation) */
