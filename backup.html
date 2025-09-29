@@ -1,18 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="utf-8" />
   <title>Vertical Timelines (events + character/location icons)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="styles/timelines.css">
 </head>
-
 <body>
   <header>
     <h1>Vertical Timelines</h1>
     <div class="meta" id="meta">Loading…</div>
     <div class="err" id="err"></div>
+    <button id="toggle-editor" type="button">Edit</button>
   </header>
 
   <div class="viewport">
@@ -23,75 +22,164 @@
     /** ===================== CONFIG ===================== **/
     const TIMELINES_DIR = 'timelines/';
     const INDEX_JSON = TIMELINES_DIR + 'index.json';
+    const JSON_PATH = 'timelines/data.json';
+
+    const visualDebug = true;
 
     const EVENT_IMAGES_DIR = 'images/events/';
-    const CHAR_IMAGES_DIR = 'images/characters/';
-    const LOC_IMAGES_DIR = 'images/locations/';
-    const IMAGE_EXTS = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg', 'avif'];
+    const CHAR_IMAGES_DIR  = 'images/characters/';
+    const LOC_IMAGES_DIR   = 'images/locations/';
+    const SEASONAL_IMAGES_DIR = 'images/seasonal/';
+
+    const SEASONAL_CSV = TIMELINES_DIR + 'seasonal.csv';
+
+    const PRESET_CATEGORIES = [
+      '',            // blank option
+      'OrdinaryWorld',
+      'CallToAdventure',
+      'RefusalOfTheCall',
+      'MeetingTheMentor',
+      'CrossingTheThreshold',
+      'TestsAlliesEnemies',
+      'ApproachToTheInmostCave',
+      'TheOrdeal',
+      'Reward',
+      'TheRoadBack',
+      'Resurrection',
+      'TheReturn'
+    ];
+
+    const IMAGE_EXTS = ['png','jpg','jpeg','webp','gif','svg','avif'];
 
     /** Inline template for CSS testing (used only if no files can be read) */
     const INLINE_TEMPLATE_CSV =
-      `
-Harry Potter and the Goblet of Fire,,,,,,
+`Harry Potter and the Goblet of Fire,,,,,,
 Start,Duration,Description,Category,Image,Characters,Location
-2025-02,2w,Ordinary World - living a quiet village life,Background,Wand,HarryPotter,UnderStairs
-2w,1w,Call to Adventure - mysterious stranger arrives,Call,,,
-1w,1w,Refusal of the Call - doubts and fear,Conflict,,,
-1w,1w,Meeting the Mentor - wise elder offers guidance,Guidance,,,Hogwarts
-2w,3w,Crossing the Threshold - leaves village to unknown lands,Transition,,,
-1w,2w,Tests - Allies - Enemies - faces trials and gains companions,Trial,,,
-2w,2w,Approach to the Inmost Cave - enters dark forest,Preparation,,,
-1w,1w,Ordeal - battles the shadow beast,Climax,,,
-1w,2w,Reward - gains the sacred relic,Reward,,,
-2w,2w,The Road Back - pursued by enemies,Conflict,,,
-1w,1w,Resurrection - final test of character,Climax,,,
-1w,2w,Return with the Elixir - brings knowledge to village,Return,,HarryPotter,
-  `;
+2025-02,4w," Ordinary World - living a quiet village life",OrdinaryWorld,Wand,HarryPotter,UnderStairs
+2w," 1w"," Call to Adventure - mysterious stranger arrives",CallToAdventure,,Hermoine,
+1w," 1w"," Refusal of the Call - doubts and fear",RefusalOfTheCall,,Ron,
+4w," 1w"," Meeting the Mentor - wise elder offers guidance",MeetingTheMentor,,Snape,Hogwarts
+2w," 3w"," Crossing the Threshold - leaves village to unknown lands",CrossingTheThreshold,,Dumbledorf,
+0w," 2w"," Tests - Allies - Enemies - faces trials and gains companions",TestsAlliesEnemies,,HarryPotter,
+2w,7w," Approach to the Inmost Cave - enters dark forest",ApproachToTheInmostCave,,Hermione,
+0w," 1w"," Ordeal - battles the shadow beast",TheOrdeal,,Ron,
+0w,1w," Reward - gains the sacred relic"," Reward",,Snape,
+0w,3w," The Road Back - pursued by enemies",TheRoadBack,,Dumbledorf,
+3w,2w," Resurrection - final test of character",Resurrection,,Ron,
+2w,2w," Return with the Elixir - brings knowledge to village",TheReturn,,HarryPotter,Hogwarts`;
+
+    /* If you're now using the newer seasonal schema (no Image column), feel free to update this inline CSV accordingly. */
 
     /** ===================== SMALL HELPERS ===================== **/
     const $ = (id) => document.getElementById(id);
     const setText = (id, txt) => { const el = $(id); if (el) el.textContent = txt; };
 
-    function isSpecificWeek(s) { return /^\d{4}-\d{2}$/.test(s || ''); }
-    function parseRelWeeks(s) { const m = /^(\d+)\s*[wW]$/.exec(s || ''); return m ? parseInt(m[1], 10) : null; }
-    function stripExt(name) { return name.replace(/\.[^.]+$/, ''); }
-    function encSeg(s) { return encodeURIComponent(s).replace(/%2F/g, '/'); }
+    function isSpecificWeek(s){ return /^\d{4}-\d{2}$/.test(s || ''); }
+    function parseRelWeeks(s){ const m = /^(\d+)\s*[wW]$/.exec(s || ''); return m ? parseInt(m[1],10) : null; }
+    function stripExt(name){ return name.replace(/\.[^.]+$/, ''); }
+    function encSeg(s){ return encodeURIComponent(s).replace(/%2F/g, '/'); }
 
     /* Robust ISO week helpers */
-    function isoWeekToDate(iso) {
+    function isoWeekToDate(iso){
       const [yStr, wStr] = iso.split('-'); const Y = +yStr, W = +wStr;
       const jan4 = new Date(Date.UTC(Y, 0, 4)); const d = jan4.getUTCDay() || 7;
       const monW1 = new Date(jan4); monW1.setUTCDate(jan4.getUTCDate() - (d - 1));
-      const monW = new Date(monW1); monW.setUTCDate(monW1.getUTCDate() + (W - 1) * 7); monW.setUTCHours(0, 0, 0, 0);
+      const monW  = new Date(monW1); monW.setUTCDate(monW1.getUTCDate() + (W - 1) * 7); monW.setUTCHours(0,0,0,0);
       return monW;
     }
-    function isoWeekToIdx(iso) {
-      const d = isoWeekToDate(iso); const epochMon = new Date(Date.UTC(1970, 0, 5));
-      return Math.floor((d - epochMon) / (7 * 24 * 3600 * 1000));
+    function isoWeekToIdx(iso){
+      const d = isoWeekToDate(iso); const epochMon = new Date(Date.UTC(1970,0,5));
+      return Math.floor((d - epochMon) / (7*24*3600*1000));
     }
-    function idxToISOWeek(idx) {
-      const epochMon = new Date(Date.UTC(1970, 0, 5));
-      const d = new Date(epochMon); d.setUTCDate(epochMon.getUTCDate() + idx * 7);
+    function idxToISOWeek(idx){
+      const epochMon = new Date(Date.UTC(1970,0,5));
+      const d = new Date(epochMon); d.setUTCDate(epochMon.getUTCDate() + idx*7);
       const t = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
       const day = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + (4 - day));
       const isoYear = t.getUTCFullYear();
-      const w1 = new Date(Date.UTC(isoYear, 0, 4)); const wd = w1.getUTCDay() || 7;
+      const w1 = new Date(Date.UTC(isoYear,0,4)); const wd = w1.getUTCDay() || 7;
       const w1Mon = new Date(w1); w1Mon.setUTCDate(w1.getUTCDate() - (wd - 1));
-      const diff = (d - w1Mon); const isoWeek = 1 + Math.floor(diff / (7 * 24 * 3600 * 1000));
+      const diff = (d - w1Mon); const isoWeek = 1 + Math.floor(diff / (7*24*3600*1000));
       return { year: isoYear, week: isoWeek };
     }
 
+    async function tryLoadJSON(){
+      try {
+        const r = await fetch(`${JSON_PATH}?v=${Date.now()}`, { cache: 'no-store' });
+        if (!r.ok) return null;
+        const json = await r.json();
+        // Quick shape check
+        if (!json || !Array.isArray(json.timelines)) return null;
+        return json;
+      } catch { return null; }
+    }
+
+    async function buildFromCSV(){
+      const files = await discoverFiles();
+      const timelines = [];
+      for (const f of files){
+        try {
+          const txt = await fetch(TIMELINES_DIR + f, {cache:'no-store'}).then(r => r.text());
+          timelines.push(csvToTimeline(f, txt));
+        } catch {}
+      }
+      const seasonal = await loadSeasonalMarkers();
+
+      return {
+        timelines: timelines.map((tl, i) => ({
+          id: stripExt(files[i] || tl.title.toLowerCase().replace(/\s+/g,'-')),
+          title: tl.title,
+          events: tl.events.map(e => ({
+            date: e.rawDate,
+            duration: `${e.durationWeeks}w`,
+            desc: e.desc,
+            category: e.category || '',
+            image: e.imageName || '',
+            characters: e.characters || [],
+            locations: e.locations || []
+          }))
+        })),
+        seasonal: seasonal.map(m =>
+          m.type === 'static'
+            ? (() => { const {year, week} = idxToISOWeek(m.weekIdx); return { date: `${year}-${String(week).padStart(2,'0')}`, id: m.id, name: m.name, desc: m.desc || '' }; })()
+            : ({ date: String(m.week).padStart(2,'0'), id: m.id, name: m.name, desc: m.desc || '' })
+        )
+      };
+    }
+
+    async function bootstrapState(){
+      // 1) Prefer the on-disk JSON
+      const jsonState = await tryLoadJSON();
+      if (jsonState){
+        editorState = jsonState;
+        saveToLocal();                   // keep a fast local copy
+        return;
+      }
+
+      // 2) If no JSON, try whatever you had locally
+      const local = loadFromLocal();
+      if (local){
+        editorState = local;
+        return;
+      }
+
+      // 3) Last resort: build from CSVs + seasonal.csv
+      editorState = await buildFromCSV();
+      saveToLocal();
+    }
+
+
     /** CSV parse (quoted commas handled) */
-    function parseCSV(text) {
-      const rows = []; let row = [], cur = '', inQ = false;
-      for (let i = 0; i < text.length; i++) {
-        const ch = text[i], nx = text[i + 1];
-        if (ch === '"') { if (inQ && nx === '"') { cur += '"'; i++; } else inQ = !inQ; }
-        else if (ch === ',' && !inQ) { row.push(cur); cur = ''; }
-        else if ((ch === '\n' || ch === '\r') && !inQ) {
+    function parseCSV(text){
+      const rows=[]; let row=[], cur='', inQ=false;
+      for (let i=0;i<text.length;i++){
+        const ch=text[i], nx=text[i+1];
+        if (ch === '"'){ if (inQ && nx === '"'){ cur+='"'; i++; } else inQ=!inQ; }
+        else if (ch === ',' && !inQ){ row.push(cur); cur=''; }
+        else if ((ch === '\n' || ch === '\r') && !inQ){
           if (ch === '\r' && nx === '\n') i++;
-          row.push(cur); cur = ''; rows.push(row); row = [];
-        } else cur += ch;
+          row.push(cur); cur=''; rows.push(row); row=[];
+        } else cur+=ch;
       }
       row.push(cur); rows.push(row);
       const maxLen = Math.max(...rows.map(r => r.length));
@@ -99,7 +187,7 @@ Start,Duration,Description,Category,Image,Characters,Location
     }
 
     /** Make an <img> that tries extensions in order; hides itself if none exist. Works with file:// */
-    function makeSmartImg(dir, name, className, alt) {
+    function makeSmartImg(dir, name, className, alt){
       if (!name) return null;
       const img = document.createElement('img');
       img.className = className || '';
@@ -108,7 +196,7 @@ Start,Duration,Description,Category,Image,Characters,Location
       const exts = IMAGE_EXTS.slice();
       let i = 0;
       const tryNext = () => {
-        if (i >= exts.length) { img.remove(); return; }
+        if (i >= exts.length){ img.remove(); return; }
         img.src = `${dir}${encSeg(name)}.${exts[i++]}`;
       };
       img.onerror = tryNext;
@@ -116,15 +204,71 @@ Start,Duration,Description,Category,Image,Characters,Location
       return img;
     }
 
+    // Try image <dir>/<name>.(exts...). If all fail, call onAllFail().
+    // Returns the <img> element immediately (it will remove itself if it ultimately fails).
+    function makeSmartImgFallback(dir, name, className, alt, onAllFail){
+      if (!name){
+        if (typeof onAllFail === 'function') onAllFail();
+        return null;
+      }
+      const img = document.createElement('img');
+      img.className = className || '';
+      img.alt = alt || name;
+      img.loading = 'lazy';
+
+      const exts = IMAGE_EXTS.slice();
+      let i = 0;
+      const tryNext = () => {
+        if (i >= exts.length){
+          img.remove();
+          if (typeof onAllFail === 'function') onAllFail();
+          return;
+        }
+        img.src = `${dir}${encSeg(name)}.${exts[i++]}`;
+      };
+      img.onerror = tryNext;
+      tryNext();
+      return img;
+    }
+
+    function prependEventMedia(el, ev){
+      const insertPlaceholder = () => {
+        const ph = document.createElement('div');
+        ph.className = 'thumb';
+        el.prepend(ph);
+      };
+
+      const tryLocation = () => {
+        const firstLoc = (ev.locations && ev.locations[0]) ? ev.locations[0] : '';
+        if (firstLoc) {
+          const locImg = makeSmartImgFallback(
+            LOC_IMAGES_DIR, firstLoc, 'thumb', firstLoc, insertPlaceholder
+          );
+          if (locImg) el.prepend(locImg);
+        } else {
+          insertPlaceholder();
+        }
+      };
+
+      if (ev.imageName){
+        const img = makeSmartImgFallback(
+          EVENT_IMAGES_DIR, ev.imageName, 'thumb', ev.imageName, tryLocation
+        );
+        if (img) el.prepend(img);
+      } else {
+        tryLocation();
+      }
+    }
+
     /** ===================== DISCOVERY ===================== **/
-    async function discoverFiles() {
+    async function discoverFiles(){
       try {
-        const r = await fetch(INDEX_JSON, { cache: 'no-store' });
+        const r = await fetch(INDEX_JSON, {cache:'no-store'});
         if (!r.ok) return [];
         const arr = await r.json();
         if (!Array.isArray(arr)) return [];
         const files = [];
-        for (const entry of arr) {
+        for (const entry of arr){
           if (typeof entry !== 'string') continue;
           const s = entry.trim();
           if (!s || !/\.csv$/i.test(s)) continue;
@@ -136,21 +280,107 @@ Start,Duration,Description,Category,Image,Characters,Location
       }
     }
 
+    async function loadSeasonalMarkers(){
+      const parseSeasonal = (text) => {
+        const rows = parseCSV(text).filter(r => r.some(c => (c||'').trim() !== ''));
+        const out = [];
+        for (const row of rows){
+          const date = (row[0]||'').trim();
+          const id   = (row[1]||'').trim();
+          const name = (row[2]||'').trim();
+          const desc = (row[3]||'').trim();
+          if (!id || !name || !date) continue;
+
+          if (isSpecificWeek(date)) {
+            // Static: YYYY-WW
+            out.push({
+              type: 'static',
+              weekIdx: isoWeekToIdx(date),
+              id, name, desc,
+              imageName: id
+            });
+          } else if (/^\d{2}$/.test(date)) {
+            // Recurring each year on week WW
+            out.push({
+              type: 'recurring',
+              week: parseInt(date, 10),
+              id, name, desc,
+              imageName: id
+            });
+          }
+        }
+        return out;
+      };
+
+      // Try file
+      try {
+        const r = await fetch(SEASONAL_CSV, {cache:'no-store'});
+        if (r.ok) return parseSeasonal(await r.text());
+      } catch {}
+
+      // Fallback: inline
+      try {
+        return parseSeasonal(INLINE_SEASONAL_CSV);
+      } catch {
+        return [];
+      }
+    }
+
+    async function loadProjectState(){
+      // Try JSON first
+      try {
+        const r = await fetch(JSON_PATH, { cache: 'no-store' });
+        if (r.ok) return await r.json();
+      } catch {}
+
+      // Fallback: build state from your existing CSV loaders
+      const files = await discoverFiles();
+      const timelines = [];
+      for (const f of files){
+        try {
+          const txt = await fetch(TIMELINES_DIR + f, {cache:'no-store'}).then(r => r.text());
+          timelines.push(csvToTimeline(f, txt));
+        } catch {}
+      }
+      const seasonal = await loadSeasonalMarkers();
+
+      return {
+        timelines: timelines.map((tl, i) => ({
+          id: stripExt(files[i] || tl.title.toLowerCase().replace(/\s+/g,'-')),
+          title: tl.title,
+          events: tl.events.map(e => ({
+            date: e.rawDate,
+            duration: `${e.durationWeeks}w`,
+            desc: e.desc,
+            category: e.category || '',
+            image: e.imageName || '',
+            characters: e.characters || [],
+            locations: e.locations || []
+          }))
+        })),
+        seasonal: seasonal.map(m =>
+          m.type === 'static'
+            ? (() => { const {year, week} = idxToISOWeek(m.weekIdx); return { date: `${year}-${String(week).padStart(2,'0')}`, id: m.id, name: m.name, desc: m.desc || '' }; })()
+            : ({ date: String(m.week).padStart(2,'0'), id: m.id, name: m.name, desc: m.desc || '' })
+        )
+      };
+    }
+
     /** CSV -> timeline (title row + events, with row-level validation) */
-    function csvToTimeline(filename, csvText) {
-      const rowsRaw = parseCSV(csvText).filter(r => r.some(c => (c || '').trim() !== ''));
+    function csvToTimeline(filename, csvText){
+      const rowsRaw = parseCSV(csvText).filter(r => r.some(c => (c||'').trim() !== ''));
       if (!rowsRaw.length) throw new Error('CSV is empty');
       const titleRow = rowsRaw[0];
-      const title = (titleRow.find(c => (c || '').trim() !== '') || '').trim() || stripExt(filename);
+      const title = (titleRow.find(c => (c||'').trim() !== '') || '').trim() || stripExt(filename);
       const rows = rowsRaw.slice(1);
 
       const events = [];
-      for (const row of rows) {
+      for (const row of rows){
         const [d, dur, desc, cat, img, chars, locs] = [
-          (row[0] || '').trim(), (row[1] || '').trim(),
-          (row[2] || '').trim(), (row[3] || '').trim(),
-          (row[4] || '').trim(), (row[5] || '').trim(),
-          (row[6] || '').trim()
+          (row[0]||'').trim(), (row[1]||'').trim(),
+          (row[2]||'').trim(), (row[3]||'').trim(),
+          (row[4]||'').trim(), (row[5]||'').trim(),
+          (row[6]||'').trim()
         ];
         if (!d && !dur && !desc && !cat && !img && !chars && !locs) continue;
         const durationWeeks = parseRelWeeks(dur);
@@ -158,21 +388,21 @@ Start,Duration,Description,Category,Image,Characters,Location
         if (!isSpecificWeek(d) && parseRelWeeks(d) == null) continue;
 
         const characters = (chars ? chars.split(/\s+/).filter(Boolean) : []);
-        const locations = (locs ? locs.split(/\s+/).filter(Boolean) : []);
-        events.push({ rawDate: d, durationWeeks, desc, category: cat, imageName: img || '', characters, locations });
+        const locations  = (locs ? locs.split(/\s+/).filter(Boolean) : []);
+        events.push({ rawDate:d, durationWeeks, desc, category:cat, imageName:img||'', characters, locations });
       }
       if (!events.length) throw new Error('No valid events found');
       return { title, events };
     }
 
     /** Resolve relative dates */
-    function resolveTimelineWeeks(tl) {
+    function resolveTimelineWeeks(tl){
       let prevEnd = null;
       const events = tl.events.map(ev => {
         let startIdx;
         if (isSpecificWeek(ev.rawDate)) startIdx = isoWeekToIdx(ev.rawDate);
-        else { const rel = parseRelWeeks(ev.rawDate) || 0; startIdx = (prevEnd == null) ? rel : (prevEnd + rel); }
-        const durationWeeks = Math.max(1, ev.durationWeeks | 0);
+        else { const rel = parseRelWeeks(ev.rawDate) || 0; startIdx = (prevEnd==null)? rel : (prevEnd+rel); }
+        const durationWeeks = Math.max(1, ev.durationWeeks|0);
         const endIdx = startIdx + durationWeeks;
         prevEnd = endIdx;
         return { ...ev, startIdx, durationWeeks };
@@ -180,38 +410,651 @@ Start,Duration,Description,Category,Image,Characters,Location
       return { title: tl.title, events };
     }
 
+    /** ===================== CORNER YEAR HELPERS ===================== **/
+    function setupCornerYearTracker(grid, corner){
+      const scroller = grid.parentElement; // .viewport
+      const weekLabels = Array.from(grid.querySelectorAll('.wlabel:not(.wlabel--seasonal)'));
+
+      function update(){
+        const topY = scroller.getBoundingClientRect().top + 1;
+
+        // Find the week row whose top is closest to the scroller top (and visible)
+        let best = null, bestDy = Infinity;
+        for (const wl of weekLabels){
+          const r = wl.getBoundingClientRect();
+          const dy = Math.abs(r.top - topY);
+          const visible = r.bottom > topY && r.top < (topY + scroller.clientHeight);
+          if (visible && dy < bestDy){
+            best = wl; bestDy = dy;
+          }
+        }
+
+        // Fallbacks if none matched visibility (e.g., at extremes)
+        if (!best){
+          let minPos = Infinity, chosen = null;
+          for (const wl of weekLabels){
+            const pos = wl.getBoundingClientRect().top - topY;
+            if (pos >= 0 && pos < minPos){ minPos = pos; chosen = wl; }
+          }
+          best = chosen || weekLabels[weekLabels.length-1] || null;
+        }
+
+        if (best){
+          const idx = parseInt(best.dataset.weekIdx, 10);
+          const { year } = idxToISOWeek(idx);
+          corner.textContent = String(year);
+        }
+      }
+
+      scroller.addEventListener('scroll', update, { passive: true });
+      window.addEventListener('resize', update);
+      update(); // initial
+    }
+
+    /** ===================== EDITOR (BASIC) ===================== **/
+    let editorState = null;
+    let editMode = false;
+
+    function renderEditorUI(){
+      let panel = document.getElementById('editor');
+      if (panel) panel.remove();
+
+      if (!document.getElementById('editor-style')){
+        const s = document.createElement('style');
+        s.id = 'editor-style';
+        s.textContent = `
+          #editor{position:fixed;inset:0;display:grid;place-items:center;z-index:50;}
+          #editor::before{content:"";position:absolute;inset:0;background:rgba(0,0,0,.5);backdrop-filter:saturate(1.2) blur(2px);}
+          .editor__wrap{position:relative;background:#0f1318;border:1px solid #1a1f26;border-radius:12px;min-width:360px;max-width:720px;width:min(90vw,700px);color:#eef2f6;box-shadow:0 10px 40px rgba(0,0,0,.5);}
+          .editor__bar{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid #1a1f26}
+          .editor__body{padding:14px 16px;font-size:14px;color:#9aa3ad}
+          .editor__bar button{all:unset;cursor:pointer;padding:6px 10px;border:1px solid #2a313a;border-radius:8px}
+          .editor__bar button:hover{background:#141a21}
+        `;
+        document.head.appendChild(s);
+      }
+
+      panel = document.createElement('div');
+      panel.id = 'editor';
+      panel.innerHTML = `
+        <div class="editor__wrap">
+          <div class="editor__bar">
+            <strong>Editor mode</strong>
+            <button id="editor-close" type="button" aria-label="Close">Close</button>
+          </div>
+          <div class="editor__body">
+            <p>Coming soon — create / edit / reorder events here.</p>
+            <p>This proves the Edit toggle is wired correctly.</p>
+          </div>
+        </div>`;
+      document.body.appendChild(panel);
+      document.getElementById('editor-close').onclick = exitEditMode;
+    }
+
+    function enterEditMode(){
+      editMode = true;
+      document.body.classList.add('editing');
+      renderEditorUI();
+    }
+
+    function exitEditMode(){
+      editMode = false;
+      document.body.classList.remove('editing');
+      const panel = document.getElementById('editor');
+      if (panel) panel.remove();
+    }
+
+    function saveToLocal(){
+      localStorage.setItem('timelineEditorState', JSON.stringify(editorState));
+    }
+
+    function loadFromLocal(){
+      try { return JSON.parse(localStorage.getItem('timelineEditorState') || 'null'); } catch { return null; }
+    }
+
+    /* Use renderer from current in-memory editorState */
+    async function applyStateToRenderer(){
+      // Build timelines like your current renderer expects
+      const timelines = (editorState?.timelines || []).map(tl => ({
+        title: tl.title,
+        events: (tl.events || []).map(e => ({
+          rawDate: e.date,
+          durationWeeks: parseRelWeeks(e.duration) || 0,
+          desc: e.desc,
+          category: e.category || '',
+          imageName: e.image || '',
+          characters: e.characters || [],
+          locations: e.locations || []
+        }))
+      }));
+      const resolved = timelines.map(resolveTimelineWeeks);
+
+      // Rebuild seasonal markers to your render format
+      const seasonalMarkers = (editorState?.seasonal || []).map(s => {
+        if (isSpecificWeek(s.date)) {
+          return { type: 'static', weekIdx: isoWeekToIdx(s.date), id: s.id, name: s.name, desc: s.desc || '', imageName: s.id };
+        } else if (/^\d{2}$/.test(s.date)) {
+          return { type: 'recurring', week: parseInt(s.date, 10), id: s.id, name: s.name, desc: s.desc || '', imageName: s.id };
+        }
+        return null;
+      }).filter(Boolean);
+
+      await renderGridVertical(resolved, seasonalMarkers);
+    }
+
+
+    /** ===== Editor state helpers ===== */
+let selTlIndex = 0;
+const AUTOSAVE_MS = 400;
+const debouncedApply = debounce(() => { saveToLocal(); applyStateToRenderer(); }, AUTOSAVE_MS);
+
+function debounce(fn, ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
+function ensureSelectedTimeline(){
+  if (!editorState || !Array.isArray(editorState.timelines) || editorState.timelines.length === 0){
+    selTlIndex = -1; return;
+  }
+  if (selTlIndex < 0 || selTlIndex >= editorState.timelines.length) selTlIndex = 0;
+}
+
+/** ===== Editor UI root ===== */
+function renderEditorUI(){
+  // remove previous
+  const old = document.getElementById('editor'); if (old) old.remove();
+
+  // root
+  const root = document.createElement('div');
+  root.id = 'editor';
+  root.innerHTML = `
+    <div class="editor__backdrop" role="presentation"></div>
+    <div class="editor__panel" role="dialog" aria-modal="true" aria-label="Timeline editor">
+      <div class="editor__head">
+        <div class="editor__title">Timeline Editor</div>
+        <div class="editor__actions">
+          <button id="ed-import" class="ghost" type="button">Import JSON</button>
+          <button id="ed-download" type="button">Download JSON</button>
+          <button id="ed-reload" class="ghost" type="button">Reload from data.json</button>
+          <button id="ed-close" type="button">Close</button>
+        </div>
+      </div>
+      <div class="editor__body">
+        <aside class="editor__sidebar" id="ed-sidebar"></aside>
+        <main class="editor__main" id="ed-main"></main>
+        <aside class="editor__seasonal" id="ed-seasonal"></aside>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(root);
+
+  // wiring
+  document.getElementById('ed-close').onclick = exitEditMode;
+  document.getElementById('ed-download').onclick = onDownloadJSON;
+  document.getElementById('ed-import').onclick = onImportJSON;
+  document.getElementById('ed-reload').onclick = onReloadFromDisk;
+
+  renderSidebar();
+  ensureSelectedTimeline();
+  renderMain();
+  renderSeasonal();
+}
+
+/** ===== Sidebar (timelines list) ===== */
+function renderSidebar(){
+  const host = document.getElementById('ed-sidebar');
+  host.innerHTML = '';
+
+  const head = document.createElement('div');
+  head.className = 'ed-main-head';
+  head.innerHTML = `
+    <div><strong>Timelines</strong></div>
+    <div>
+      <button id="ed-add-tl" type="button"><b>＋</b></button>
+    </div>`;
+  host.appendChild(head);
+
+  const list = document.createElement('div');
+  list.className = 'ed-tl-list';
+
+  (editorState.timelines || []).forEach((tl, i) => {
+    const row = document.createElement('div');
+    row.className = 'ed-tl' + (i === selTlIndex ? ' is-active' : '');
+    row.innerHTML = `
+      <button class="ghost" title="Select" type="button">●</button>
+      <div class="ed-timelines">
+        <input type="text" class="ed-tl__title" value="${tl.title || ''}" />
+        <div class="ed-tl__meta">${(tl.events||[]).length} events</div>
+        <div class="ed-btn-box small">
+          <button class="ghost" data-act="up" title="Move up">▲</button>
+          <button class="ghost" data-act="down" title="Move down">▼</button>
+          <button class="danger" data-act="del" title="Delete timeline">🞬</button>
+        </div>
+      </div>`;
+    list.appendChild(row);
+
+    row.querySelector('button.ghost').onclick = () => { selTlIndex = i; renderSidebar(); renderMain(); };
+    row.querySelector('.ed-tl__title').onchange = (e) => { tl.title = e.target.value; renderSidebar(); };
+
+    row.querySelector('[data-act="up"]').onclick = () => {
+      if (i>0){ const a=editorState.timelines[i-1]; editorState.timelines[i-1]=editorState.timelines[i]; editorState.timelines[i]=a; selTlIndex = i-1; debouncedApply(); renderSidebar(); renderMain(); }
+    };
+    row.querySelector('[data-act="down"]').onclick = () => {
+      if (i<editorState.timelines.length-1){ const a=editorState.timelines[i+1]; editorState.timelines[i+1]=editorState.timelines[i]; editorState.timelines[i]=a; selTlIndex = i+1; debouncedApply(); renderSidebar(); renderMain(); }
+    };
+    row.querySelector('[data-act="del"]').onclick = () => {
+      if (confirm(`Delete timeline "${tl.title}"?`)){
+        editorState.timelines.splice(i,1);
+        selTlIndex = Math.min(selTlIndex, editorState.timelines.length-1);
+        debouncedApply(); renderSidebar(); renderMain();
+      }
+    };
+  });
+
+  host.appendChild(list);
+
+  document.getElementById('ed-add-tl').onclick = () => {
+    const id = `tl_${Date.now()}`;
+    editorState.timelines.push({ id, title: 'New Timeline', events: [] });
+    selTlIndex = editorState.timelines.length-1;
+    debouncedApply(); renderSidebar(); renderMain();
+  };
+}
+
+  /** ===== Main panel (events table) ===== */
+  function renderMain(){
+    const host = document.getElementById('ed-main');
+    host.innerHTML = '';
+
+    if (selTlIndex < 0 || !editorState.timelines.length){
+      host.innerHTML = '<div class="ed-main-head"><em>No timelines. Add one from the left.</em></div>';
+      return;
+    }
+    const tl = editorState.timelines[selTlIndex];
+
+    const head = document.createElement('div');
+    head.className = 'ed-main-head';
+    head.innerHTML = `
+      <div><strong>${tl.title || 'Untitled'}</strong></div>
+      <div class="ed-btn-box">
+        <button id="ed-add-ev" type="button"><b>＋</b></button>
+        <button id="ed-dup-evs" class="ghost" type="button">🗐 All</button>
+        <button id="ed-clear-evs" class="danger" type="button">🞬 All</button>
+      </div>`;
+    host.appendChild(head);
+
+    const table = document.createElement('table');
+    table.className = 'ed-table';
+    table.innerHTML = `
+      <tbody></tbody>`;
+    host.appendChild(table);
+
+    const tbody = table.querySelector('tbody');
+    const evs = tl.events || [];
+
+    evs.slice().reverse().forEach((ev, rIdx) => {
+      // map the reversed position back to the real index in evs
+      const i = evs.length - 1 - rIdx;
+      // 1) Build the row (your new markup)
+      const tr = document.createElement('tr');
+      tr.dataset.category = ev.category || ''; // if you want data-category
+      tr.innerHTML = `
+        <td>
+          <div class="ed-row-data">
+            <div class="ed-row-data-top">
+              <input type="text" class="ed-desc" value="${ev.desc || ''}" placeholder="Event Name" title="Event Name">
+              <div class="ed-category"></div>
+            </div>
+            <div class="ed-row-data-bottom">
+              <input type="text" class="ed-date" value="${ev.date || ''}" placeholder="Date" title="Date: YYYY-WW or 2w">
+              <input type="text" class="ed-duration" value="${ev.duration || ''}" placeholder="Duration" title="Duration: e.g. 3w">
+              <input type="text" class="ed-characters" value="${(ev.characters||[]).join(' ')}" placeholder="Characters" title="Characters: Space or comma separated">
+              <input type="text" class="ed-locations"  value="${(ev.locations||[]).join(' ')}"  placeholder="Locations" title="Locations: Space or comma separated">
+            </div>
+          </div>
+          <div class="ed-row-btns">
+            <div class="ed-image">
+              <div class="ed-thumb ed-thumb--ph" aria-hidden="false"></div>
+              <input type="text" class="ed-image-input" value="${ev.image || ''}" placeholder="Image slug" title="Image Slug">
+            </div>
+            <div class="ed-btn-box small">
+              <button data-act="up" class="ghost" title="Move up">▲</button>
+              <button data-act="down" class="ghost" title="Move down">▼</button>
+              <button data-act="dup" class="ghost" title="Duplicate">🗐</button>
+              <button data-act="del" class="danger" title="Delete">🞬</button>
+            </div>
+          </div>
+        </td>`;
+      tbody.appendChild(tr);
+
+      // 2) Category select (presets + keep data-category in sync)
+      const catCell = tr.querySelector('.ed-category');
+      const sel = document.createElement('select');
+      sel.innerHTML = PRESET_CATEGORIES
+        .concat(ev.category && !PRESET_CATEGORIES.includes(ev.category) ? [ev.category] : [])
+        .map(c => `<option value="${c}">${c || '—'}</option>`)
+        .join('');
+      sel.value = ev.category || '';
+      catCell.appendChild(sel);
+
+      sel.addEventListener('change', e => {
+        ev.category = e.target.value;
+        tr.dataset.category = ev.category || '';
+        debouncedApply();
+      });
+
+      // 3) Get inputs by class (not position)
+      const iDesc = tr.querySelector('.ed-desc');
+      const iDate = tr.querySelector('.ed-date');
+      const iDur  = tr.querySelector('.ed-duration');
+      const iImg  = tr.querySelector('.ed-image-input');
+      const iCh   = tr.querySelector('.ed-characters');
+      const iLo   = tr.querySelector('.ed-locations');
+
+      // 4) Image preview (re-uses your makeSmartImgFallback)
+      const imgCell = tr.querySelector('.ed-image');
+      function updateImagePreview() {
+        imgCell.querySelectorAll('.ed-thumb').forEach(n => n.remove());
+        const slug = (iImg.value || '').trim();
+        if (!slug) {
+          const ph = document.createElement('div');
+          ph.className = 'ed-thumb ed-thumb--ph';
+          imgCell.insertBefore(ph, iImg);
+          return;
+        }
+        const imgEl = makeSmartImgFallback(
+          EVENT_IMAGES_DIR,
+          slug,
+          'ed-thumb',
+          slug,
+          () => {
+            const ph = document.createElement('div');
+            ph.className = 'ed-thumb ed-thumb--ph';
+            imgCell.insertBefore(ph, iImg);
+          }
+        );
+        if (imgEl) imgCell.insertBefore(imgEl, iImg);
+      }
+      updateImagePreview();
+
+      // 5) Field bindings (use your debounce)
+      iDesc.addEventListener('input', () => { ev.desc = iDesc.value; debouncedApply(); });
+      iDate.addEventListener('input', () => { ev.date = iDate.value.trim(); debouncedApply(); });
+      iDur .addEventListener('input', () => { ev.duration = iDur.value.trim(); debouncedApply(); });
+      iImg .addEventListener('input', () => { ev.image = iImg.value.trim(); updateImagePreview(); debouncedApply(); });
+
+      iCh.addEventListener('input', () => { ev.characters = tokenise(iCh.value); debouncedApply(); });
+      iLo.addEventListener('input', () => { ev.locations  = tokenise(iLo.value); debouncedApply(); });
+
+      // 6) Row actions
+      tr.querySelector('[data-act="up"]').onclick   = () => { if (i>0){ const a=evs[i-1]; evs[i-1]=evs[i]; evs[i]=a; renderMain(); debouncedApply(); } };
+      tr.querySelector('[data-act="down"]').onclick = () => { if (i<evs.length-1){ const a=evs[i+1]; evs[i+1]=evs[i]; evs[i]=a; renderMain(); debouncedApply(); } };
+      tr.querySelector('[data-act="dup"]').onclick  = () => { evs.splice(i+1,0,structuredClone(ev)); renderMain(); debouncedApply(); };
+      tr.querySelector('[data-act="del"]').onclick  = () => { evs.splice(i,1); renderMain(); debouncedApply(); };
+
+    });
+
+    document.getElementById('ed-add-ev').onclick = ()=>{
+      evs.push({ date:'', duration:'1w', desc:'', category:'', image:'', characters:[], locations:[] });
+      renderMain(); debouncedApply();
+    };
+    document.getElementById('ed-dup-evs').onclick = ()=>{
+      tl.events = [...evs.map(e=>structuredClone(e)), ...evs.map(e=>structuredClone(e))];
+      renderMain(); debouncedApply();
+    };
+    document.getElementById('ed-clear-evs').onclick = ()=>{
+      if (confirm('Remove all events in this timeline?')){ tl.events = []; renderMain(); debouncedApply(); }
+    };
+  }
+
+  function tokenise(s){
+    if (!s) return [];
+    if (s.includes(',')) return [...new Set(s.split(',').map(x=>x.trim()).filter(Boolean))];
+    return [...new Set(s.trim().split(/\s+/).filter(Boolean))];
+  }
+
+  /** ===== Seasonal panel ===== */
+  function renderSeasonal(){
+    const host = document.getElementById('ed-seasonal');
+    host.innerHTML = '';
+
+    const wrap = document.createElement('div');
+    wrap.className = 'ed-sect';
+    wrap.innerHTML = `<h3>World Events</h3>`;
+    host.appendChild(wrap);
+
+    const [statics, recurring] = splitSeasonal(editorState.seasonal || []);
+    wrap.appendChild(makeSeasonalSection('One-Off Events', statics, 'static'));
+    wrap.appendChild(makeSeasonalSection('Annual Events', recurring, 'recurring'));
+  }
+
+  function splitSeasonal(list){
+    const stat=[], rec=[];
+    for (const s of list){
+      if (/^\d{4}-\d{2}$/.test(s.date)) stat.push(s); else rec.push(s);
+    }
+    return [stat, rec];
+  }
+
+  function makeSeasonalSection(title, items, kind){
+    const sect = document.createElement('div');
+    sect.className = 'ed-sect';
+    sect.innerHTML = `<h3>${title}</h3>`;
+    const list = document.createElement('div'); list.className = 'ed-list'; sect.appendChild(list);
+
+    items.forEach((s, i)=>{
+      const row = document.createElement('div');
+      row.className = 'ed-sea';
+      row.innerHTML = `
+      <div class="ed-row-data-top">
+        <input type="text" class="ed-sea-name" value="${s.name}" title="Event Name" placeholder="Event Name">
+        <input type="text" class="ed-sea-date" value="${s.date}" placeholder="${kind==='static'?'YYYY-WW':'WW'}" title="Date: ${kind==='static'?'YYYY-WW':'WW'}">
+      </div>
+      <input type="text" class="ed-sea-desc" value="${s.desc || ''}" title="Event Description" placeholder="Event Description">
+      <div class="ed-row-data-bottom">
+        <div class="ed-sea-image">
+          <div class="ed-thumb ed-thumb--ph" aria-hidden="false"></div>
+          <input type="text" class="ed-sea-id" value="${s.id}" title="Image Slug" placeholder="Image Slug">
+        </div>
+        <div class="ed-btn-box small">
+          <button data-act="up" class="ghost">▲</button>
+          <button data-act="down" class="ghost">▼</button>
+          <button data-act="del" class="danger">🞬</button>
+        </div>
+      </div>`;
+      list.appendChild(row);
+
+
+      const iName = row.querySelector('.ed-sea-name');
+      const iId   = row.querySelector('.ed-sea-id');
+      const iDesc = row.querySelector('.ed-sea-desc');
+      const iDate = row.querySelector('.ed-sea-date');
+      const imgWrap = row.querySelector('.ed-sea-image');
+
+      // live preview for the seasonal image (ID == image slug)
+      function updateSeasonalPreview() {
+        // remove any existing preview/placeholder
+        imgWrap.querySelectorAll('.ed-thumb').forEach(n => n.remove());
+
+        const slug = (iId.value || '').trim();
+        if (!slug) {
+          const ph = document.createElement('div');
+          ph.className = 'ed-thumb ed-thumb--ph';
+          ph.setAttribute('aria-hidden', 'false');
+          imgWrap.insertBefore(ph, iId);
+          return;
+        }
+
+        // Try /images/seasonal/<slug>.(exts...), else put placeholder back
+        const imgEl = makeSmartImgFallback(
+          SEASONAL_IMAGES_DIR,
+          slug,
+          'ed-thumb',
+          slug,
+          () => {
+            const ph = document.createElement('div');
+            ph.className = 'ed-thumb ed-thumb--ph';
+            ph.setAttribute('aria-hidden', 'false');
+            imgWrap.insertBefore(ph, iId);
+          }
+        );
+        if (imgEl) imgWrap.insertBefore(imgEl, iId);
+      }
+
+      // initial preview
+      updateSeasonalPreview();
+
+      // bindings
+      iName.addEventListener('input', () => { s.name = iName.value; debouncedApply(); });
+      iId  .addEventListener('input', () => { s.id   = iId.value.trim(); updateSeasonalPreview(); debouncedApply(); });
+      iDesc.addEventListener('input', () => { s.desc = iDesc.value; debouncedApply(); });
+      iDate.addEventListener('input', () => { s.date = iDate.value.trim(); debouncedApply(); });
+
+
+      row.querySelector('[data-act="up"]').onclick = ()=>{
+        const idx = (editorState.seasonal||[]).indexOf(s);
+        if (idx>0){ const arr=editorState.seasonal; const a=arr[idx-1]; arr[idx-1]=arr[idx]; arr[idx]=a; renderSeasonal(); debouncedApply(); }
+      };
+      row.querySelector('[data-act="down"]').onclick = ()=>{
+        const arr=editorState.seasonal||[]; const idx = arr.indexOf(s);
+        if (idx<arr.length-1){ const a=arr[idx+1]; arr[idx+1]=arr[idx]; arr[idx]=a; renderSeasonal(); debouncedApply(); }
+      };
+      row.querySelector('[data-act="del"]').onclick = ()=>{
+        const arr=editorState.seasonal||[]; const idx = arr.indexOf(s); arr.splice(idx,1); renderSeasonal(); debouncedApply();
+      };
+    });
+
+    const addBar = document.createElement('div');
+    addBar.style.marginTop = '10px';
+    const addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.textContent = `＋ ${kind === 'static' ? 'static' : 'recurring'}`;
+    addBtn.onclick = ()=>{
+      if (!editorState.seasonal) editorState.seasonal = [];
+      editorState.seasonal.push(kind === 'static'
+        ? { date: `${new Date().getUTCFullYear()}-01`, id:'season', name:'Season', desc:'' }
+        : { date: '01', id:'season', name:'Season', desc:'' });
+      renderSeasonal(); debouncedApply();
+    };
+    addBar.appendChild(addBtn);
+    sect.appendChild(addBar);
+
+    return sect;
+  }
+
+  /** ===== Persistence actions ===== */
+  function onDownloadJSON(){
+    const blob = new Blob([JSON.stringify(editorState, null, 2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'data.json';
+    document.body.appendChild(a);
+    a.click();
+    URL.revokeObjectURL(a.href);
+    a.remove();
+  }
+
+  async function onImportJSON(){
+    const inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = '.json,application/json';
+    inp.onchange = async () => {
+      const file = inp.files[0]; if (!file) return;
+      try {
+        const text = await file.text();
+        const json = JSON.parse(text);
+        if (!json || !Array.isArray(json.timelines)) throw new Error('Invalid JSON shape');
+        editorState = json;
+        saveToLocal();
+        await applyStateToRenderer();
+        renderSidebar(); renderMain(); renderSeasonal();
+      } catch (e) {
+        alert('Failed to import: ' + (e.message||e));
+      }
+    };
+    inp.click();
+  }
+
+  async function onReloadFromDisk(){
+    try {
+      const r = await fetch(`${JSON_PATH}?v=${Date.now()}`, {cache:'no-store'});
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const json = await r.json();
+      if (!json || !Array.isArray(json.timelines)) throw new Error('Invalid JSON');
+      editorState = json; saveToLocal();
+      await applyStateToRenderer();
+      renderSidebar(); renderMain(); renderSeasonal();
+    } catch (e) {
+      alert('Could not reload from data.json: ' + (e.message||e));
+    }
+  }
+
+
     /** ===================== RENDER ===================== **/
-    async function renderGridVertical(timelines) {
+    async function renderGridVertical(timelines, seasonalMarkers = []){
       const grid = $('grid'); grid.innerHTML = '';
 
-      // Global range
+      // Global week range from timelines only
       const bounds = timelines.flatMap(tl => tl.events.map(ev => [ev.startIdx, ev.startIdx + ev.durationWeeks]));
       const minIdx = Math.min(...bounds.map(b => b[0]));
       const maxIdx = Math.max(...bounds.map(b => b[1]));
       const totalWeeks = Math.max(1, maxIdx - minIdx);
 
-      const weekIdxs = []; for (let i = maxIdx - 1; i >= minIdx; i--) weekIdxs.push(i);
-      const weekLabels = weekIdxs.map(idx => {
-        const { year, week } = idxToISOWeek(idx);
-        return `${year}-${String(week).padStart(2, '0')}`;
-      });
-
-      // Build a map of active weeks -> number of overlapping events in that week
+      // Active weeks (for badge/count on week rows)
       const activeWeekCounts = new Map();
-
-      for (const tl of timelines) {
-        for (const ev of tl.events) {
+      for (const tl of timelines){
+        for (const ev of tl.events){
           const start = ev.startIdx;
-          const end = ev.startIdx + ev.durationWeeks; // exclusive
-          for (let idx = start; idx < end; idx++) {
+          const end   = ev.startIdx + ev.durationWeeks; // exclusive
+          for (let idx = start; idx < end; idx++){
             activeWeekCounts.set(idx, (activeWeekCounts.get(idx) || 0) + 1);
           }
         }
       }
 
-      // Grid template
+      // ---- Expand recurring seasonal markers across the visible year span ----
+      const { year: minYear } = idxToISOWeek(minIdx);
+      const { year: maxYear } = idxToISOWeek(maxIdx - 1);
+
+      const expandedSeasonal = [];
+      for (const m of seasonalMarkers){
+        if (m.type === 'static'){
+          expandedSeasonal.push(m);
+        } else if (m.type === 'recurring'){
+          const ww = String(m.week).padStart(2, '0');
+          for (let y = minYear; y <= maxYear; y++){
+            const idx = isoWeekToIdx(`${y}-${ww}`);
+            if (idx >= minIdx && idx < maxIdx){
+              expandedSeasonal.push({ ...m, type: 'static', weekIdx: idx });
+            }
+          }
+        }
+      }
+
+      // Group seasonals by weekIdx and count them
+      const seasonalByIdx = new Map();
+      for (const m of expandedSeasonal){
+        if (!seasonalByIdx.has(m.weekIdx)) seasonalByIdx.set(m.weekIdx, []);
+        seasonalByIdx.get(m.weekIdx).push(m);
+      }
+      const seasonalCountByIdx = new Map();
+      for (const [idx, arr] of seasonalByIdx.entries()){
+        seasonalCountByIdx.set(idx, arr.length);
+      }
+
+      // Build combined rows: newest → oldest; after each week row, insert seasonal rows for that week
+      const rows = []; // { type:'week', idx } | { type:'seasonal', idx, data }
+      const weekRowIndex = new Map(); // weekIdx -> row index (in rows array)
+      for (let i = maxIdx - 1; i >= minIdx; i--){
+        weekRowIndex.set(i, rows.length);
+        rows.push({ type: 'week', idx: i });
+        const arr = seasonalByIdx.get(i);
+        if (arr && arr.length){
+          for (const m of arr){
+            rows.push({ type: 'seasonal', idx: i, data: m });
+          }
+        }
+      }
+
+      // Grid template uses the combined rows
       grid.style.gridTemplateColumns = `[weeks] 120px ${timelines.map(() => `minmax(var(--timeline-col-min), var(--timeline-col-max))`).join(' ')}`;
-      grid.style.gridTemplateRows = weekIdxs.map(() => `minmax(var(--week-row-min), auto)`).join(' ');
+      grid.style.gridTemplateRows = rows.map(() => `minmax(var(--week-row-min), auto)`).join(' ');
 
       // Corner
       const corner = document.createElement('div');
@@ -231,192 +1074,214 @@ Start,Duration,Description,Category,Image,Characters,Location
         grid.appendChild(th);
       });
 
-      // Week labels + background cells
-      weekLabels.forEach((label, rIdx) => {
-        const weekIdx = weekIdxs[rIdx]; // actual ISO-week index for this row
+      // Render rows
+      rows.forEach((row, rIdx) => {
+        if (row.type === 'week'){
+          const { year, week } = idxToISOWeek(row.idx);
 
-        const wl = document.createElement('div');
-        wl.className = 'wlabel';
+          const wl = document.createElement('div');
+          wl.className = 'wlabel';
+          wl.dataset.weekIdx = String(row.idx);
 
-        // Inner container holds the content + state
-        const inner = document.createElement('div');
-        inner.className = 'wlabel__inner';
-        inner.textContent = label;
+          const inner = document.createElement('div');
+          inner.className = 'wlabel__inner';
+          inner.textContent = `Week ${String(week).padStart(2,'0')}`;
 
-        // add class + optional data-count on the INNER element
-        const count = activeWeekCounts.get(weekIdx) || 0;
-        if (count > 0) {
-          inner.classList.add('has-events');
-          inner.dataset.count = String(count);
+          const count = activeWeekCounts.get(row.idx) || 0;
+          if (count > 0){
+            inner.classList.add('has-events');
+            inner.dataset.count = String(count);
+          }
+
+          wl.appendChild(inner);
+          wl.style.gridColumn = '1 / 2';
+          wl.style.gridRow = `${2 + rIdx} / ${3 + rIdx}`;
+          grid.appendChild(wl);
+
+          // background cells
+          timelines.forEach((_, cIdx) => {
+            const bg = document.createElement('div');
+            bg.className = 'cell';
+            bg.style.gridColumn = `${2 + cIdx} / ${3 + cIdx}`;
+            bg.style.gridRow = `${2 + rIdx} / ${3 + rIdx}`;
+            grid.appendChild(bg);
+          });
+
+        } else {
+          // Seasonal row
+          const m = row.data;
+
+          const wl = document.createElement('div');
+          wl.className = 'wlabel wlabel--seasonal';
+
+          const inner = document.createElement('div');
+          inner.className = 'wlabel__inner wlabel__inner--seasonal';
+
+          // image
+          const img = makeSmartImg(SEASONAL_IMAGES_DIR, m.imageName, 'seasonal-thumb', m.name);
+          if (img) inner.appendChild(img);
+
+          // name
+          const nameEl = document.createElement('span');
+          nameEl.className = 'seasonal-name';
+          nameEl.textContent = m.name;
+          inner.appendChild(nameEl);
+
+          // optional description
+          if (m.desc){
+            const descEl = document.createElement('span');
+            descEl.className = 'seasonal-desc';
+            descEl.textContent = m.desc;
+            inner.appendChild(descEl);
+          }
+
+          wl.appendChild(inner);
+          wl.style.gridColumn = '1 / 2';
+          wl.style.gridRow = `${2 + rIdx} / ${3 + rIdx}`;
+          grid.appendChild(wl);
+
+          // seasonal background cells
+          timelines.forEach((_, cIdx) => {
+            const bg = document.createElement('div');
+            bg.className = 'cell cell--seasonal';
+            bg.style.gridColumn = `${2 + cIdx} / ${3 + cIdx}`;
+            bg.style.gridRow = `${2 + rIdx} / ${3 + rIdx}`;
+            grid.appendChild(bg);
+          });
         }
-
-        wl.appendChild(inner);
-
-        wl.style.gridColumn = '1 / 2';
-        wl.style.gridRow = `${2 + rIdx} / ${3 + rIdx}`;
-        grid.appendChild(wl);
-
-        timelines.forEach((_, cIdx) => {
-          const bg = document.createElement('div');
-          bg.className = 'cell';
-          bg.style.gridColumn = `${2 + cIdx} / ${3 + cIdx}`;
-          bg.style.gridRow = `${2 + rIdx} / ${3 + rIdx}`;
-          grid.appendChild(bg);
-        });
       });
 
+      // Corner-year tracker: call once, after rows are in the DOM
+      setupCornerYearTracker(grid, corner);
 
-      // Events
-      const rowOfIdx = (idx) => weekIdxs.indexOf(idx);
-      for (let cIdx = 0; cIdx < timelines.length; cIdx++) {
+      // ---- Events (account for seasonal rows crossed) ----
+      function countSeasonalsBetween(start, endExclusive){
+        let total = 0;
+        for (let idx = start; idx < endExclusive; idx++){
+          total += seasonalCountByIdx.get(idx) || 0;
+        }
+        return total;
+      }
+
+      for (let cIdx = 0; cIdx < timelines.length; cIdx++){
         const tl = timelines[cIdx];
-        for (const ev of tl.events) {
-          const start = ev.startIdx, end = ev.startIdx + ev.durationWeeks;
-          const vStart = Math.min(Math.max(start, minIdx), maxIdx - 1);
-          const vEnd = Math.min(Math.max(end - 1, minIdx), maxIdx - 1);
-          const vStartRow = rowOfIdx(vStart), vEndRow = rowOfIdx(vEnd);
-          if (vStartRow === -1 || vEndRow === -1) continue;
+        for (const ev of tl.events){
+          const start = ev.startIdx;
+          const endExclusive = ev.startIdx + ev.durationWeeks;
 
+          // Clip to visible bounds (weeks space)
+          const visStart = Math.min(Math.max(start, minIdx), maxIdx - 1);
+          const visEndWk = Math.min(Math.max(endExclusive - 1, minIdx), maxIdx - 1);
+
+          if (!weekRowIndex.has(visStart) || !weekRowIndex.has(visEndWk)) continue;
+
+          // Determine which week is visually on top (newer week → smaller row index)
+          const topWeek    = Math.max(visStart, visEndWk);
+          const topRowIdx  = weekRowIndex.get(topWeek);
+
+          // Base span = number of weeks covered (ignore seasonal rows here)
+          const baseSpanWeeks = Math.abs(visEndWk - visStart) + 1;
+
+          // Add seasonal rows actually crossed between start and end (use unclipped start/end but clamp)
+          const extra = countSeasonalsBetween(
+            Math.max(Math.min(start, endExclusive), minIdx),
+            Math.min(Math.max(start, endExclusive), maxIdx)
+          );
+
+          const span = baseSpanWeeks + extra;
+
+          // Build the event card
           const el = document.createElement('div');
           el.className = 'event';
           el.dataset.category = ev.category || '';
 
+          // Place from the top-most covered row downward for `span` rows
           el.style.gridColumn = `${2 + cIdx} / ${3 + cIdx}`;
-          el.style.gridRow = `${2 + Math.min(vStartRow, vEndRow)} / ${2 + Math.max(vStartRow, vEndRow) + 1}`;
+          el.style.gridRow    = `${2 + topRowIdx} / ${2 + topRowIdx + span}`;
 
-          const { year, week } = idxToISOWeek(start);
-          const labelStart = `${year}-${String(week).padStart(2, '0')}`;
+          const {year, week} = idxToISOWeek(start);
+          const labelStart = `${year}-${String(week).padStart(2,'0')}`;
 
           const topline = document.createElement('div');
           topline.className = 'topline';
 
-          // media stays at the very top of the card
-          let media = null;
-          if (ev.imageName) {
-            media = makeSmartImg(EVENT_IMAGES_DIR, ev.imageName, 'thumb', ev.imageName);
-          }
-          if (!media) {
-            const ph = document.createElement('div');
-            ph.className = 'thumb';
-            media = ph;
-          }
-          el.prepend(media);
+          // media on top
+          prependEventMedia(el, ev);
 
-          // 1) Category (only if provided)
-          if (ev.category) {
+          // Category → Title → Date & duration
+          if (ev.category){
             const cat = document.createElement('div');
             cat.className = 'cat';
             cat.textContent = ev.category;
             topline.appendChild(cat);
           }
 
-          // 2) Title
           const title = document.createElement('div');
           title.className = 'desc';
           title.textContent = ev.desc || '(no description)';
           topline.appendChild(title);
 
-          // 3) Date & duration (category removed from here)
           const meta = document.createElement('div');
           meta.className = 'meta';
           meta.textContent = `${labelStart} • ${ev.durationWeeks}w`;
           topline.appendChild(meta);
 
-          // attach topline to the event card
           el.appendChild(topline);
 
-          const chips = document.createElement('div');
-          chips.className = 'chips';
-
-          // Characters
+          // Chips — characters
+          const charChips = document.createElement('div');
+          charChips.className = 'chips chips--characters';
           for (const n of ev.characters || []) {
             const a = document.createElement('a');
             a.className = 'chip';
             a.href = `characters/${encodeURIComponent(n)}.html`;
             a.title = `Character: ${n}`;
-
             const icon = makeSmartImg(CHAR_IMAGES_DIR, n, 'icon', n);
             if (icon) a.appendChild(icon);
-
             const label = document.createElement('span');
             label.textContent = n;
             a.appendChild(label);
-
-            chips.appendChild(a);
+            charChips.appendChild(a);
           }
+          if (charChips.children.length) el.appendChild(charChips);
 
-          // Locations
+          // Chips — locations
+          const locChips = document.createElement('div');
+          locChips.className = 'chips chips--locations';
           for (const n of ev.locations || []) {
             const a = document.createElement('a');
             a.className = 'chip';
             a.href = `locations/${encodeURIComponent(n)}.html`;
             a.title = `Location: ${n}`;
-
-            const icon = makeSmartImg(LOC_IMAGES_DIR, n, 'icon', n);
-            if (icon) a.appendChild(icon);
-
             const label = document.createElement('span');
             label.textContent = n;
             a.appendChild(label);
-
-            chips.appendChild(a);
+            locChips.appendChild(a);
           }
-          if (chips.children.length) el.appendChild(chips);
-          if ((ev.durationWeeks | 0) <= 1) el.classList.add('small');
+          if (locChips.children.length) el.appendChild(locChips);
 
           grid.appendChild(el);
         }
       }
 
       // Meta line
-      const firstLabel = (function () { const { year, week } = idxToISOWeek(minIdx); return `${year}-${String(week).padStart(2, '0')}`; })();
-      const lastLabel = (function () { const { year, week } = idxToISOWeek(maxIdx - 1); return `${year}-${String(week).padStart(2, '0')}`; })();
+      const firstLabel = (function(){ const {year, week} = idxToISOWeek(minIdx); return `${year}-${String(week).padStart(2,'0')}`; })();
+      const lastLabel  = (function(){ const {year, week} = idxToISOWeek(maxIdx - 1); return `${year}-${String(week).padStart(2,'0')}`; })();
       setText('meta', `Timelines: ${timelines.length} • Weeks: ${totalWeeks} • Range: ${firstLabel} → ${lastLabel}`);
     }
 
     /** ===================== BOOT ===================== **/
-    (async function main() {
+    (async function main(){
       try {
-        let files = await discoverFiles();  // lenient
+        await bootstrapState();
+        await applyStateToRenderer();
 
-        const timelines = [];
+        // Auto-open editor when debugging
+        if (visualDebug && !editMode) enterEditMode();
 
-        // Load each CSV listed in index.json, skipping failures
-        for (const fname of files) {
-          try {
-            const text = await fetch(TIMELINES_DIR + fname, { cache: 'no-store' }).then(r => {
-              if (!r.ok) throw new Error(`HTTP ${r.status}`);
-              return r.text();
-            });
-            timelines.push(csvToTimeline(fname, text));
-          } catch (e) {
-            console.warn(`Skip ${fname}:`, e.message || e);
-          }
-        }
-
-        // If none loaded, try template_test.csv in /timelines
-        if (!timelines.length) {
-          try {
-            const text = await fetch(TIMELINES_DIR + 'template_test.csv', { cache: 'no-store' }).then(r => {
-              if (!r.ok) throw new Error(`HTTP ${r.status}`);
-              return r.text();
-            });
-            timelines.push(csvToTimeline('template_test.csv', text));
-            setText('err', 'Using timelines/template_test.csv (fallback).');
-          } catch {
-            // Final fallback: inline template (works under file://)
-            try {
-              timelines.push(csvToTimeline('template_test.csv', INLINE_TEMPLATE_CSV));
-              setText('err', 'Using inline template (file access unavailable).');
-            } catch (e2) {
-              throw new Error('No CSV timelines found. Add files to /timelines or create timelines/index.json.');
-            }
-          }
-        }
-
-        // Resolve + render
-        const resolved = timelines.map(resolveTimelineWeeks);
-        await renderGridVertical(resolved);
+        // Hook up Edit toggle
+        const btn = document.getElementById('toggle-editor');
+        if (btn) btn.addEventListener('click', () => (editMode ? exitEditMode() : enterEditMode()));
 
       } catch (e) {
         console.error(e);
@@ -424,7 +1289,5 @@ Start,Duration,Description,Category,Image,Characters,Location
       }
     })();
   </script>
-
 </body>
-
 </html>
