@@ -1,11 +1,43 @@
 :root {
-  --week-row-min: 44px;
-  --timeline-col-min: 260px;
-  --timeline-col-max: 420px;
+  --timeline-col-min: 260px;   /* each timeline column (VERTICAL layout) */
+  --timeline-col-max: 1fr;
+  --week-row-min: 72px;        /* each week row (VERTICAL layout) */
+
+  /* for HORIZONTAL layout if you made a horizontal renderer */
+  --week-col-min: 110px;       /* each week column */
+  --week-col-max: 1fr;
+  --timeline-row-min: 90px;    /* each timeline row */
+
+  --jemoji: "?";
+}
+html,
+body {
+  height: 100%;
+  margin: 0;
+  color: var(--ink);
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
+    Helvetica, Arial;
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+body.theme-dark {
+  --background: #2a2d30;
+  --ink: white;
+  --muted: #e1e1e1;
+
+  --g-outline: #222427;
+  --g-panel: #313538;
+  --g-bar: #3d4145;
+
+  --seasonal-line: #574f45;
+  --seasonal-bg: #a4967c;
+  
+  background: var(--background);
+}
+body.theme-light {
+  --background: white;
   --ink: #2a2d30;
   --muted: #9aa3ad;
-  --chip-bg: rgba(255, 255, 255, 0.06);
-  --chip-brd: rgba(255, 255, 255, 0.12);
 
   --g-outline: #f7f7f7;
   --g-panel: #fdfdfd;
@@ -13,72 +45,8 @@
 
   --seasonal-line: #fff3e3;
   --seasonal-bg: #fffcf7;
-
-  /**  --jemoji: "🏡"; default emoji **/
-}
-
-/*
-[data-cat-id="1"] {
-  --jcolor: #80acff;
-  --jtext: white;
-}
-[data-cat-id="2"] {
-  --jcolor: #80c0ff;
-  --jtext: white;
-}
-[data-cat-id="3"] {
-  --jcolor: #80f9ff;
-  --jtext: var(--ink);
-}
-[data-cat-id="4"] {
-  --jcolor: #80ffc8;
-  --jtext: var(--ink);
-}
-[data-cat-id="5"] {
-  --jcolor: #80ff93;
-  --jtext: var(--ink);
-}
-[data-cat-id="6"] {
-  --jcolor: #f7ff80;
-  --jtext: var(--ink);
-}
-[data-cat-id="7"] {
-  --jcolor: #ffca80;
-  --jtext: var(--ink);
-}
-[data-cat-id="8"] {
-  --jcolor: #ff8080;
-  --jtext: white;
-}
-[data-cat-id="9"] {
-  --jcolor: #ff809c;
-  --jtext: white;
-}
-[data-cat-id="10"] {
-  --jcolor: #ff80e1;
-  --jtext: white;
-}
-[data-cat-id="11"] {
-  --jcolor: #8f80ff;
-  --jtext: white;
-}
-[data-cat-id="12"] {
-  --jcolor: #80acff;
-  --jtext: white;
-}
-*/
-html,
-body {
-  height: 100%;
-}
-body {
-  margin: 0;
-  background: white;
-  color: var(--ink);
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
-    Helvetica, Arial;
-  display: grid;
-  grid-template-rows: auto 1fr;
+  
+  background: var(--background);
 }
 header {
   display: flex;
@@ -100,17 +68,29 @@ header .err {
   font-size: 12px;
 }
 
-.viewport {
+.viewport.layout-vertical {
   display: flex;
   position: relative;
   overflow: auto;
   justify-content: center;
   align-items: start;
+  --col-min: var(--timeline-col-min);
+  --row-min: var(--week-row-min);
+}
+.viewport.layout-horizontal {
+  display: flex;
+  position: relative;
+  overflow: auto;
+  justify-content: start;
+  align-items: start;
+  --col-min: var(--week-col-min);
+  --row-min: var(--timeline-row-min);
 }
 .grid {
   display: grid;
   gap: 6px;
   padding: 12px;
+  grid-template-columns: var(--col-min);
 }
 
 .corner {
@@ -121,7 +101,7 @@ header .err {
   top: 0;
   left: 0;
   z-index: 5;
-  background: white;
+  background: var(--background);
   border: 1px solid var(--g-bar);
   padding: 8px 10px;
   font-size: 12px;
@@ -132,7 +112,7 @@ header .err {
   position: sticky;
   left: 0;
   z-index: 3;
-  background: white;
+  background: var(--background);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -152,29 +132,12 @@ header .err {
   border-radius: 10px;
   background: var(--g-outline);
 }
-/* If you want to show the count as a badge on the right, use the data attribute we set 
-.wlabel .wlabel__inner.has-events::after {
-  content: attr(data-count);
-  display: flex;
-  position: absolute;
-  justify-content: center;
-  align-items: center;
-  width: 15px;
-  height: 15px;
-  top: 50%;
-  left: 100%;
-  text-align: center;
-  margin: -7.5px 0 0 5px;
-  font-size: 10px;
-  border-radius: 999px;
-  background: white;
-  border: 1px solid var(--g-bar);
-}*/
 .thead {
   position: sticky;
   top: 0;
+  left:0;
   z-index: 4;
-  background: white;
+  background: var(--background);
   border: 1px solid var(--g-bar);
   padding: 28px 12px;
   font-weight: 600;
@@ -191,7 +154,7 @@ header .err {
   border-radius: 6px;
   overflow: visible;
 }
-.cell:before {
+.layout-vertical .cell:before {
   content: "";
   position: absolute;
   top: -1px;
@@ -199,6 +162,18 @@ header .err {
   width: 2px;
   height: calc(100% + 15px);
   margin-left: -1px;
+  background-color: var(--g-bar);
+  border-radius: 0;
+  pointer-events: none;
+}
+.layout-horizontal .cell:before {
+  content: "";
+  position: absolute;
+  left: -1px;
+  top: 50%;
+  width: calc(100% + 15px);
+  height: 2px;
+  margin-top: -1px;
   background-color: var(--g-bar);
   border-radius: 0;
   pointer-events: none;
@@ -211,8 +186,8 @@ header .err {
   font-size: 12px;
   line-height: 1.25;
   outline: 2px solid var(--jcolor);
-  box-shadow: 0 2px 10px var(--muted);
-  background: white;
+  box-shadow: 0 2px 10px rgba(0,0,0,.5);
+  background: var(--background);
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -242,7 +217,7 @@ header .err {
   left: 50%;
   margin-top: -27px;
   margin-left: -15px;
-  background-color: white;
+  background-color: var(--background);
   border-radius: 50%;
   border: 2px solid var(--jcolor);
   font-size: 18px;
@@ -328,7 +303,7 @@ header .err {
   right: 0px;
 }
 .event .chips.chips--locations .chip {
-  background: white;
+  background: var(--background);
   color: var(--ink);
   outline: 1.5px solid var(--jcolor);
 }
@@ -439,7 +414,7 @@ body.editing {
   display: flex;
   flex-direction: column;
   margin:4vh auto; 
-  background: white;
+  background: var(--background);
   border: 1px solid var(--g-outline);
   border-radius:12px;
   color: var(--ink);
@@ -506,7 +481,7 @@ body.editing {
   padding: 0px;
   outline: 1px solid var(--g-bar);
   border-radius: 8px;
-  background: white;
+  background: var(--background);
 }
 .ed-tl.is-active {
   outline: 2px solid var(--muted);
@@ -536,7 +511,7 @@ body.editing {
 }
 .ed-tl.is-active > .ghost {
   display:block;
-  color:white;
+  color:var(--background);
   background: var(--muted);
   border-color: var(--muted);
 }
@@ -548,7 +523,7 @@ body.editing {
 }
 .ed-tl > .ghost:hover {
   display:block;
-  color:white;
+  color:var(--background);
   background: var(--muted);
   border-color: var(--muted);
 }
@@ -596,10 +571,9 @@ body.editing {
   padding: 20px;
   text-align: center;
 }
-.ed-timelines input[type="text"],
-.ed-table input[type="text"] {
+input[type="text"] {
   --pad:6px;
-  background: white;
+  background: var(--background);
   color: var(--ink);
   border: 1px solid var(--g-bar);
   border-radius: var(--pad);
@@ -688,13 +662,13 @@ body.editing {
   gap: 8px;
   align-items: center;
   border: 1px solid var(--g-bar);
-  background-color: white;
+  background-color: var(--background);
   border-radius: 8px;
   padding: 8px;
 }
 .ed-sea input[type="text"] {
   width: 100%;
-  background: white;
+  background: var(--background);
   color: var(--ink);
   border: 1px solid var(--g-bar);
   border-radius: 6px;
@@ -717,18 +691,18 @@ button {
   border-radius: 8px;
   padding: 6px 10px;
   cursor: pointer;
+  text-align: center;
 }
 button:hover {
   filter: brightness(1.1);
   background-color: var(--ink);
-  color:white;
+  color:var(--background);
 }
 button.danger {
   display:inline-block;
   border-color: #9c5454;
   background: #ffeaea;
   color:#9c5454;
-  font-style: italic;
   font-weight:bold;
   letter-spacing: 0.5px;
   text-transform: uppercase;
@@ -741,12 +715,12 @@ button.ghost {
 
 button.ghost:hover {
   background-color: var(--muted);
-  color:white;
+  color:var(--background);
 }
 
 .ed-table select {
   width: 100%;
-  background: white;
+  background: var(--background);
   color: var(--ink);
   border: 1px solid var(--g-bar);
   border-left:7px solid var(--jcolor);

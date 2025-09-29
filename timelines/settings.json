@@ -84,5 +84,10 @@
       "color": "#80acff",
       "text": "white"
     }
-  ]
+  ],
+  "ui": {
+    "title": "Vertical Timelines",
+    "theme": "light",
+    "layout": "horizontal"
+  }
 }

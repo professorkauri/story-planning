@@ -16,7 +16,7 @@
     <button id="toggle-editor" type="button">Edit</button>
   </header>
 
-  <div class="viewport">
+  <div id="viewport" class="viewport">
     <div id="grid" class="grid" role="table" aria-label="Timelines grid"></div>
   </div>
 
@@ -32,6 +32,23 @@
     const LOC_IMAGES_DIR = 'images/locations/';
     const SEASONAL_IMAGES_DIR = 'images/seasonal/';
 
+    // ===== SIZING (edit these) =====
+    const GRID_SIZING = {
+      vertical: {
+        namesColWidth:  '120px',  // left "Weeks" column width (vertical layout)
+        timelineColMin: '280px',  // min width for each timeline column
+        timelineColMax: '1fr',    // max width for each timeline column
+        weekRowMin:     '80px',   // min height for each week row
+        weekHeaderRow:  'auto',   // height for header row
+      },
+      horizontal: {
+        namesColWidth:  '160px',  // left "Timeline names" column width (horizontal layout)
+        weekColWidth:   '140px',  // width for each week column
+        timelineRowMin: '90px',   // min height for each timeline row
+        weekHeaderRow:  'auto',   // height for header row
+      }
+    };
+
     // PRESET_CATEGORIES is now derived from settings.json (IDs 1-12). Kept here for legacy fallback only.
     const LEGACY_PRESET_CATEGORIES = [
       '', 'OrdinaryWorld','CallToAdventure','RefusalOfTheCall','MeetingTheMentor','CrossingTheThreshold',
@@ -44,15 +61,45 @@
     // shape: { categories: [{id:1..12, name:'', emoji:''}, ...] }
     let settingsState = null;
 
+    // NEW: site/UI defaults
+    const DEFAULT_UI = {
+      title: 'Vertical Timelines',
+      theme: 'light',       // 'light' | 'dark'  → toggles class on <body>
+      layout: 'vertical'    // 'vertical' | 'horizontal' → toggles class on #grid
+    };
+
+    // Extend DEFAULT_SETTINGS
     const DEFAULT_SETTINGS = {
+      ui: { ...DEFAULT_UI },   // <— NEW
       categories: Array.from({ length: 12 }, (_, i) => ({
         id: i + 1,
         name: LEGACY_PRESET_CATEGORIES[i + 1] || `Category ${i + 1}`,
-        emoji: '', // you can add emojis in the Settings UI,
+        emoji: '',
         color: '',
         text: 'black'
       }))
     };
+
+    // Apply UI settings to the page (call on load & whenever UI changes)
+    function applyUIFromSettings() {
+      const ui = (settingsState?.ui) || DEFAULT_UI;
+
+      // Title
+      const h1 = document.querySelector('header h1');
+      if (h1) h1.textContent = ui.title || DEFAULT_UI.title;
+
+      // Theme toggle on <body>
+      document.body.classList.toggle('theme-dark', ui.theme === 'dark');
+      document.body.classList.toggle('theme-light', ui.theme !== 'dark'); // optional helper class
+
+      // Layout toggle on #viewport
+      const viewportEl = document.getElementById('viewport');
+      if (viewportEl) {
+        viewportEl.classList.toggle('layout-horizontal', ui.layout === 'horizontal');
+        viewportEl.classList.toggle('layout-vertical', ui.layout !== 'horizontal'); // optional helper class
+      }
+      applyGridSizing(ui.layout === 'horizontal' ? 'horizontal' : 'vertical');
+    }
 
     function loadSettingsFromLocal() {
       try { return JSON.parse(localStorage.getItem('timelineSettings') || 'null'); }
@@ -68,7 +115,16 @@
         if (!r.ok) return null;
         const json = await r.json();
         if (!json || !Array.isArray(json.categories)) return null;
-        // normalise ids 1..12
+
+        // Normalize UI (NEW)
+        const ui = json.ui || {};
+        json.ui = {
+          title: String(ui.title || DEFAULT_UI.title),
+          theme: (ui.theme === 'dark') ? 'dark' : 'light',
+          layout: (ui.layout === 'horizontal') ? 'horizontal' : 'vertical'
+        };
+
+        // Normalize categories (existing)
         json.categories = json.categories
           .filter(c => Number.isInteger(c.id) && c.id >= 1 && c.id <= 12)
           .map(c => ({
@@ -78,8 +134,11 @@
             color: normalizeHexColor(c.color),
             text: String(c.text || '').toLowerCase() === 'white' ? 'white' : 'black'
           }));
-        return json.categories.length ? json : null;
-      } catch { return null; }
+
+        return json;
+      } catch {
+        return null;
+      }
     }
 
     function getCatById(id) {
@@ -138,6 +197,33 @@
       return { year: isoYear, week: isoWeek };
     }
 
+    function applyGridSizing(layout) {
+      const g = document.getElementById('grid');
+      if (!g) return;
+      const sz = GRID_SIZING[layout] || GRID_SIZING.vertical;
+
+      // Common
+      if (sz.namesColWidth) g.style.setProperty('--names-col-width', sz.namesColWidth);
+      if (sz.weekHeaderRow) g.style.setProperty('--week-header-row', sz.weekHeaderRow);
+
+      if (layout === 'vertical') {
+        g.style.setProperty('--timeline-col-min', sz.timelineColMin);
+        g.style.setProperty('--timeline-col-max', sz.timelineColMax);
+        g.style.setProperty('--week-row-min',     sz.weekRowMin);
+        // clear horizontal-only vars to avoid confusion
+        g.style.removeProperty('--week-col-width');
+        g.style.removeProperty('--timeline-row-min');
+      } else {
+        g.style.setProperty('--week-col-width',   sz.weekColWidth);
+        g.style.setProperty('--timeline-row-min', sz.timelineRowMin);
+        // clear vertical-only vars
+        g.style.removeProperty('--timeline-col-min');
+        g.style.removeProperty('--timeline-col-max');
+        g.style.removeProperty('--week-row-min');
+      }
+    }
+
+
     function getCatText(id) {
       return getCatById(id)?.text || 'black';
     }
@@ -151,6 +237,16 @@
       if (/^[0-9a-f]{8}$/i.test(s)) return '#' + s;
       return ''; // invalid -> clear
     }
+
+    function applyAllFromSettings() {
+      // persist (optional but nice if you want it remembered)
+      try { saveSettingsToLocal(); } catch {}
+      // update header/body classes
+      applyUIFromSettings();
+      // re-render the grid with the current layout (vertical/horizontal)
+      applyStateToRenderer();
+    }
+
 
 
     async function tryLoadJSON() {
@@ -167,6 +263,9 @@
       // SETTINGS: always load from settings.json on disk
       const setDisk = await tryLoadSettings();
       settingsState = setDisk || DEFAULT_SETTINGS;
+      
+      // NEW: apply UI immediately
+      applyUIFromSettings();
 
       // DATA
       const json = await tryLoadJSON();
@@ -319,14 +418,59 @@
       update();
     }
 
+    /** Editor Helpers **/
+    function renderHeaderActions() {
+      const host = document.getElementById('ed-actions');
+      if (!host) return;
+      host.innerHTML = '';
+
+      // Settings context → show settings buttons
+      if (selPane?.type === 'settings') {
+        host.innerHTML = `
+          <button id="ed-settings-download" type="button">Download settings.json</button>
+          <button id="ed-settings-reload" class="ghost" type="button">Reload from settings.json</button>
+        `;
+
+        // Wire settings buttons
+        document.getElementById('ed-settings-download').onclick = () => {
+          const blob = new Blob([JSON.stringify(settingsState, null, 2)], { type: 'application/json' });
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = 'settings.json';
+          document.body.appendChild(a); a.click(); URL.revokeObjectURL(a.href); a.remove();
+        };
+
+        document.getElementById('ed-settings-reload').onclick = async () => {
+          const s = await tryLoadSettings();
+          if (!s) return alert('Could not reload settings.json');
+          settingsState = s;
+          renderMain();              // rebuild settings UI
+          applyStateToRenderer();    // update grid with new names/colors
+          renderHeaderActions();     // keep header in sync
+        };
+
+      } else {
+        // Data context → show data JSON buttons
+        host.innerHTML = `
+          <button id="ed-import" class="ghost" type="button">Import JSON</button>
+          <button id="ed-download" type="button">Download JSON</button>
+          <button id="ed-reload" class="ghost" type="button">Reload from data.json</button>
+        `;
+
+        // Wire data buttons
+        document.getElementById('ed-import').onclick = onImportJSON;
+        document.getElementById('ed-download').onclick = onDownloadJSON;
+        document.getElementById('ed-reload').onclick = onReloadFromDisk;
+      }
+    }
+
+
     /** ===================== EDITOR (BASIC) ===================== **/
     let editorState = null;
     let editMode = false;
 
     /** ===== Editor UI root ===== */
     function renderEditorUI() {
-      const old = document.getElementById('editor'); if (old) old.remove();
-
       const root = document.createElement('div');
       root.id = 'editor';
       root.innerHTML = `
@@ -335,9 +479,7 @@
           <div class="editor__head">
             <div class="editor__title">Timeline Editor</div>
             <div class="editor__actions">
-              <button id="ed-import" class="ghost" type="button">Import JSON</button>
-              <button id="ed-download" type="button">Download JSON</button>
-              <button id="ed-reload" class="ghost" type="button">Reload from data.json</button>
+              <span id="ed-actions"></span>
               <button id="ed-close" type="button">Close</button>
             </div>
           </div>
@@ -349,14 +491,15 @@
       `;
       document.body.appendChild(root);
 
+      // static wiring
       document.getElementById('ed-close').onclick = exitEditMode;
-      document.getElementById('ed-download').onclick = onDownloadJSON;
-      document.getElementById('ed-import').onclick = onImportJSON;
-      document.getElementById('ed-reload').onclick = onReloadFromDisk;
 
+      // initial paint
       renderSidebar();
       ensureSelectedPane();
       renderMain();
+      renderHeaderActions(); // NEW
+
     }
 
     function enterEditMode() { editMode = true; document.body.classList.add('editing'); renderEditorUI(); }
@@ -394,7 +537,11 @@
         return null;
       }).filter(Boolean);
 
-      await renderGridVertical(resolved, seasonalMarkers);
+      if ((settingsState?.ui?.layout) === 'horizontal') {
+        await renderGridHorizontal(resolved, seasonalMarkers);
+      } else {
+        await renderGridVertical(resolved, seasonalMarkers);
+      }
     }
 
     /** ===== Selection state ===== */
@@ -435,7 +582,11 @@
       host.appendChild(settingsRow);
 
       settingsRow.classList.toggle('is-active', selPane?.type === 'settings');
-      settingsRow.querySelector('.select-settings').onclick = () => { selPane = { type: 'settings' }; renderSidebar(); renderMain(); };
+      settingsRow.querySelector('.select-settings').onclick = () => {
+        selPane = { type: 'settings' };
+        renderSidebar(); renderMain(); renderHeaderActions();
+      };
+
 
       // ===== WORLD EVENTS =====
       const worldHead = document.createElement('div');
@@ -470,8 +621,8 @@
       rowStatic.classList.toggle('is-active', selPane?.type === 'world-static');
       rowRecurring.classList.toggle('is-active', selPane?.type === 'world-recurring');
 
-      rowStatic.querySelector('.select-world').onclick = () => { selPane = { type: 'world-static' }; renderSidebar(); renderMain(); };
-      rowRecurring.querySelector('.select-world').onclick = () => { selPane = { type: 'world-recurring' }; renderSidebar(); renderMain(); };
+      rowStatic.querySelector('.select-world').onclick = () => { selPane = { type: 'world-static' }; renderSidebar(); renderMain(); renderHeaderActions(); };
+      rowRecurring.querySelector('.select-world').onclick = () => { selPane = { type: 'world-recurring' }; renderSidebar(); renderMain(); renderHeaderActions(); };
 
       // ===== TIMELINES =====
       const head = document.createElement('div');
@@ -501,7 +652,7 @@
 
         row.classList.toggle('is-active', selPane?.type === 'timeline' && selPane.idx === i);
         row.querySelector('.select-timeline').onclick = () => { selPane = { type: 'timeline', idx: i }; renderSidebar(); renderMain(); };
-        row.querySelector('.ed-tl__title').onchange = (e) => { tl.title = e.target.value; debouncedApply(); renderSidebar(); };
+        row.querySelector('.ed-tl__title').onchange = (e) => { tl.title = e.target.value; debouncedApply(); renderSidebar(); renderHeaderActions(); };
 
         row.querySelector('[data-act="up"]').onclick = () => {
           if (i>0){ const a = editorState.timelines[i-1]; editorState.timelines[i-1] = editorState.timelines[i]; editorState.timelines[i] = a;
@@ -534,6 +685,7 @@
     /** ===== Main panel ===== */
     function renderMain() {
       ensureSelectedPane();
+      renderHeaderActions();
       const host = document.getElementById('ed-main');
       host.innerHTML = '';
 
@@ -689,17 +841,76 @@
     function renderSettingsEditor(host) {
       const head = document.createElement('div');
       head.className = 'ed-main-head';
-      head.innerHTML = `<div><strong>Settings</strong></div>
-      <div class="ed-btn-box">
-        <button id="ed-settings-download" type="button">Download settings.json</button>
-        <button id="ed-settings-reload" class="ghost" type="button">Reload from settings.json</button>
-      </div>`;
+      head.innerHTML = `<div><strong>Settings</strong></div>`;
       host.appendChild(head);
 
       const wrap = document.createElement('div');
       wrap.className = 'ed-sect';
       host.appendChild(wrap);
 
+      // === General (put this FIRST) ===
+      const uiCard = document.createElement('div');
+      uiCard.className = 'ed-sect';
+      uiCard.innerHTML = `
+        <h3>General</h3>
+        <div class="ed-list">
+          <div class="ed-row">
+            <label style="display:block; font-weight:600; margin-bottom:.25rem;">Title</label>
+            <input type="text" id="ui-title" value="${(settingsState.ui?.title) || DEFAULT_UI.title}" placeholder="Site title" />
+          </div>
+
+          <div class="ed-row" style="margin-top:12px;">
+            <label style="display:block; font-weight:600; margin-bottom:.25rem;">Theme</label>
+            <label style="margin-right:1rem;">
+              <input type="radio" name="ui-theme" value="light" ${(settingsState.ui?.theme === 'dark') ? '' : 'checked'}>
+              Light
+            </label>
+            <label>
+              <input type="radio" name="ui-theme" value="dark" ${(settingsState.ui?.theme === 'dark') ? 'checked' : ''}>
+              Dark
+            </label>
+          </div>
+
+          <div class="ed-row" style="margin-top:12px;">
+            <label style="display:block; font-weight:600; margin-bottom:.25rem;">Layout</label>
+            <label style="margin-right:1rem;">
+              <input type="radio" name="ui-layout" value="vertical" ${(settingsState.ui?.layout === 'horizontal') ? '' : 'checked'}>
+              Vertical
+            </label>
+            <label>
+              <input type="radio" name="ui-layout" value="horizontal" ${(settingsState.ui?.layout === 'horizontal') ? 'checked' : ''}>
+              Horizontal
+            </label>
+          </div>
+        </div>
+      `;
+      wrap.appendChild(uiCard);
+
+      // Wire UI controls
+      const iTitle = uiCard.querySelector('#ui-title');
+      iTitle.addEventListener('input', () => {
+        if (!settingsState.ui) settingsState.ui = { ...DEFAULT_UI };
+        settingsState.ui.title = iTitle.value;
+        applyAllFromSettings();
+      });
+
+      uiCard.querySelectorAll('input[name="ui-theme"]').forEach(r => {
+        r.addEventListener('change', (e) => {
+          if (!settingsState.ui) settingsState.ui = { ...DEFAULT_UI };
+          settingsState.ui.theme = e.target.value === 'dark' ? 'dark' : 'light';
+          applyAllFromSettings();
+        });
+      });
+
+      uiCard.querySelectorAll('input[name="ui-layout"]').forEach(r => {
+        r.addEventListener('change', (e) => {
+          if (!settingsState.ui) settingsState.ui = { ...DEFAULT_UI };
+          settingsState.ui.layout = e.target.value === 'horizontal' ? 'horizontal' : 'vertical';
+          applyAllFromSettings();
+        });
+      });
+
+      // === Categories table (AFTER General) ===
       const table = document.createElement('table');
       table.className = 'ed-table';
       table.innerHTML = `
@@ -752,10 +963,10 @@
 
         iColor.addEventListener('input', () => {
           const norm = normalizeHexColor(iColor.value);
-          // allow empty to clear; otherwise only commit valid hex
           if (iColor.value.trim() === '' || norm) {
             cat.color = norm;
             swatch.style.background = norm || 'transparent';
+            textBtn.style.background = norm || 'transparent';
             applyStateToRenderer();
           }
         });
@@ -766,23 +977,6 @@
           applyStateToRenderer();
         });
       });
-
-
-      document.getElementById('ed-settings-download').onclick = () => {
-        const blob = new Blob([JSON.stringify(settingsState, null, 2)], { type: 'application/json' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'settings.json';
-        document.body.appendChild(a); a.click(); URL.revokeObjectURL(a.href); a.remove();
-      };
-
-      document.getElementById('ed-settings-reload').onclick = async () => {
-        const s = await tryLoadSettings();
-        if (!s) return alert('Could not reload settings.json');
-        settingsState = s;
-        renderSettingsEditor(host); // rebuild UI
-        applyStateToRenderer();
-      };
     }
 
     /** ===== World Events editor (kind: 'static' | 'recurring') ===== */
@@ -941,8 +1135,257 @@
         alert('Could not reload from data.json: ' + (e.message || e));
       }
     }
+    
+    /** ===================== RENDER HORIZONTAL TIMELINES ===================== **/
+    async function renderGridHorizontal(timelines, seasonalMarkers = []) {
+      const grid = $('grid');
+      grid.innerHTML = '';
 
-    /** ===================== RENDER ===================== **/
+      // 1) Compute bounds
+      const bounds = timelines.flatMap(tl => tl.events.map(ev => [ev.startIdx, ev.startIdx + ev.durationWeeks]));
+      const minIdx = Math.min(...bounds.map(b => b[0]));
+      const maxIdx = Math.max(...bounds.map(b => b[1]));
+      const totalWeeks = Math.max(1, maxIdx - minIdx);
+
+      // 2) Expand seasonal markers into absolute week indices
+      const { year: minYear } = idxToISOWeek(minIdx);
+      const { year: maxYear } = idxToISOWeek(maxIdx - 1);
+
+      const expandedSeasonal = [];
+      for (const m of seasonalMarkers) {
+        if (m.type === 'static') {
+          expandedSeasonal.push(m);
+        } else if (m.type === 'recurring') {
+          const ww = String(m.week).padStart(2, '0');
+          for (let y = minYear; y <= maxYear; y++) {
+            const idx = isoWeekToIdx(`${y}-${ww}`);
+            if (idx >= minIdx && idx < maxIdx) expandedSeasonal.push({ ...m, type: 'static', weekIdx: idx });
+          }
+        }
+      }
+
+      const seasonalByIdx = new Map();
+      for (const m of expandedSeasonal) {
+        if (!seasonalByIdx.has(m.weekIdx)) seasonalByIdx.set(m.weekIdx, []);
+        seasonalByIdx.get(m.weekIdx).push(m);
+      }
+
+      // 3) Build columns array: week column + N seasonal columns (for that week)
+      const columns = [];                 // [{type:'week', idx} | {type:'seasonal', data}]
+      const weekColIndex = new Map();     // weekIdx -> first column index for that week
+      for (let w = minIdx; w < maxIdx; w++) {
+        weekColIndex.set(w, columns.length);
+        columns.push({ type: 'week', idx: w });
+        const arr = seasonalByIdx.get(w);
+        if (arr && arr.length) {
+          for (const m of arr) columns.push({ type: 'seasonal', data: m, idx: w });
+        }
+      }
+
+      // 4) Sizing (uses CSS vars you set via applyGridSizing)
+      grid.style.gridTemplateRows = [
+        'var(--week-header-row)',                                 // header row
+        ...timelines.map(() => 'minmax(var(--timeline-row-min), auto)')
+      ].join(' ');
+
+      grid.style.gridTemplateColumns = [
+        'var(--names-col-width)',                                 // names column
+        ...columns.map(() => 'var(--week-col-width)')
+      ].join(' ');
+
+      // 5) Header names cell (top-left)
+      const corner = document.createElement('div');
+      corner.className = 'corner';
+      corner.style.gridRow = '1 / 2';
+      corner.style.gridColumn = '1 / 2';
+      corner.textContent = 'Timeline';
+      grid.appendChild(corner);
+
+      // 6) Header: one cell per column
+      columns.forEach((col, c) => {
+        const header = document.createElement('div');
+        const gridCol = 2 + c;     // +1 for the names col, +1 because CSS grid is 1-based
+        header.style.gridRow = '1 / 2';
+        header.style.gridColumn = `${gridCol} / ${gridCol + 1}`;
+
+        if (col.type === 'week') {
+          header.className = 'wlabel';
+          const { week } = idxToISOWeek(col.idx);
+          const inner = document.createElement('div');
+          inner.className = 'wlabel__inner';
+          inner.textContent = `Week ${String(week).padStart(2, '0')}`;
+          header.appendChild(inner);
+        } else {
+          header.className = 'wlabel wlabel--seasonal';
+          const inner = document.createElement('div');
+          inner.className = 'wlabel__inner wlabel__inner--seasonal';
+          const m = col.data;
+          const img = makeSmartImg(SEASONAL_IMAGES_DIR, m.imageName, 'seasonal-thumb', m.name);
+          if (img) inner.appendChild(img);
+          const nameEl = document.createElement('span');
+          nameEl.className = 'seasonal-name';
+          nameEl.textContent = m.name;
+          inner.appendChild(nameEl);
+          if (m.desc) {
+            const descEl = document.createElement('span');
+            descEl.className = 'seasonal-desc';
+            descEl.textContent = m.desc;
+            inner.appendChild(descEl);
+          }
+          header.appendChild(inner);
+        }
+
+        grid.appendChild(header);
+      });
+
+      // 7) Timeline name cells + background cells
+      timelines.forEach((tl, r) => {
+        const gridRow = 2 + r;
+
+        // left names column
+        const name = document.createElement('div');
+        name.className = 'thead';
+        name.textContent = tl.title;
+        name.style.gridRow = `${gridRow} / ${gridRow + 1}`;
+        name.style.gridColumn = '1 / 2';
+        grid.appendChild(name);
+
+        // background cells for each column (separate class for seasonal columns)
+        columns.forEach((col, c) => {
+          const bg = document.createElement('div');
+          bg.className = 'cell' + (col.type === 'seasonal' ? ' cell--seasonal' : '');
+          bg.style.gridRow = `${gridRow} / ${gridRow + 1}`;
+          bg.style.gridColumn = `${2 + c} / ${3 + c}`;
+          grid.appendChild(bg);
+        });
+      });
+
+      // Helper: how many seasonal columns between week indices [start, end)
+      function countSeasonalsBetween(startWeekIdx, endWeekIdx) {
+        let total = 0;
+        for (let idx = startWeekIdx; idx < endWeekIdx; idx++) {
+          total += (seasonalByIdx.get(idx)?.length || 0);
+        }
+        return total;
+      }
+
+      // 8) Place events as horizontal spans (across week + seasonal columns)
+      for (let r = 0; r < timelines.length; r++) {
+        const tl = timelines[r];
+        for (const ev of tl.events) {
+          const start = ev.startIdx;
+          const endExclusive = ev.startIdx + ev.durationWeeks;
+
+          // clamp weeks to visible range
+          const visStart = Math.min(Math.max(start, minIdx), maxIdx - 1);
+          const visEndWk = Math.min(Math.max(endExclusive - 1, minIdx), maxIdx - 1);
+
+          // must have week columns for both ends
+          if (!weekColIndex.has(visStart) || !weekColIndex.has(visEndWk)) continue;
+
+          const colStart = weekColIndex.get(visStart);
+          const baseSpanWeeks = Math.abs(visEndWk - visStart) + 1;
+          const extraSeasonal = countSeasonalsBetween(
+            Math.max(Math.min(start, endExclusive), minIdx),
+            Math.min(Math.max(start, endExclusive), maxIdx)
+          );
+          const span = baseSpanWeeks + extraSeasonal;
+
+          const el = document.createElement('div');
+          el.className = 'event';
+
+          const catId   = toCatId(ev.categoryId);
+          const catName = getCatName(catId);
+          const catEmoji= getCatEmoji(catId);
+          const catColor= getCatColor(catId);
+          const catText = getCatText(catId);
+
+          el.dataset.catId = String(catId || 0);
+          el.dataset.catEmoji = catEmoji || '';
+          el.dataset.catTitle = catName || '';
+          el.dataset.catColor = catColor || '';
+          el.style.setProperty('--jcolor', catColor || 'transparent');
+          el.style.setProperty('--jtext',  catText  || 'black');
+          el.style.setProperty('--jemoji', `"${catEmoji}"`);
+
+          // position
+          const gridRow = 2 + r;
+          const gridColStart = 2 + colStart;
+          el.style.gridRow = `${gridRow} / ${gridRow + 1}`;
+          el.style.gridColumn = `${gridColStart} / ${gridColStart + span}`;
+
+          // content
+          const { year, week } = idxToISOWeek(start);
+          const labelStart = `${year}-${String(week).padStart(2, '0')}`;
+
+          const topline = document.createElement('div');
+          topline.className = 'topline';
+
+          prependEventMedia(el, ev);
+
+          if (catName) {
+            const cat = document.createElement('div');
+            cat.className = 'cat';
+            cat.textContent = catName;
+            topline.appendChild(cat);
+          }
+
+          const title = document.createElement('div');
+          title.className = 'desc';
+          title.textContent = ev.desc || '(no description)';
+          topline.appendChild(title);
+
+          const meta = document.createElement('div');
+          meta.className = 'meta';
+          meta.textContent = `${labelStart} • ${ev.durationWeeks}w`;
+          topline.appendChild(meta);
+
+          el.appendChild(topline);
+
+          // chips
+          const charChips = document.createElement('div');
+          charChips.className = 'chips chips--characters';
+          for (const n of ev.characters || []) {
+            const a = document.createElement('a');
+            a.className = 'chip';
+            a.href = `characters/${encodeURIComponent(n)}.html`;
+            a.title = `Character: ${n}`;
+            const icon = makeSmartImg(CHAR_IMAGES_DIR, n, 'icon', n);
+            if (icon) a.appendChild(icon);
+            const label = document.createElement('span');
+            label.textContent = n;
+            a.appendChild(label);
+            charChips.appendChild(a);
+          }
+          if (charChips.children.length) el.appendChild(charChips);
+
+          const locChips = document.createElement('div');
+          locChips.className = 'chips chips--locations';
+          for (const n of ev.locations || []) {
+            const a = document.createElement('a');
+            a.className = 'chip';
+            a.href = `locations/${encodeURIComponent(n)}.html`;
+            a.title = `Location: ${n}`;
+            const label = document.createElement('span');
+            label.textContent = n;
+            a.appendChild(label);
+            locChips.appendChild(a);
+          }
+          if (locChips.children.length) el.appendChild(locChips);
+
+          grid.appendChild(el);
+        }
+      }
+
+      // meta line
+      const firstLabel = (function(){const {year,week}=idxToISOWeek(minIdx); return `${year}-${String(week).padStart(2,'0')}`})();
+      const lastLabel  = (function(){const {year,week}=idxToISOWeek(maxIdx-1); return `${year}-${String(week).padStart(2,'0')}`})();
+      setText('meta', `Timelines: ${timelines.length} • Weeks: ${totalWeeks} • Range: ${firstLabel} → ${lastLabel}`);
+    }
+
+
+
+    /** ===================== RENDER VERTICAL TIMELINES ===================== **/
     async function renderGridVertical(timelines, seasonalMarkers = []) {
       const grid = $('grid'); grid.innerHTML = '';
 
@@ -994,8 +1437,13 @@
         if (arr && arr.length) for (const m of arr) rows.push({ type: 'seasonal', idx: i, data: m });
       }
 
-      grid.style.gridTemplateColumns = `[weeks] 120px ${timelines.map(() => `minmax(var(--timeline-col-min), var(--timeline-col-max))`).join(' ')}`;
-      grid.style.gridTemplateRows = rows.map(() => `minmax(var(--week-row-min), auto)`).join(' ');
+      grid.style.gridTemplateColumns = `[weeks] var(--names-col-width) ${timelines
+        .map(() => 'minmax(var(--timeline-col-min), var(--timeline-col-max))').join(' ')}`;
+
+      grid.style.gridTemplateRows = rows
+        .map(() => 'minmax(var(--week-row-min), auto)')
+        .join(' ');
+
 
       const corner = document.createElement('div');
       corner.className = 'corner';

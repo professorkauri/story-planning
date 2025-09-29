@@ -7,7 +7,7 @@
         {
           "date": "2024-48",
           "duration": "7w",
-          "desc": "Ordinary World - young scholar in city archives",
+          "desc": "Young scholar in city archives",
           "category": "OrdinaryWorld",
           "image": "",
           "characters": [
@@ -21,7 +21,7 @@
         {
           "date": "0w",
           "duration": "1w",
-          "desc": "Call to Adventure - discovery of forbidden manuscript",
+          "desc": "Discovery of forbidden manuscript",
           "category": "CallToAdventure",
           "image": "ring",
           "characters": [],
@@ -33,7 +33,7 @@
         {
           "date": "0w",
           "duration": "1w",
-          "desc": "Refusal of the Call - fears punishment for knowledge",
+          "desc": "Fears punishment for knowledge",
           "category": "RefusalOfTheCall",
           "image": "",
           "characters": [],
@@ -45,7 +45,7 @@
         {
           "date": "6w",
           "duration": "2w",
-          "desc": "Meeting the Mentor - eccentric professor offers help",
+          "desc": "Eccentric professor offers help",
           "category": "MeetingTheMentor",
           "image": "",
           "characters": [],
@@ -57,7 +57,7 @@
         {
           "date": "2w",
           "duration": "3w",
-          "desc": "Crossing the Threshold - journey to ancient ruins",
+          "desc": "Journey to ancient ruins",
           "category": "CrossingTheThreshold",
           "image": "",
           "characters": [],
@@ -67,7 +67,7 @@
         {
           "date": "1w",
           "duration": "2w",
-          "desc": "Tests - Allies - Enemies - rival scholars and puzzles",
+          "desc": "Rival scholars and puzzles",
           "category": "TestsAlliesEnemies",
           "image": "",
           "characters": [],
@@ -77,7 +77,7 @@
         {
           "date": "1w",
           "duration": "2w",
-          "desc": "Approach to the Inmost Cave - descends into hidden catacombs",
+          "desc": "Descends into hidden catacombs",
           "category": "ApproachToTheInmostCave",
           "image": "",
           "characters": [],
@@ -87,7 +87,7 @@
         {
           "date": "0w",
           "duration": "5w",
-          "desc": "Ordeal - confrontation with cursed guardian",
+          "desc": "Confrontation with cursed guardian",
           "category": "TheOrdeal",
           "image": "",
           "characters": [
@@ -101,7 +101,7 @@
         {
           "date": "1w",
           "duration": "1w",
-          "desc": "Reward - gains secret of eternal flame",
+          "desc": "Gains secret of eternal flame",
           "category": "Reward",
           "image": "",
           "characters": [],
@@ -111,7 +111,7 @@
         {
           "date": "2w",
           "duration": "2w",
-          "desc": "The Road Back - chased by collapsing ruins",
+          "desc": "Chased by collapsing ruins",
           "category": "TheRoadBack",
           "image": "",
           "characters": [],
@@ -121,7 +121,7 @@
         {
           "date": "2025-39",
           "duration": "2w",
-          "desc": "Resurrection - uses knowledge to save companions",
+          "desc": "Uses knowledge to save companions",
           "category": "Resurrection",
           "image": "ring",
           "characters": [],
@@ -131,7 +131,7 @@
         {
           "date": "1w",
           "duration": "12w",
-          "desc": "Return with the Elixir - teaches wisdom to new generation",
+          "desc": "Teaches wisdom to new generation",
           "category": "TheReturn",
           "image": "",
           "characters": [],
@@ -149,7 +149,7 @@
         {
           "date": "2025-02",
           "duration": "4w",
-          "desc": "Ordinary World - living a quiet village life",
+          "desc": "Living a quiet village life",
           "category": "OrdinaryWorld",
           "image": "Wand",
           "characters": [
@@ -163,7 +163,7 @@
         {
           "date": "2w",
           "duration": "1w",
-          "desc": "Call to Adventure - mysterious stranger arrives",
+          "desc": "Mysterious stranger arrives",
           "category": "CallToAdventure",
           "image": "",
           "characters": [
@@ -175,7 +175,7 @@
         {
           "date": "1w",
           "duration": "1w",
-          "desc": "Refusal of the Call - doubts and fear",
+          "desc": "Doubts and fear",
           "category": "RefusalOfTheCall",
           "image": "",
           "characters": [
@@ -187,7 +187,7 @@
         {
           "date": "4w",
           "duration": "1w",
-          "desc": "Meeting the Mentor - wise elder offers guidance",
+          "desc": "Wise elder offers guidance",
           "category": "MeetingTheMentor",
           "image": "",
           "characters": [
@@ -201,7 +201,7 @@
         {
           "date": "2w",
           "duration": "3w",
-          "desc": "Crossing the Threshold - leaves village to unknown lands",
+          "desc": "Leaves village to unknown lands",
           "category": "CrossingTheThreshold",
           "image": "",
           "characters": [
@@ -213,7 +213,7 @@
         {
           "date": "0w",
           "duration": "2w",
-          "desc": "Tests - Allies - Enemies - faces trials and gains companions",
+          "desc": "Faces trials and gains companions",
           "category": "TestsAlliesEnemies",
           "image": "",
           "characters": [
@@ -225,7 +225,7 @@
         {
           "date": "2w",
           "duration": "7w",
-          "desc": "Approach to the Inmost Cave - enters dark forest",
+          "desc": "Enters dark forest",
           "category": "ApproachToTheInmostCave",
           "image": "",
           "characters": [
@@ -237,7 +237,7 @@
         {
           "date": "0w",
           "duration": "1w",
-          "desc": "Ordeal - battles the shadow beast",
+          "desc": "Battles the shadow beast",
           "category": "TheOrdeal",
           "image": "",
           "characters": [
@@ -249,7 +249,7 @@
         {
           "date": "0w",
           "duration": "1w",
-          "desc": "Reward - gains the sacred relic",
+          "desc": "Gains the sacred relic",
           "category": "Reward",
           "image": "",
           "characters": [
@@ -261,7 +261,7 @@
         {
           "date": "0w",
           "duration": "3w",
-          "desc": "The Road Back - pursued by enemies",
+          "desc": "Pursued by enemies",
           "category": "TheRoadBack",
           "image": "",
           "characters": [
@@ -273,7 +273,7 @@
         {
           "date": "3w",
           "duration": "2w",
-          "desc": "Resurrection - final test of character",
+          "desc": "Final test of character",
           "category": "Resurrection",
           "image": "",
           "characters": [
@@ -288,7 +288,7 @@
         {
           "date": "2w",
           "duration": "2w",
-          "desc": "Return with the Elixir - brings knowledge to village",
+          "desc": "Brings knowledge to village",
           "category": "TheReturn",
           "image": "",
           "characters": [
