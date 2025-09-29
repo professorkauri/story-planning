@@ -587,6 +587,10 @@ body.editing {
   z-index: 1;
 }
 
+.ed-table tr {
+  --jcolor: attr[data-cat-id];
+}
+
 .ed-table td {
   gap: 20px;
   padding: 20px;

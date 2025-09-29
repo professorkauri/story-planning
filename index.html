@@ -582,6 +582,9 @@
 
         const tr = document.createElement('tr');
         tr.dataset.catId = ev.categoryId || 0;
+        const catColor = getCatColor(ev.categoryId);
+        tr.dataset.catColor = catColor || '';
+        tr.style.setProperty('--jcolor', catColor || 'transparent');
         tr.innerHTML = `
       <td>
         <div class="ed-row-data">
