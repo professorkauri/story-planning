@@ -15,7 +15,8 @@
           ],
           "locations": [
             "UnderStairs"
-          ]
+          ],
+          "categoryId": 1
         },
         {
           "date": "2w",
@@ -26,7 +27,8 @@
           "characters": [
             "Hermoine"
           ],
-          "locations": []
+          "locations": [],
+          "categoryId": 2
         },
         {
           "date": "1w",
@@ -37,7 +39,8 @@
           "characters": [
             "Ron"
           ],
-          "locations": []
+          "locations": [],
+          "categoryId": 3
         },
         {
           "date": "4w",
@@ -50,7 +53,8 @@
           ],
           "locations": [
             "Hogwarts"
-          ]
+          ],
+          "categoryId": 4
         },
         {
           "date": "2w",
@@ -61,7 +65,8 @@
           "characters": [
             "Dumbledorf"
           ],
-          "locations": []
+          "locations": [],
+          "categoryId": 5
         },
         {
           "date": "0w",
@@ -72,7 +77,8 @@
           "characters": [
             "HarryPotter"
           ],
-          "locations": []
+          "locations": [],
+          "categoryId": 6
         },
         {
           "date": "2w",
@@ -83,7 +89,8 @@
           "characters": [
             "Hermione"
           ],
-          "locations": []
+          "locations": [],
+          "categoryId": 7
         },
         {
           "date": "0w",
@@ -94,7 +101,8 @@
           "characters": [
             "Ron"
           ],
-          "locations": []
+          "locations": [],
+          "categoryId": 8
         },
         {
           "date": "0w",
@@ -105,7 +113,8 @@
           "characters": [
             "Snape"
           ],
-          "locations": []
+          "locations": [],
+          "categoryId": 9
         },
         {
           "date": "0w",
@@ -116,7 +125,8 @@
           "characters": [
             "Dumbledorf"
           ],
-          "locations": []
+          "locations": [],
+          "categoryId": 10
         },
         {
           "date": "3w",
@@ -129,9 +139,9 @@
             "HarryPotter"
           ],
           "locations": [
-            "Hogwarts",
-            "Mordor"
-          ]
+            "Hogwarts"
+          ],
+          "categoryId": 11
         },
         {
           "date": "2w",
@@ -144,7 +154,8 @@
           ],
           "locations": [
             "Hogwarts"
-          ]
+          ],
+          "categoryId": 12
         }
       ]
     },
@@ -163,7 +174,8 @@
           ],
           "locations": [
             "Hobbiton"
-          ]
+          ],
+          "categoryId": 1
         },
         {
           "date": "0w",
@@ -174,7 +186,8 @@
           "characters": [],
           "locations": [
             "Hobbiton"
-          ]
+          ],
+          "categoryId": 2
         },
         {
           "date": "0w",
@@ -185,7 +198,8 @@
           "characters": [],
           "locations": [
             "Hobbiton"
-          ]
+          ],
+          "categoryId": 3
         },
         {
           "date": "6w",
@@ -196,7 +210,8 @@
           "characters": [],
           "locations": [
             "Hobbiton"
-          ]
+          ],
+          "categoryId": 4
         },
         {
           "date": "2w",
@@ -205,7 +220,8 @@
           "category": "CrossingTheThreshold",
           "image": "",
           "characters": [],
-          "locations": []
+          "locations": [],
+          "categoryId": 5
         },
         {
           "date": "1w",
@@ -214,7 +230,8 @@
           "category": "TestsAlliesEnemies",
           "image": "",
           "characters": [],
-          "locations": []
+          "locations": [],
+          "categoryId": 6
         },
         {
           "date": "1w",
@@ -223,7 +240,8 @@
           "category": "ApproachToTheInmostCave",
           "image": "",
           "characters": [],
-          "locations": []
+          "locations": [],
+          "categoryId": 7
         },
         {
           "date": "0w",
@@ -236,7 +254,8 @@
           ],
           "locations": [
             "Mordor"
-          ]
+          ],
+          "categoryId": 8
         },
         {
           "date": "1w",
@@ -245,7 +264,8 @@
           "category": "Reward",
           "image": "",
           "characters": [],
-          "locations": []
+          "locations": [],
+          "categoryId": 9
         },
         {
           "date": "2w",
@@ -254,7 +274,8 @@
           "category": "TheRoadBack",
           "image": "",
           "characters": [],
-          "locations": []
+          "locations": [],
+          "categoryId": 10
         },
         {
           "date": "2025-39",
@@ -263,7 +284,8 @@
           "category": "Resurrection",
           "image": "ring",
           "characters": [],
-          "locations": []
+          "locations": [],
+          "categoryId": 11
         },
         {
           "date": "1w",
@@ -274,7 +296,8 @@
           "characters": [],
           "locations": [
             "Hobbiton"
-          ]
+          ],
+          "categoryId": 12
         }
       ]
     },
@@ -293,7 +316,8 @@
           ],
           "locations": [
             "PalletTown"
-          ]
+          ],
+          "categoryId": 1
         },
         {
           "date": "0w",
@@ -307,7 +331,8 @@
           ],
           "locations": [
             "PalletTown"
-          ]
+          ],
+          "categoryId": 2
         },
         {
           "date": "0w",
@@ -320,7 +345,8 @@
           ],
           "locations": [
             "PalletTown"
-          ]
+          ],
+          "categoryId": 3
         },
         {
           "date": "0w",
@@ -334,7 +360,8 @@
           ],
           "locations": [
             "PalletTown"
-          ]
+          ],
+          "categoryId": 4
         },
         {
           "date": "0w",
@@ -347,7 +374,8 @@
           ],
           "locations": [
             "Route1"
-          ]
+          ],
+          "categoryId": 5
         }
       ]
     }

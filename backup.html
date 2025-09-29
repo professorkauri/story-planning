@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8" />
   <title>Vertical Timelines (events + character/location icons)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="styles/timelines.css">
 </head>
+
 <body>
   <header>
     <h1>Vertical Timelines</h1>
@@ -20,18 +22,15 @@
 
   <script>
     /** ===================== CONFIG ===================== **/
-    const TIMELINES_DIR = 'timelines/';
-    const INDEX_JSON = TIMELINES_DIR + 'index.json';
     const JSON_PATH = 'timelines/data.json';
 
-    const visualDebug = true;
+    const visualDebug = false;
 
     const EVENT_IMAGES_DIR = 'images/events/';
-    const CHAR_IMAGES_DIR  = 'images/characters/';
-    const LOC_IMAGES_DIR   = 'images/locations/';
+    const CHAR_IMAGES_DIR = 'images/characters/';
+    const LOC_IMAGES_DIR = 'images/locations/';
     const SEASONAL_IMAGES_DIR = 'images/seasonal/';
 
-    const SEASONAL_CSV = TIMELINES_DIR + 'seasonal.csv';
 
     const PRESET_CATEGORIES = [
       '',            // blank option
@@ -49,24 +48,9 @@
       'TheReturn'
     ];
 
-    const IMAGE_EXTS = ['png','jpg','jpeg','webp','gif','svg','avif'];
+    const IMAGE_EXTS = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg', 'avif'];
 
-    /** Inline template for CSS testing (used only if no files can be read) */
-    const INLINE_TEMPLATE_CSV =
-`Harry Potter and the Goblet of Fire,,,,,,
-Start,Duration,Description,Category,Image,Characters,Location
-2025-02,4w," Ordinary World - living a quiet village life",OrdinaryWorld,Wand,HarryPotter,UnderStairs
-2w," 1w"," Call to Adventure - mysterious stranger arrives",CallToAdventure,,Hermoine,
-1w," 1w"," Refusal of the Call - doubts and fear",RefusalOfTheCall,,Ron,
-4w," 1w"," Meeting the Mentor - wise elder offers guidance",MeetingTheMentor,,Snape,Hogwarts
-2w," 3w"," Crossing the Threshold - leaves village to unknown lands",CrossingTheThreshold,,Dumbledorf,
-0w," 2w"," Tests - Allies - Enemies - faces trials and gains companions",TestsAlliesEnemies,,HarryPotter,
-2w,7w," Approach to the Inmost Cave - enters dark forest",ApproachToTheInmostCave,,Hermione,
-0w," 1w"," Ordeal - battles the shadow beast",TheOrdeal,,Ron,
-0w,1w," Reward - gains the sacred relic"," Reward",,Snape,
-0w,3w," The Road Back - pursued by enemies",TheRoadBack,,Dumbledorf,
-3w,2w," Resurrection - final test of character",Resurrection,,Ron,
-2w,2w," Return with the Elixir - brings knowledge to village",TheReturn,,HarryPotter,Hogwarts`;
+    
 
     /* If you're now using the newer seasonal schema (no Image column), feel free to update this inline CSV accordingly. */
 
@@ -74,36 +58,36 @@ Start,Duration,Description,Category,Image,Characters,Location
     const $ = (id) => document.getElementById(id);
     const setText = (id, txt) => { const el = $(id); if (el) el.textContent = txt; };
 
-    function isSpecificWeek(s){ return /^\d{4}-\d{2}$/.test(s || ''); }
-    function parseRelWeeks(s){ const m = /^(\d+)\s*[wW]$/.exec(s || ''); return m ? parseInt(m[1],10) : null; }
-    function stripExt(name){ return name.replace(/\.[^.]+$/, ''); }
-    function encSeg(s){ return encodeURIComponent(s).replace(/%2F/g, '/'); }
+    function isSpecificWeek(s) { return /^\d{4}-\d{2}$/.test(s || ''); }
+    function parseRelWeeks(s) { const m = /^(\d+)\s*[wW]$/.exec(s || ''); return m ? parseInt(m[1], 10) : null; }
+    function stripExt(name) { return name.replace(/\.[^.]+$/, ''); }
+    function encSeg(s) { return encodeURIComponent(s).replace(/%2F/g, '/'); }
 
     /* Robust ISO week helpers */
-    function isoWeekToDate(iso){
+    function isoWeekToDate(iso) {
       const [yStr, wStr] = iso.split('-'); const Y = +yStr, W = +wStr;
       const jan4 = new Date(Date.UTC(Y, 0, 4)); const d = jan4.getUTCDay() || 7;
       const monW1 = new Date(jan4); monW1.setUTCDate(jan4.getUTCDate() - (d - 1));
-      const monW  = new Date(monW1); monW.setUTCDate(monW1.getUTCDate() + (W - 1) * 7); monW.setUTCHours(0,0,0,0);
+      const monW = new Date(monW1); monW.setUTCDate(monW1.getUTCDate() + (W - 1) * 7); monW.setUTCHours(0, 0, 0, 0);
       return monW;
     }
-    function isoWeekToIdx(iso){
-      const d = isoWeekToDate(iso); const epochMon = new Date(Date.UTC(1970,0,5));
-      return Math.floor((d - epochMon) / (7*24*3600*1000));
+    function isoWeekToIdx(iso) {
+      const d = isoWeekToDate(iso); const epochMon = new Date(Date.UTC(1970, 0, 5));
+      return Math.floor((d - epochMon) / (7 * 24 * 3600 * 1000));
     }
-    function idxToISOWeek(idx){
-      const epochMon = new Date(Date.UTC(1970,0,5));
-      const d = new Date(epochMon); d.setUTCDate(epochMon.getUTCDate() + idx*7);
+    function idxToISOWeek(idx) {
+      const epochMon = new Date(Date.UTC(1970, 0, 5));
+      const d = new Date(epochMon); d.setUTCDate(epochMon.getUTCDate() + idx * 7);
       const t = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
       const day = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + (4 - day));
       const isoYear = t.getUTCFullYear();
-      const w1 = new Date(Date.UTC(isoYear,0,4)); const wd = w1.getUTCDay() || 7;
+      const w1 = new Date(Date.UTC(isoYear, 0, 4)); const wd = w1.getUTCDay() || 7;
       const w1Mon = new Date(w1); w1Mon.setUTCDate(w1.getUTCDate() - (wd - 1));
-      const diff = (d - w1Mon); const isoWeek = 1 + Math.floor(diff / (7*24*3600*1000));
+      const diff = (d - w1Mon); const isoWeek = 1 + Math.floor(diff / (7 * 24 * 3600 * 1000));
       return { year: isoYear, week: isoWeek };
     }
 
-    async function tryLoadJSON(){
+    async function tryLoadJSON() {
       try {
         const r = await fetch(`${JSON_PATH}?v=${Date.now()}`, { cache: 'no-store' });
         if (!r.ok) return null;
@@ -114,72 +98,40 @@ Start,Duration,Description,Category,Image,Characters,Location
       } catch { return null; }
     }
 
-    async function buildFromCSV(){
-      const files = await discoverFiles();
-      const timelines = [];
-      for (const f of files){
-        try {
-          const txt = await fetch(TIMELINES_DIR + f, {cache:'no-store'}).then(r => r.text());
-          timelines.push(csvToTimeline(f, txt));
-        } catch {}
-      }
-      const seasonal = await loadSeasonalMarkers();
-
-      return {
-        timelines: timelines.map((tl, i) => ({
-          id: stripExt(files[i] || tl.title.toLowerCase().replace(/\s+/g,'-')),
-          title: tl.title,
-          events: tl.events.map(e => ({
-            date: e.rawDate,
-            duration: `${e.durationWeeks}w`,
-            desc: e.desc,
-            category: e.category || '',
-            image: e.imageName || '',
-            characters: e.characters || [],
-            locations: e.locations || []
-          }))
-        })),
-        seasonal: seasonal.map(m =>
-          m.type === 'static'
-            ? (() => { const {year, week} = idxToISOWeek(m.weekIdx); return { date: `${year}-${String(week).padStart(2,'0')}`, id: m.id, name: m.name, desc: m.desc || '' }; })()
-            : ({ date: String(m.week).padStart(2,'0'), id: m.id, name: m.name, desc: m.desc || '' })
-        )
-      };
-    }
-
     async function bootstrapState(){
-      // 1) Prefer the on-disk JSON
-      const jsonState = await tryLoadJSON();
-      if (jsonState){
-        editorState = jsonState;
-        saveToLocal();                   // keep a fast local copy
+      // Prefer disk JSON
+      const json = await tryLoadJSON();
+      if (json && Array.isArray(json.timelines)) {
+        editorState = json;
+        saveToLocal();
         return;
       }
 
-      // 2) If no JSON, try whatever you had locally
+      // Then localStorage (if you want this first, swap these two blocks)
       const local = loadFromLocal();
-      if (local){
+      if (local && Array.isArray(local.timelines)) {
         editorState = local;
         return;
       }
 
-      // 3) Last resort: build from CSVs + seasonal.csv
-      editorState = await buildFromCSV();
+      // Fresh empty project
+      editorState = { timelines: [], seasonal: [] };
       saveToLocal();
     }
 
 
+
     /** CSV parse (quoted commas handled) */
-    function parseCSV(text){
-      const rows=[]; let row=[], cur='', inQ=false;
-      for (let i=0;i<text.length;i++){
-        const ch=text[i], nx=text[i+1];
-        if (ch === '"'){ if (inQ && nx === '"'){ cur+='"'; i++; } else inQ=!inQ; }
-        else if (ch === ',' && !inQ){ row.push(cur); cur=''; }
-        else if ((ch === '\n' || ch === '\r') && !inQ){
+    function parseCSV(text) {
+      const rows = []; let row = [], cur = '', inQ = false;
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i], nx = text[i + 1];
+        if (ch === '"') { if (inQ && nx === '"') { cur += '"'; i++; } else inQ = !inQ; }
+        else if (ch === ',' && !inQ) { row.push(cur); cur = ''; }
+        else if ((ch === '\n' || ch === '\r') && !inQ) {
           if (ch === '\r' && nx === '\n') i++;
-          row.push(cur); cur=''; rows.push(row); row=[];
-        } else cur+=ch;
+          row.push(cur); cur = ''; rows.push(row); row = [];
+        } else cur += ch;
       }
       row.push(cur); rows.push(row);
       const maxLen = Math.max(...rows.map(r => r.length));
@@ -187,7 +139,7 @@ Start,Duration,Description,Category,Image,Characters,Location
     }
 
     /** Make an <img> that tries extensions in order; hides itself if none exist. Works with file:// */
-    function makeSmartImg(dir, name, className, alt){
+    function makeSmartImg(dir, name, className, alt) {
       if (!name) return null;
       const img = document.createElement('img');
       img.className = className || '';
@@ -196,7 +148,7 @@ Start,Duration,Description,Category,Image,Characters,Location
       const exts = IMAGE_EXTS.slice();
       let i = 0;
       const tryNext = () => {
-        if (i >= exts.length){ img.remove(); return; }
+        if (i >= exts.length) { img.remove(); return; }
         img.src = `${dir}${encSeg(name)}.${exts[i++]}`;
       };
       img.onerror = tryNext;
@@ -206,8 +158,8 @@ Start,Duration,Description,Category,Image,Characters,Location
 
     // Try image <dir>/<name>.(exts...). If all fail, call onAllFail().
     // Returns the <img> element immediately (it will remove itself if it ultimately fails).
-    function makeSmartImgFallback(dir, name, className, alt, onAllFail){
-      if (!name){
+    function makeSmartImgFallback(dir, name, className, alt, onAllFail) {
+      if (!name) {
         if (typeof onAllFail === 'function') onAllFail();
         return null;
       }
@@ -219,7 +171,7 @@ Start,Duration,Description,Category,Image,Characters,Location
       const exts = IMAGE_EXTS.slice();
       let i = 0;
       const tryNext = () => {
-        if (i >= exts.length){
+        if (i >= exts.length) {
           img.remove();
           if (typeof onAllFail === 'function') onAllFail();
           return;
@@ -231,7 +183,7 @@ Start,Duration,Description,Category,Image,Characters,Location
       return img;
     }
 
-    function prependEventMedia(el, ev){
+    function prependEventMedia(el, ev) {
       const insertPlaceholder = () => {
         const ph = document.createElement('div');
         ph.className = 'thumb';
@@ -250,7 +202,7 @@ Start,Duration,Description,Category,Image,Characters,Location
         }
       };
 
-      if (ev.imageName){
+      if (ev.imageName) {
         const img = makeSmartImgFallback(
           EVENT_IMAGES_DIR, ev.imageName, 'thumb', ev.imageName, tryLocation
         );
@@ -260,127 +212,21 @@ Start,Duration,Description,Category,Image,Characters,Location
       }
     }
 
-    /** ===================== DISCOVERY ===================== **/
-    async function discoverFiles(){
-      try {
-        const r = await fetch(INDEX_JSON, {cache:'no-store'});
-        if (!r.ok) return [];
-        const arr = await r.json();
-        if (!Array.isArray(arr)) return [];
-        const files = [];
-        for (const entry of arr){
-          if (typeof entry !== 'string') continue;
-          const s = entry.trim();
-          if (!s || !/\.csv$/i.test(s)) continue;
-          if (!files.includes(s)) files.push(s);
-        }
-        return files;
-      } catch {
-        return [];
-      }
-    }
-
-    async function loadSeasonalMarkers(){
-      const parseSeasonal = (text) => {
-        const rows = parseCSV(text).filter(r => r.some(c => (c||'').trim() !== ''));
-        const out = [];
-        for (const row of rows){
-          const date = (row[0]||'').trim();
-          const id   = (row[1]||'').trim();
-          const name = (row[2]||'').trim();
-          const desc = (row[3]||'').trim();
-          if (!id || !name || !date) continue;
-
-          if (isSpecificWeek(date)) {
-            // Static: YYYY-WW
-            out.push({
-              type: 'static',
-              weekIdx: isoWeekToIdx(date),
-              id, name, desc,
-              imageName: id
-            });
-          } else if (/^\d{2}$/.test(date)) {
-            // Recurring each year on week WW
-            out.push({
-              type: 'recurring',
-              week: parseInt(date, 10),
-              id, name, desc,
-              imageName: id
-            });
-          }
-        }
-        return out;
-      };
-
-      // Try file
-      try {
-        const r = await fetch(SEASONAL_CSV, {cache:'no-store'});
-        if (r.ok) return parseSeasonal(await r.text());
-      } catch {}
-
-      // Fallback: inline
-      try {
-        return parseSeasonal(INLINE_SEASONAL_CSV);
-      } catch {
-        return [];
-      }
-    }
-
-    async function loadProjectState(){
-      // Try JSON first
-      try {
-        const r = await fetch(JSON_PATH, { cache: 'no-store' });
-        if (r.ok) return await r.json();
-      } catch {}
-
-      // Fallback: build state from your existing CSV loaders
-      const files = await discoverFiles();
-      const timelines = [];
-      for (const f of files){
-        try {
-          const txt = await fetch(TIMELINES_DIR + f, {cache:'no-store'}).then(r => r.text());
-          timelines.push(csvToTimeline(f, txt));
-        } catch {}
-      }
-      const seasonal = await loadSeasonalMarkers();
-
-      return {
-        timelines: timelines.map((tl, i) => ({
-          id: stripExt(files[i] || tl.title.toLowerCase().replace(/\s+/g,'-')),
-          title: tl.title,
-          events: tl.events.map(e => ({
-            date: e.rawDate,
-            duration: `${e.durationWeeks}w`,
-            desc: e.desc,
-            category: e.category || '',
-            image: e.imageName || '',
-            characters: e.characters || [],
-            locations: e.locations || []
-          }))
-        })),
-        seasonal: seasonal.map(m =>
-          m.type === 'static'
-            ? (() => { const {year, week} = idxToISOWeek(m.weekIdx); return { date: `${year}-${String(week).padStart(2,'0')}`, id: m.id, name: m.name, desc: m.desc || '' }; })()
-            : ({ date: String(m.week).padStart(2,'0'), id: m.id, name: m.name, desc: m.desc || '' })
-        )
-      };
-    }
-
     /** CSV -> timeline (title row + events, with row-level validation) */
-    function csvToTimeline(filename, csvText){
-      const rowsRaw = parseCSV(csvText).filter(r => r.some(c => (c||'').trim() !== ''));
+    function csvToTimeline(filename, csvText) {
+      const rowsRaw = parseCSV(csvText).filter(r => r.some(c => (c || '').trim() !== ''));
       if (!rowsRaw.length) throw new Error('CSV is empty');
       const titleRow = rowsRaw[0];
-      const title = (titleRow.find(c => (c||'').trim() !== '') || '').trim() || stripExt(filename);
+      const title = (titleRow.find(c => (c || '').trim() !== '') || '').trim() || stripExt(filename);
       const rows = rowsRaw.slice(1);
 
       const events = [];
-      for (const row of rows){
+      for (const row of rows) {
         const [d, dur, desc, cat, img, chars, locs] = [
-          (row[0]||'').trim(), (row[1]||'').trim(),
-          (row[2]||'').trim(), (row[3]||'').trim(),
-          (row[4]||'').trim(), (row[5]||'').trim(),
-          (row[6]||'').trim()
+          (row[0] || '').trim(), (row[1] || '').trim(),
+          (row[2] || '').trim(), (row[3] || '').trim(),
+          (row[4] || '').trim(), (row[5] || '').trim(),
+          (row[6] || '').trim()
         ];
         if (!d && !dur && !desc && !cat && !img && !chars && !locs) continue;
         const durationWeeks = parseRelWeeks(dur);
@@ -388,21 +234,21 @@ Start,Duration,Description,Category,Image,Characters,Location
         if (!isSpecificWeek(d) && parseRelWeeks(d) == null) continue;
 
         const characters = (chars ? chars.split(/\s+/).filter(Boolean) : []);
-        const locations  = (locs ? locs.split(/\s+/).filter(Boolean) : []);
-        events.push({ rawDate:d, durationWeeks, desc, category:cat, imageName:img||'', characters, locations });
+        const locations = (locs ? locs.split(/\s+/).filter(Boolean) : []);
+        events.push({ rawDate: d, durationWeeks, desc, category: cat, imageName: img || '', characters, locations });
       }
       if (!events.length) throw new Error('No valid events found');
       return { title, events };
     }
 
     /** Resolve relative dates */
-    function resolveTimelineWeeks(tl){
+    function resolveTimelineWeeks(tl) {
       let prevEnd = null;
       const events = tl.events.map(ev => {
         let startIdx;
         if (isSpecificWeek(ev.rawDate)) startIdx = isoWeekToIdx(ev.rawDate);
-        else { const rel = parseRelWeeks(ev.rawDate) || 0; startIdx = (prevEnd==null)? rel : (prevEnd+rel); }
-        const durationWeeks = Math.max(1, ev.durationWeeks|0);
+        else { const rel = parseRelWeeks(ev.rawDate) || 0; startIdx = (prevEnd == null) ? rel : (prevEnd + rel); }
+        const durationWeeks = Math.max(1, ev.durationWeeks | 0);
         const endIdx = startIdx + durationWeeks;
         prevEnd = endIdx;
         return { ...ev, startIdx, durationWeeks };
@@ -411,35 +257,35 @@ Start,Duration,Description,Category,Image,Characters,Location
     }
 
     /** ===================== CORNER YEAR HELPERS ===================== **/
-    function setupCornerYearTracker(grid, corner){
+    function setupCornerYearTracker(grid, corner) {
       const scroller = grid.parentElement; // .viewport
       const weekLabels = Array.from(grid.querySelectorAll('.wlabel:not(.wlabel--seasonal)'));
 
-      function update(){
+      function update() {
         const topY = scroller.getBoundingClientRect().top + 1;
 
         // Find the week row whose top is closest to the scroller top (and visible)
         let best = null, bestDy = Infinity;
-        for (const wl of weekLabels){
+        for (const wl of weekLabels) {
           const r = wl.getBoundingClientRect();
           const dy = Math.abs(r.top - topY);
           const visible = r.bottom > topY && r.top < (topY + scroller.clientHeight);
-          if (visible && dy < bestDy){
+          if (visible && dy < bestDy) {
             best = wl; bestDy = dy;
           }
         }
 
         // Fallbacks if none matched visibility (e.g., at extremes)
-        if (!best){
+        if (!best) {
           let minPos = Infinity, chosen = null;
-          for (const wl of weekLabels){
+          for (const wl of weekLabels) {
             const pos = wl.getBoundingClientRect().top - topY;
-            if (pos >= 0 && pos < minPos){ minPos = pos; chosen = wl; }
+            if (pos >= 0 && pos < minPos) { minPos = pos; chosen = wl; }
           }
-          best = chosen || weekLabels[weekLabels.length-1] || null;
+          best = chosen || weekLabels[weekLabels.length - 1] || null;
         }
 
-        if (best){
+        if (best) {
           const idx = parseInt(best.dataset.weekIdx, 10);
           const { year } = idxToISOWeek(idx);
           corner.textContent = String(year);
@@ -455,65 +301,69 @@ Start,Duration,Description,Category,Image,Characters,Location
     let editorState = null;
     let editMode = false;
 
-    function renderEditorUI(){
-      let panel = document.getElementById('editor');
-      if (panel) panel.remove();
+    /** ===== Editor UI root ===== */
+    function renderEditorUI() {
+      // remove previous
+      const old = document.getElementById('editor'); if (old) old.remove();
 
-      if (!document.getElementById('editor-style')){
-        const s = document.createElement('style');
-        s.id = 'editor-style';
-        s.textContent = `
-          #editor{position:fixed;inset:0;display:grid;place-items:center;z-index:50;}
-          #editor::before{content:"";position:absolute;inset:0;background:rgba(0,0,0,.5);backdrop-filter:saturate(1.2) blur(2px);}
-          .editor__wrap{position:relative;background:#0f1318;border:1px solid #1a1f26;border-radius:12px;min-width:360px;max-width:720px;width:min(90vw,700px);color:#eef2f6;box-shadow:0 10px 40px rgba(0,0,0,.5);}
-          .editor__bar{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid #1a1f26}
-          .editor__body{padding:14px 16px;font-size:14px;color:#9aa3ad}
-          .editor__bar button{all:unset;cursor:pointer;padding:6px 10px;border:1px solid #2a313a;border-radius:8px}
-          .editor__bar button:hover{background:#141a21}
-        `;
-        document.head.appendChild(s);
-      }
-
-      panel = document.createElement('div');
-      panel.id = 'editor';
-      panel.innerHTML = `
-        <div class="editor__wrap">
-          <div class="editor__bar">
-            <strong>Editor mode</strong>
-            <button id="editor-close" type="button" aria-label="Close">Close</button>
+      // root
+      const root = document.createElement('div');
+      root.id = 'editor';
+      root.innerHTML = `
+        <div class="editor__backdrop" role="presentation"></div>
+        <div class="editor__panel" role="dialog" aria-modal="true" aria-label="Timeline editor">
+          <div class="editor__head">
+            <div class="editor__title">Timeline Editor</div>
+            <div class="editor__actions">
+              <button id="ed-import" class="ghost" type="button">Import JSON</button>
+              <button id="ed-download" type="button">Download JSON</button>
+              <button id="ed-reload" class="ghost" type="button">Reload from data.json</button>
+              <button id="ed-close" type="button">Close</button>
+            </div>
           </div>
           <div class="editor__body">
-            <p>Coming soon — create / edit / reorder events here.</p>
-            <p>This proves the Edit toggle is wired correctly.</p>
+            <aside class="editor__sidebar" id="ed-sidebar"></aside>
+            <main class="editor__main" id="ed-main"></main>
           </div>
-        </div>`;
-      document.body.appendChild(panel);
-      document.getElementById('editor-close').onclick = exitEditMode;
+        </div>
+      `;
+      document.body.appendChild(root);
+
+      // wiring
+      document.getElementById('ed-close').onclick = exitEditMode;
+      document.getElementById('ed-download').onclick = onDownloadJSON;
+      document.getElementById('ed-import').onclick = onImportJSON;
+      document.getElementById('ed-reload').onclick = onReloadFromDisk;
+
+      ensureSelectedPane();
+      renderSidebar();
+      renderMain();
     }
 
-    function enterEditMode(){
+
+    function enterEditMode() {
       editMode = true;
       document.body.classList.add('editing');
       renderEditorUI();
     }
 
-    function exitEditMode(){
+    function exitEditMode() {
       editMode = false;
       document.body.classList.remove('editing');
       const panel = document.getElementById('editor');
       if (panel) panel.remove();
     }
 
-    function saveToLocal(){
+    function saveToLocal() {
       localStorage.setItem('timelineEditorState', JSON.stringify(editorState));
     }
 
-    function loadFromLocal(){
+    function loadFromLocal() {
       try { return JSON.parse(localStorage.getItem('timelineEditorState') || 'null'); } catch { return null; }
     }
 
     /* Use renderer from current in-memory editorState */
-    async function applyStateToRenderer(){
+    async function applyStateToRenderer() {
       // Build timelines like your current renderer expects
       const timelines = (editorState?.timelines || []).map(tl => ({
         title: tl.title,
@@ -543,28 +393,37 @@ Start,Duration,Description,Category,Image,Characters,Location
     }
 
 
-    /** ===== Editor state helpers ===== */
-let selTlIndex = 0;
-const AUTOSAVE_MS = 400;
-const debouncedApply = debounce(() => { saveToLocal(); applyStateToRenderer(); }, AUTOSAVE_MS);
+    /** ===== Editor selection state ===== */
+    let selPane = null;
+    const AUTOSAVE_MS = 400;
+    const debouncedApply = debounce(() => { saveToLocal(); applyStateToRenderer(); }, AUTOSAVE_MS);
 
-function debounce(fn, ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
-function ensureSelectedTimeline(){
-  if (!editorState || !Array.isArray(editorState.timelines) || editorState.timelines.length === 0){
-    selTlIndex = -1; return;
+    function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
+
+    /** Validate selection; fallback to a safe pane if needed */
+    function ensureSelectedPane(){
+  if (!selPane) return; // allow "no selection"
+  if (selPane.type === 'timeline') {
+    const L = editorState?.timelines?.length ?? 0;
+    if (!(Number.isInteger(selPane.idx) && selPane.idx >= 0 && selPane.idx < L)) {
+      selPane = null; // invalid → clear selection
+    }
+  } else if (selPane.type !== 'world-static' && selPane.type !== 'world-recurring') {
+    selPane = null; // unknown type → clear selection
   }
-  if (selTlIndex < 0 || selTlIndex >= editorState.timelines.length) selTlIndex = 0;
 }
 
-/** ===== Editor UI root ===== */
-function renderEditorUI(){
-  // remove previous
-  const old = document.getElementById('editor'); if (old) old.remove();
 
-  // root
-  const root = document.createElement('div');
-  root.id = 'editor';
-  root.innerHTML = `
+
+    /** ===== Editor UI root ===== */
+    function renderEditorUI() {
+      // remove previous
+      const old = document.getElementById('editor'); if (old) old.remove();
+
+      // root
+      const root = document.createElement('div');
+      root.id = 'editor';
+      root.innerHTML = `
     <div class="editor__backdrop" role="presentation"></div>
     <div class="editor__panel" role="dialog" aria-modal="true" aria-label="Timeline editor">
       <div class="editor__head">
@@ -579,273 +438,353 @@ function renderEditorUI(){
       <div class="editor__body">
         <aside class="editor__sidebar" id="ed-sidebar"></aside>
         <main class="editor__main" id="ed-main"></main>
-        <aside class="editor__seasonal" id="ed-seasonal"></aside>
       </div>
     </div>
   `;
-  document.body.appendChild(root);
+      document.body.appendChild(root);
 
-  // wiring
-  document.getElementById('ed-close').onclick = exitEditMode;
-  document.getElementById('ed-download').onclick = onDownloadJSON;
-  document.getElementById('ed-import').onclick = onImportJSON;
-  document.getElementById('ed-reload').onclick = onReloadFromDisk;
+      // wiring
+      document.getElementById('ed-close').onclick = exitEditMode;
+      document.getElementById('ed-download').onclick = onDownloadJSON;
+      document.getElementById('ed-import').onclick = onImportJSON;
+      document.getElementById('ed-reload').onclick = onReloadFromDisk;
 
-  renderSidebar();
-  ensureSelectedTimeline();
-  renderMain();
-  renderSeasonal();
-}
+      renderSidebar();
+      ensureSelectedTimeline();
+      renderMain();
 
-/** ===== Sidebar (timelines list) ===== */
-function renderSidebar(){
-  const host = document.getElementById('ed-sidebar');
-  host.innerHTML = '';
-
-  const head = document.createElement('div');
-  head.className = 'ed-main-head';
-  head.innerHTML = `
-    <div><strong>Timelines</strong></div>
-    <div>
-      <button id="ed-add-tl" type="button"><b>＋</b></button>
-    </div>`;
-  host.appendChild(head);
-
-  const list = document.createElement('div');
-  list.className = 'ed-tl-list';
-
-  (editorState.timelines || []).forEach((tl, i) => {
-    const row = document.createElement('div');
-    row.className = 'ed-tl' + (i === selTlIndex ? ' is-active' : '');
-    row.innerHTML = `
-      <button class="ghost" title="Select" type="button">●</button>
-      <div class="ed-timelines">
-        <input type="text" class="ed-tl__title" value="${tl.title || ''}" />
-        <div class="ed-tl__meta">${(tl.events||[]).length} events</div>
-        <div class="ed-btn-box small">
-          <button class="ghost" data-act="up" title="Move up">▲</button>
-          <button class="ghost" data-act="down" title="Move down">▼</button>
-          <button class="danger" data-act="del" title="Delete timeline">🞬</button>
-        </div>
-      </div>`;
-    list.appendChild(row);
-
-    row.querySelector('button.ghost').onclick = () => { selTlIndex = i; renderSidebar(); renderMain(); };
-    row.querySelector('.ed-tl__title').onchange = (e) => { tl.title = e.target.value; renderSidebar(); };
-
-    row.querySelector('[data-act="up"]').onclick = () => {
-      if (i>0){ const a=editorState.timelines[i-1]; editorState.timelines[i-1]=editorState.timelines[i]; editorState.timelines[i]=a; selTlIndex = i-1; debouncedApply(); renderSidebar(); renderMain(); }
-    };
-    row.querySelector('[data-act="down"]').onclick = () => {
-      if (i<editorState.timelines.length-1){ const a=editorState.timelines[i+1]; editorState.timelines[i+1]=editorState.timelines[i]; editorState.timelines[i]=a; selTlIndex = i+1; debouncedApply(); renderSidebar(); renderMain(); }
-    };
-    row.querySelector('[data-act="del"]').onclick = () => {
-      if (confirm(`Delete timeline "${tl.title}"?`)){
-        editorState.timelines.splice(i,1);
-        selTlIndex = Math.min(selTlIndex, editorState.timelines.length-1);
-        debouncedApply(); renderSidebar(); renderMain();
-      }
-    };
-  });
-
-  host.appendChild(list);
-
-  document.getElementById('ed-add-tl').onclick = () => {
-    const id = `tl_${Date.now()}`;
-    editorState.timelines.push({ id, title: 'New Timeline', events: [] });
-    selTlIndex = editorState.timelines.length-1;
-    debouncedApply(); renderSidebar(); renderMain();
-  };
-}
-
-  /** ===== Main panel (events table) ===== */
-  function renderMain(){
-    const host = document.getElementById('ed-main');
-    host.innerHTML = '';
-
-    if (selTlIndex < 0 || !editorState.timelines.length){
-      host.innerHTML = '<div class="ed-main-head"><em>No timelines. Add one from the left.</em></div>';
-      return;
     }
-    const tl = editorState.timelines[selTlIndex];
 
-    const head = document.createElement('div');
-    head.className = 'ed-main-head';
-    head.innerHTML = `
-      <div><strong>${tl.title || 'Untitled'}</strong></div>
-      <div class="ed-btn-box">
-        <button id="ed-add-ev" type="button"><b>＋</b></button>
-        <button id="ed-dup-evs" class="ghost" type="button">🗐 All</button>
-        <button id="ed-clear-evs" class="danger" type="button">🞬 All</button>
-      </div>`;
-    host.appendChild(head);
+    function renderSidebar(){
+      const host = document.getElementById('ed-sidebar');
+      host.innerHTML = '';
 
-    const table = document.createElement('table');
-    table.className = 'ed-table';
-    table.innerHTML = `
-      <tbody></tbody>`;
-    host.appendChild(table);
+      // ===== WORLD EVENTS =====
+      const worldHead = document.createElement('div');
+      worldHead.className = 'ed-main-head';
+      worldHead.innerHTML = `<div><strong>World Events</strong></div>`;
+      host.appendChild(worldHead);
 
-    const tbody = table.querySelector('tbody');
-    const evs = tl.events || [];
+      const worldList = document.createElement('div');
+      worldList.className = 'ed-tl-list';
+      host.appendChild(worldList);
 
-    evs.slice().reverse().forEach((ev, rIdx) => {
-      // map the reversed position back to the real index in evs
-      const i = evs.length - 1 - rIdx;
-      // 1) Build the row (your new markup)
-      const tr = document.createElement('tr');
-      tr.dataset.category = ev.category || ''; // if you want data-category
-      tr.innerHTML = `
-        <td>
-          <div class="ed-row-data">
-            <div class="ed-row-data-top">
-              <input type="text" class="ed-desc" value="${ev.desc || ''}" placeholder="Event Name" title="Event Name">
-              <div class="ed-category"></div>
-            </div>
-            <div class="ed-row-data-bottom">
-              <input type="text" class="ed-date" value="${ev.date || ''}" placeholder="Date" title="Date: YYYY-WW or 2w">
-              <input type="text" class="ed-duration" value="${ev.duration || ''}" placeholder="Duration" title="Duration: e.g. 3w">
-              <input type="text" class="ed-characters" value="${(ev.characters||[]).join(' ')}" placeholder="Characters" title="Characters: Space or comma separated">
-              <input type="text" class="ed-locations"  value="${(ev.locations||[]).join(' ')}"  placeholder="Locations" title="Locations: Space or comma separated">
-            </div>
-          </div>
-          <div class="ed-row-btns">
-            <div class="ed-image">
-              <div class="ed-thumb ed-thumb--ph" aria-hidden="false"></div>
-              <input type="text" class="ed-image-input" value="${ev.image || ''}" placeholder="Image slug" title="Image Slug">
-            </div>
+      // One-off
+      const rowStatic = document.createElement('div');
+      rowStatic.className = 'ed-tl';
+      rowStatic.innerHTML = `
+        <button class="ghost select-world" data-kind="world-static" title="Select">●</button>
+        <div class="ed-timelines">
+          <div class="ed-tl__title">One-off Events</div>
+          <div class="ed-tl__meta">Static (YYYY-WW)</div>
+        </div>`;
+      worldList.appendChild(rowStatic);
+
+      // Recurring
+      const rowRecurring = document.createElement('div');
+      rowRecurring.className = 'ed-tl';
+      rowRecurring.innerHTML = `
+        <button class="ghost select-world" data-kind="world-recurring" title="Select">●</button>
+        <div class="ed-timelines">
+          <div class="ed-tl__title">Recurring Events</div>
+          <div class="ed-tl__meta">Annual (WW)</div>
+        </div>`;
+      worldList.appendChild(rowRecurring);
+
+      // Active states for world items
+      rowStatic.classList.toggle('is-active',  selPane?.type === 'world-static');
+      rowRecurring.classList.toggle('is-active', selPane?.type === 'world-recurring');
+
+      // Click → select world pane
+      rowStatic.querySelector('.select-world').onclick = () => {
+        selPane = { type: 'world-static' };
+        renderSidebar(); renderMain();
+      };
+      rowRecurring.querySelector('.select-world').onclick = () => {
+        selPane = { type: 'world-recurring' };
+        renderSidebar(); renderMain();
+      };
+
+      // ===== TIMELINES =====
+      const head = document.createElement('div');
+      head.className = 'ed-main-head';
+      head.innerHTML = `
+        <div><strong>Timelines</strong></div>
+        <div>
+          <button id="ed-add-tl" type="button"><b>＋</b></button>
+        </div>`;
+      host.appendChild(head);
+
+      const list = document.createElement('div');
+      list.className = 'ed-tl-list';
+      host.appendChild(list);
+
+      (editorState.timelines || []).forEach((tl, i) => {
+        const row = document.createElement('div');
+        row.className = 'ed-tl';
+        row.innerHTML = `
+          <button class="ghost select-timeline" title="Select" type="button">●</button>
+          <div class="ed-timelines">
+            <input type="text" class="ed-tl__title" value="${tl.title || ''}" />
+            <div class="ed-tl__meta">${(tl.events||[]).length} events</div>
             <div class="ed-btn-box small">
-              <button data-act="up" class="ghost" title="Move up">▲</button>
-              <button data-act="down" class="ghost" title="Move down">▼</button>
-              <button data-act="dup" class="ghost" title="Duplicate">🗐</button>
-              <button data-act="del" class="danger" title="Delete">🞬</button>
+              <button class="ghost" data-act="up" title="Move up">▲</button>
+              <button class="ghost" data-act="down" title="Move down">▼</button>
+              <button class="danger" data-act="del" title="Delete timeline">🞬</button>
             </div>
-          </div>
-        </td>`;
-      tbody.appendChild(tr);
+          </div>`;
+        list.appendChild(row);
 
-      // 2) Category select (presets + keep data-category in sync)
-      const catCell = tr.querySelector('.ed-category');
-      const sel = document.createElement('select');
-      sel.innerHTML = PRESET_CATEGORIES
-        .concat(ev.category && !PRESET_CATEGORIES.includes(ev.category) ? [ev.category] : [])
-        .map(c => `<option value="${c}">${c || '—'}</option>`)
-        .join('');
-      sel.value = ev.category || '';
-      catCell.appendChild(sel);
+        // Active state: only if this row is selected
+        row.classList.toggle('is-active', selPane?.type === 'timeline' && selPane.idx === i);
 
-      sel.addEventListener('change', e => {
-        ev.category = e.target.value;
-        tr.dataset.category = ev.category || '';
-        debouncedApply();
+        // Select timeline
+        row.querySelector('.select-timeline').onclick = () => {
+          selPane = { type: 'timeline', idx: i };
+          renderSidebar(); renderMain();
+        };
+
+        // Title change
+        row.querySelector('.ed-tl__title').onchange = (e) => {
+          tl.title = e.target.value;
+          debouncedApply();
+          renderSidebar(); // to refresh event counts / titles
+        };
+
+        // Move up / down / delete
+        row.querySelector('[data-act="up"]').onclick = () => {
+          if (i>0){
+            const a = editorState.timelines[i-1];
+            editorState.timelines[i-1] = editorState.timelines[i];
+            editorState.timelines[i] = a;
+            if (selPane?.type === 'timeline' && selPane.idx === i) selPane.idx = i-1;
+            debouncedApply(); renderSidebar(); renderMain();
+          }
+        };
+        row.querySelector('[data-act="down"]').onclick = () => {
+          if (i<editorState.timelines.length-1){
+            const a = editorState.timelines[i+1];
+            editorState.timelines[i+1] = editorState.timelines[i];
+            editorState.timelines[i] = a;
+            if (selPane?.type === 'timeline' && selPane.idx === i) selPane.idx = i+1;
+            debouncedApply(); renderSidebar(); renderMain();
+          }
+        };
+        row.querySelector('[data-act="del"]').onclick = () => {
+          if (confirm(`Delete timeline "${tl.title}"?`)){
+            editorState.timelines.splice(i,1);
+            if (selPane?.type === 'timeline') {
+              if (editorState.timelines.length === 0) selPane = null;
+              else if (selPane.idx >= editorState.timelines.length) selPane.idx = editorState.timelines.length - 1;
+            }
+            debouncedApply(); renderSidebar(); renderMain();
+          }
+        };
       });
 
-      // 3) Get inputs by class (not position)
-      const iDesc = tr.querySelector('.ed-desc');
-      const iDate = tr.querySelector('.ed-date');
-      const iDur  = tr.querySelector('.ed-duration');
-      const iImg  = tr.querySelector('.ed-image-input');
-      const iCh   = tr.querySelector('.ed-characters');
-      const iLo   = tr.querySelector('.ed-locations');
+      // Add timeline
+      document.getElementById('ed-add-tl').onclick = () => {
+        const id = `tl_${Date.now()}`;
+        editorState.timelines.push({ id, title: 'New Timeline', events: [] });
+        selPane = { type: 'timeline', idx: editorState.timelines.length - 1 };
+        debouncedApply(); renderSidebar(); renderMain();
+      };
+    }
 
-      // 4) Image preview (re-uses your makeSmartImgFallback)
-      const imgCell = tr.querySelector('.ed-image');
-      function updateImagePreview() {
-        imgCell.querySelectorAll('.ed-thumb').forEach(n => n.remove());
-        const slug = (iImg.value || '').trim();
-        if (!slug) {
-          const ph = document.createElement('div');
-          ph.className = 'ed-thumb ed-thumb--ph';
-          imgCell.insertBefore(ph, iImg);
-          return;
-        }
-        const imgEl = makeSmartImgFallback(
-          EVENT_IMAGES_DIR,
-          slug,
-          'ed-thumb',
-          slug,
-          () => {
+
+    /** ===== Main panel (switches by selPane) ===== */
+    function renderMain() {
+      ensureSelectedPane();
+      if (!selPane) {
+        host.innerHTML = `
+          <div class="ed-main-head"><strong>Nothing selected</strong></div>
+          <div class="ed-empty">Choose <em>One-off Events</em>, <em>Recurring Events</em>, or a <em>Timeline</em> from the left to begin.</div>
+        `;
+        return;
+      }
+      const host = document.getElementById('ed-main');
+      host.innerHTML = '';
+
+      if (selPane.type === 'world-static' || selPane.type === 'world-recurring') {
+        renderWorldEditor(host, selPane.type === 'world-static' ? 'static' : 'recurring');
+        return;
+      }
+
+
+      // --- Timeline editor ---
+      if (!editorState.timelines.length) {
+        host.innerHTML = '<div class="ed-main-head"><em>No timelines. Add one from the left.</em></div>';
+        return;
+      }
+      const tl = editorState.timelines[selPane.idx];
+
+      const head = document.createElement('div');
+      head.className = 'ed-main-head';
+      head.innerHTML = `
+    <div><strong>${tl.title || 'Untitled'}</strong></div>
+    <div class="ed-btn-box">
+      <button id="ed-add-ev" type="button"><b>＋</b></button>
+      <button id="ed-dup-evs" class="ghost" type="button">🗐 All</button>
+      <button id="ed-clear-evs" class="danger" type="button">🞬 All</button>
+    </div>`;
+      host.appendChild(head);
+
+      const table = document.createElement('table');
+      table.className = 'ed-table';
+      table.innerHTML = `<tbody></tbody>`;
+      host.appendChild(table);
+
+      const tbody = table.querySelector('tbody');
+      const evs = tl.events || [];
+
+      // newest first in editor
+      evs.slice().reverse().forEach((ev, rIdx) => {
+        const i = evs.length - 1 - rIdx; // real index
+        const tr = document.createElement('tr');
+        tr.dataset.category = ev.category || '';
+        tr.innerHTML = `
+      <td>
+        <div class="ed-row-data">
+          <div class="ed-row-data-top">
+            <input type="text" class="ed-desc" value="${ev.desc || ''}" placeholder="Event Name" title="Event Name">
+            <div class="ed-category"></div>
+          </div>
+          <div class="ed-row-data-bottom">
+            <input type="text" class="ed-date" value="${ev.date || ''}" placeholder="Date" title="Date: YYYY-WW or 2w">
+            <input type="text" class="ed-duration" value="${ev.duration || ''}" placeholder="Duration" title="Duration: e.g. 3w">
+            <input type="text" class="ed-characters" value="${(ev.characters || []).join(' ')}" placeholder="Characters" title="Characters: Space or comma separated">
+            <input type="text" class="ed-locations"  value="${(ev.locations || []).join(' ')}"  placeholder="Locations" title="Locations: Space or comma separated">
+          </div>
+        </div>
+        <div class="ed-row-btns">
+          <div class="ed-image">
+            <div class="ed-thumb ed-thumb--ph" aria-hidden="false"></div>
+            <input type="text" class="ed-image-input" value="${ev.image || ''}" placeholder="Image slug" title="Image Slug">
+          </div>
+          <div class="ed-btn-box small">
+            <button data-act="up" class="ghost" title="Move up">▲</button>
+            <button data-act="down" class="ghost" title="Move down">▼</button>
+            <button data-act="dup" class="ghost" title="Duplicate">🗐</button>
+            <button data-act="del" class="danger" title="Delete">🞬</button>
+          </div>
+        </div>
+      </td>`;
+        tbody.appendChild(tr);
+
+        // Category select (presets + keep data-category in sync)
+        const catCell = tr.querySelector('.ed-category');
+        const sel = document.createElement('select');
+        sel.innerHTML = PRESET_CATEGORIES
+          .concat(ev.category && !PRESET_CATEGORIES.includes(ev.category) ? [ev.category] : [])
+          .map(c => `<option value="${c}">${c || '—'}</option>`)
+          .join('');
+        sel.value = ev.category || '';
+        catCell.appendChild(sel);
+
+        sel.addEventListener('change', e => {
+          ev.category = e.target.value;
+          tr.dataset.category = ev.category || '';
+          debouncedApply();
+        });
+
+        // inputs
+        const iDesc = tr.querySelector('.ed-desc');
+        const iDate = tr.querySelector('.ed-date');
+        const iDur = tr.querySelector('.ed-duration');
+        const iImg = tr.querySelector('.ed-image-input');
+        const iCh = tr.querySelector('.ed-characters');
+        const iLo = tr.querySelector('.ed-locations');
+
+        // image preview
+        const imgCell = tr.querySelector('.ed-image');
+        function updateImagePreview() {
+          imgCell.querySelectorAll('.ed-thumb').forEach(n => n.remove());
+          const slug = (iImg.value || '').trim();
+          if (!slug) {
             const ph = document.createElement('div');
             ph.className = 'ed-thumb ed-thumb--ph';
             imgCell.insertBefore(ph, iImg);
+            return;
           }
-        );
-        if (imgEl) imgCell.insertBefore(imgEl, iImg);
-      }
-      updateImagePreview();
+          const imgEl = makeSmartImgFallback(
+            EVENT_IMAGES_DIR,
+            slug,
+            'ed-thumb',
+            slug,
+            () => {
+              const ph = document.createElement('div');
+              ph.className = 'ed-thumb ed-thumb--ph';
+              imgCell.insertBefore(ph, iImg);
+            }
+          );
+          if (imgEl) imgCell.insertBefore(imgEl, iImg);
+        }
+        updateImagePreview();
 
-      // 5) Field bindings (use your debounce)
-      iDesc.addEventListener('input', () => { ev.desc = iDesc.value; debouncedApply(); });
-      iDate.addEventListener('input', () => { ev.date = iDate.value.trim(); debouncedApply(); });
-      iDur .addEventListener('input', () => { ev.duration = iDur.value.trim(); debouncedApply(); });
-      iImg .addEventListener('input', () => { ev.image = iImg.value.trim(); updateImagePreview(); debouncedApply(); });
+        // bindings
+        iDesc.addEventListener('input', () => { ev.desc = iDesc.value; debouncedApply(); });
+        iDate.addEventListener('input', () => { ev.date = iDate.value.trim(); debouncedApply(); });
+        iDur.addEventListener('input', () => { ev.duration = iDur.value.trim(); debouncedApply(); });
+        iImg.addEventListener('input', () => { ev.image = iImg.value.trim(); updateImagePreview(); debouncedApply(); });
+        iCh.addEventListener('input', () => { ev.characters = tokenise(iCh.value); debouncedApply(); });
+        iLo.addEventListener('input', () => { ev.locations = tokenise(iLo.value); debouncedApply(); });
 
-      iCh.addEventListener('input', () => { ev.characters = tokenise(iCh.value); debouncedApply(); });
-      iLo.addEventListener('input', () => { ev.locations  = tokenise(iLo.value); debouncedApply(); });
+        // row actions
+        tr.querySelector('[data-act="up"]').onclick = () => { if (i > 0) { const a = evs[i - 1]; evs[i - 1] = evs[i]; evs[i] = a; renderMain(); debouncedApply(); } };
+        tr.querySelector('[data-act="down"]').onclick = () => { if (i < evs.length - 1) { const a = evs[i + 1]; evs[i + 1] = evs[i]; evs[i] = a; renderMain(); debouncedApply(); } };
+        tr.querySelector('[data-act="dup"]').onclick = () => { evs.splice(i + 1, 0, structuredClone(ev)); renderMain(); debouncedApply(); };
+        tr.querySelector('[data-act="del"]').onclick = () => { evs.splice(i, 1); renderMain(); debouncedApply(); };
+      });
 
-      // 6) Row actions
-      tr.querySelector('[data-act="up"]').onclick   = () => { if (i>0){ const a=evs[i-1]; evs[i-1]=evs[i]; evs[i]=a; renderMain(); debouncedApply(); } };
-      tr.querySelector('[data-act="down"]').onclick = () => { if (i<evs.length-1){ const a=evs[i+1]; evs[i+1]=evs[i]; evs[i]=a; renderMain(); debouncedApply(); } };
-      tr.querySelector('[data-act="dup"]').onclick  = () => { evs.splice(i+1,0,structuredClone(ev)); renderMain(); debouncedApply(); };
-      tr.querySelector('[data-act="del"]').onclick  = () => { evs.splice(i,1); renderMain(); debouncedApply(); };
-
-    });
-
-    document.getElementById('ed-add-ev').onclick = ()=>{
-      evs.push({ date:'', duration:'1w', desc:'', category:'', image:'', characters:[], locations:[] });
-      renderMain(); debouncedApply();
-    };
-    document.getElementById('ed-dup-evs').onclick = ()=>{
-      tl.events = [...evs.map(e=>structuredClone(e)), ...evs.map(e=>structuredClone(e))];
-      renderMain(); debouncedApply();
-    };
-    document.getElementById('ed-clear-evs').onclick = ()=>{
-      if (confirm('Remove all events in this timeline?')){ tl.events = []; renderMain(); debouncedApply(); }
-    };
-  }
-
-  function tokenise(s){
-    if (!s) return [];
-    if (s.includes(',')) return [...new Set(s.split(',').map(x=>x.trim()).filter(Boolean))];
-    return [...new Set(s.trim().split(/\s+/).filter(Boolean))];
-  }
-
-  /** ===== Seasonal panel ===== */
-  function renderSeasonal(){
-    const host = document.getElementById('ed-seasonal');
-    host.innerHTML = '';
-
-    const wrap = document.createElement('div');
-    wrap.className = 'ed-sect';
-    wrap.innerHTML = `<h3>World Events</h3>`;
-    host.appendChild(wrap);
-
-    const [statics, recurring] = splitSeasonal(editorState.seasonal || []);
-    wrap.appendChild(makeSeasonalSection('One-Off Events', statics, 'static'));
-    wrap.appendChild(makeSeasonalSection('Annual Events', recurring, 'recurring'));
-  }
-
-  function splitSeasonal(list){
-    const stat=[], rec=[];
-    for (const s of list){
-      if (/^\d{4}-\d{2}$/.test(s.date)) stat.push(s); else rec.push(s);
+      // top buttons
+      document.getElementById('ed-add-ev').onclick = () => {
+        evs.push({ date: '', duration: '1w', desc: '', category: '', image: '', characters: [], locations: [] });
+        renderMain(); debouncedApply();
+      };
+      document.getElementById('ed-dup-evs').onclick = () => {
+        tl.events = [...evs.map(e => structuredClone(e)), ...evs.map(e => structuredClone(e))];
+        renderMain(); debouncedApply();
+      };
+      document.getElementById('ed-clear-evs').onclick = () => {
+        if (confirm('Remove all events in this timeline?')) { tl.events = []; renderMain(); debouncedApply(); }
+      };
     }
-    return [stat, rec];
-  }
 
-  function makeSeasonalSection(title, items, kind){
-    const sect = document.createElement('div');
-    sect.className = 'ed-sect';
-    sect.innerHTML = `<h3>${title}</h3>`;
-    const list = document.createElement('div'); list.className = 'ed-list'; sect.appendChild(list);
+    /** ===== World Events editor (kind: 'static' | 'recurring') ===== */
+    function renderWorldEditor(host, kind) {
+      const isStatic = (kind === 'static');
+      const title = isStatic ? 'One-off Events' : 'Recurring Events';
+      const placeholder = isStatic ? 'YYYY-WW' : 'WW';
 
-    items.forEach((s, i)=>{
-      const row = document.createElement('div');
-      row.className = 'ed-sea';
-      row.innerHTML = `
+      const head = document.createElement('div');
+      head.className = 'ed-main-head';
+      head.innerHTML = `
+    <div><strong>${title}</strong></div>
+    <div class="ed-btn-box">
+      <button id="ed-add-world" type="button"><b>＋</b></button>
+    </div>`;
+      host.appendChild(head);
+
+      const wrap = document.createElement('div');
+      wrap.className = 'ed-sect';
+      host.appendChild(wrap);
+
+      const list = document.createElement('div');
+      list.className = 'ed-list';
+      wrap.appendChild(list);
+
+      const items = (editorState.seasonal || []).filter(s => {
+        const isS = /^\d{4}-\d{2}$/.test(s.date);
+        return isStatic ? isS : !isS;
+      });
+
+      items.forEach((s) => {
+        const row = document.createElement('div');
+        row.className = 'ed-sea';
+        row.innerHTML = `
       <div class="ed-row-data-top">
         <input type="text" class="ed-sea-name" value="${s.name}" title="Event Name" placeholder="Event Name">
-        <input type="text" class="ed-sea-date" value="${s.date}" placeholder="${kind==='static'?'YYYY-WW':'WW'}" title="Date: ${kind==='static'?'YYYY-WW':'WW'}">
+        <input type="text" class="ed-sea-date" value="${s.date}" placeholder="${placeholder}" title="Date: ${placeholder}">
       </div>
       <input type="text" class="ed-sea-desc" value="${s.desc || ''}" title="Event Description" placeholder="Event Description">
       <div class="ed-row-data-bottom">
@@ -859,135 +798,246 @@ function renderSidebar(){
           <button data-act="del" class="danger">🞬</button>
         </div>
       </div>`;
-      list.appendChild(row);
+        list.appendChild(row);
 
+        const iName = row.querySelector('.ed-sea-name');
+        const iId = row.querySelector('.ed-sea-id');
+        const iDesc = row.querySelector('.ed-sea-desc');
+        const iDate = row.querySelector('.ed-sea-date');
+        const imgWrap = row.querySelector('.ed-sea-image');
 
-      const iName = row.querySelector('.ed-sea-name');
-      const iId   = row.querySelector('.ed-sea-id');
-      const iDesc = row.querySelector('.ed-sea-desc');
-      const iDate = row.querySelector('.ed-sea-date');
-      const imgWrap = row.querySelector('.ed-sea-image');
-
-      // live preview for the seasonal image (ID == image slug)
-      function updateSeasonalPreview() {
-        // remove any existing preview/placeholder
-        imgWrap.querySelectorAll('.ed-thumb').forEach(n => n.remove());
-
-        const slug = (iId.value || '').trim();
-        if (!slug) {
-          const ph = document.createElement('div');
-          ph.className = 'ed-thumb ed-thumb--ph';
-          ph.setAttribute('aria-hidden', 'false');
-          imgWrap.insertBefore(ph, iId);
-          return;
-        }
-
-        // Try /images/seasonal/<slug>.(exts...), else put placeholder back
-        const imgEl = makeSmartImgFallback(
-          SEASONAL_IMAGES_DIR,
-          slug,
-          'ed-thumb',
-          slug,
-          () => {
+        function updateSeasonalPreview() {
+          imgWrap.querySelectorAll('.ed-thumb').forEach(n => n.remove());
+          const slug = (iId.value || '').trim();
+          if (!slug) {
             const ph = document.createElement('div');
             ph.className = 'ed-thumb ed-thumb--ph';
             ph.setAttribute('aria-hidden', 'false');
             imgWrap.insertBefore(ph, iId);
+            return;
           }
+          const imgEl = makeSmartImgFallback(
+            SEASONAL_IMAGES_DIR,
+            slug,
+            'ed-thumb',
+            slug,
+            () => {
+              const ph = document.createElement('div');
+              ph.className = 'ed-thumb ed-thumb--ph';
+              ph.setAttribute('aria-hidden', 'false');
+              imgWrap.insertBefore(ph, iId);
+            }
+          );
+          if (imgEl) imgWrap.insertBefore(imgEl, iId);
+        }
+        updateSeasonalPreview();
+
+        // bindings
+        iName.addEventListener('input', () => { s.name = iName.value; debouncedApply(); });
+        iId.addEventListener('input', () => { s.id = iId.value.trim(); updateSeasonalPreview(); debouncedApply(); });
+        iDesc.addEventListener('input', () => { s.desc = iDesc.value; debouncedApply(); });
+        iDate.addEventListener('input', () => { s.date = iDate.value.trim(); debouncedApply(); });
+
+        // move within the full seasonal array
+        row.querySelector('[data-act="up"]').onclick = () => {
+          const arr = editorState.seasonal || [];
+          const idx = arr.indexOf(s);
+          if (idx > 0) { const a = arr[idx - 1]; arr[idx - 1] = arr[idx]; arr[idx] = a; renderMain(); debouncedApply(); }
+        };
+        row.querySelector('[data-act="down"]').onclick = () => {
+          const arr = editorState.seasonal || [];
+          const idx = arr.indexOf(s);
+          if (idx < arr.length - 1) { const a = arr[idx + 1]; arr[idx + 1] = arr[idx]; arr[idx] = a; renderMain(); debouncedApply(); }
+        };
+        row.querySelector('[data-act="del"]').onclick = () => {
+          const arr = editorState.seasonal || [];
+          const idx = arr.indexOf(s);
+          if (idx >= 0) { arr.splice(idx, 1); renderMain(); debouncedApply(); }
+        };
+      });
+
+      // add button
+      document.getElementById('ed-add-world').onclick = () => {
+        if (!editorState.seasonal) editorState.seasonal = [];
+        editorState.seasonal.push(
+          isStatic
+            ? { date: `${new Date().getUTCFullYear()}-01`, id: 'season', name: 'Event', desc: '' }
+            : { date: '01', id: 'season', name: 'Event', desc: '' }
         );
-        if (imgEl) imgWrap.insertBefore(imgEl, iId);
-      }
-
-      // initial preview
-      updateSeasonalPreview();
-
-      // bindings
-      iName.addEventListener('input', () => { s.name = iName.value; debouncedApply(); });
-      iId  .addEventListener('input', () => { s.id   = iId.value.trim(); updateSeasonalPreview(); debouncedApply(); });
-      iDesc.addEventListener('input', () => { s.desc = iDesc.value; debouncedApply(); });
-      iDate.addEventListener('input', () => { s.date = iDate.value.trim(); debouncedApply(); });
-
-
-      row.querySelector('[data-act="up"]').onclick = ()=>{
-        const idx = (editorState.seasonal||[]).indexOf(s);
-        if (idx>0){ const arr=editorState.seasonal; const a=arr[idx-1]; arr[idx-1]=arr[idx]; arr[idx]=a; renderSeasonal(); debouncedApply(); }
+        renderMain(); debouncedApply();
       };
-      row.querySelector('[data-act="down"]').onclick = ()=>{
-        const arr=editorState.seasonal||[]; const idx = arr.indexOf(s);
-        if (idx<arr.length-1){ const a=arr[idx+1]; arr[idx+1]=arr[idx]; arr[idx]=a; renderSeasonal(); debouncedApply(); }
-      };
-      row.querySelector('[data-act="del"]').onclick = ()=>{
-        const arr=editorState.seasonal||[]; const idx = arr.indexOf(s); arr.splice(idx,1); renderSeasonal(); debouncedApply();
-      };
-    });
-
-    const addBar = document.createElement('div');
-    addBar.style.marginTop = '10px';
-    const addBtn = document.createElement('button');
-    addBtn.type = 'button';
-    addBtn.textContent = `＋ ${kind === 'static' ? 'static' : 'recurring'}`;
-    addBtn.onclick = ()=>{
-      if (!editorState.seasonal) editorState.seasonal = [];
-      editorState.seasonal.push(kind === 'static'
-        ? { date: `${new Date().getUTCFullYear()}-01`, id:'season', name:'Season', desc:'' }
-        : { date: '01', id:'season', name:'Season', desc:'' });
-      renderSeasonal(); debouncedApply();
-    };
-    addBar.appendChild(addBtn);
-    sect.appendChild(addBar);
-
-    return sect;
-  }
-
-  /** ===== Persistence actions ===== */
-  function onDownloadJSON(){
-    const blob = new Blob([JSON.stringify(editorState, null, 2)], {type:'application/json'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'data.json';
-    document.body.appendChild(a);
-    a.click();
-    URL.revokeObjectURL(a.href);
-    a.remove();
-  }
-
-  async function onImportJSON(){
-    const inp = document.createElement('input');
-    inp.type = 'file'; inp.accept = '.json,application/json';
-    inp.onchange = async () => {
-      const file = inp.files[0]; if (!file) return;
-      try {
-        const text = await file.text();
-        const json = JSON.parse(text);
-        if (!json || !Array.isArray(json.timelines)) throw new Error('Invalid JSON shape');
-        editorState = json;
-        saveToLocal();
-        await applyStateToRenderer();
-        renderSidebar(); renderMain(); renderSeasonal();
-      } catch (e) {
-        alert('Failed to import: ' + (e.message||e));
-      }
-    };
-    inp.click();
-  }
-
-  async function onReloadFromDisk(){
-    try {
-      const r = await fetch(`${JSON_PATH}?v=${Date.now()}`, {cache:'no-store'});
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const json = await r.json();
-      if (!json || !Array.isArray(json.timelines)) throw new Error('Invalid JSON');
-      editorState = json; saveToLocal();
-      await applyStateToRenderer();
-      renderSidebar(); renderMain(); renderSeasonal();
-    } catch (e) {
-      alert('Could not reload from data.json: ' + (e.message||e));
     }
-  }
+
+
+    function tokenise(s) {
+      if (!s) return [];
+      if (s.includes(',')) return [...new Set(s.split(',').map(x => x.trim()).filter(Boolean))];
+      return [...new Set(s.trim().split(/\s+/).filter(Boolean))];
+    }
+
+    function splitSeasonal(list) {
+      const stat = [], rec = [];
+      for (const s of list) {
+        if (/^\d{4}-\d{2}$/.test(s.date)) stat.push(s); else rec.push(s);
+      }
+      return [stat, rec];
+    }
+
+    function makeSeasonalSection(title, items, kind) {
+      const sect = document.createElement('div');
+      sect.className = 'ed-sect';
+      sect.innerHTML = `<h3>${title}</h3>`;
+      const list = document.createElement('div'); list.className = 'ed-list'; sect.appendChild(list);
+
+      items.forEach((s, i) => {
+        const row = document.createElement('div');
+        row.className = 'ed-sea';
+        row.innerHTML = `
+      <div class="ed-row-data-top">
+        <input type="text" class="ed-sea-name" value="${s.name}" title="Event Name" placeholder="Event Name">
+        <input type="text" class="ed-sea-date" value="${s.date}" placeholder="${kind === 'static' ? 'YYYY-WW' : 'WW'}" title="Date: ${kind === 'static' ? 'YYYY-WW' : 'WW'}">
+      </div>
+      <input type="text" class="ed-sea-desc" value="${s.desc || ''}" title="Event Description" placeholder="Event Description">
+      <div class="ed-row-data-bottom">
+        <div class="ed-sea-image">
+          <div class="ed-thumb ed-thumb--ph" aria-hidden="false"></div>
+          <input type="text" class="ed-sea-id" value="${s.id}" title="Image Slug" placeholder="Image Slug">
+        </div>
+        <div class="ed-btn-box small">
+          <button data-act="up" class="ghost">▲</button>
+          <button data-act="down" class="ghost">▼</button>
+          <button data-act="del" class="danger">🞬</button>
+        </div>
+      </div>`;
+        list.appendChild(row);
+
+
+        const iName = row.querySelector('.ed-sea-name');
+        const iId = row.querySelector('.ed-sea-id');
+        const iDesc = row.querySelector('.ed-sea-desc');
+        const iDate = row.querySelector('.ed-sea-date');
+        const imgWrap = row.querySelector('.ed-sea-image');
+
+        // live preview for the seasonal image (ID == image slug)
+        function updateSeasonalPreview() {
+          // remove any existing preview/placeholder
+          imgWrap.querySelectorAll('.ed-thumb').forEach(n => n.remove());
+
+          const slug = (iId.value || '').trim();
+          if (!slug) {
+            const ph = document.createElement('div');
+            ph.className = 'ed-thumb ed-thumb--ph';
+            ph.setAttribute('aria-hidden', 'false');
+            imgWrap.insertBefore(ph, iId);
+            return;
+          }
+
+          // Try /images/seasonal/<slug>.(exts...), else put placeholder back
+          const imgEl = makeSmartImgFallback(
+            SEASONAL_IMAGES_DIR,
+            slug,
+            'ed-thumb',
+            slug,
+            () => {
+              const ph = document.createElement('div');
+              ph.className = 'ed-thumb ed-thumb--ph';
+              ph.setAttribute('aria-hidden', 'false');
+              imgWrap.insertBefore(ph, iId);
+            }
+          );
+          if (imgEl) imgWrap.insertBefore(imgEl, iId);
+        }
+
+        // initial preview
+        updateSeasonalPreview();
+
+        // bindings
+        iName.addEventListener('input', () => { s.name = iName.value; debouncedApply(); });
+        iId.addEventListener('input', () => { s.id = iId.value.trim(); updateSeasonalPreview(); debouncedApply(); });
+        iDesc.addEventListener('input', () => { s.desc = iDesc.value; debouncedApply(); });
+        iDate.addEventListener('input', () => { s.date = iDate.value.trim(); debouncedApply(); });
+
+
+        row.querySelector('[data-act="up"]').onclick = () => {
+          const idx = (editorState.seasonal || []).indexOf(s);
+          if (idx > 0) { const arr = editorState.seasonal; const a = arr[idx - 1]; arr[idx - 1] = arr[idx]; arr[idx] = a; debouncedApply(); }
+        };
+        row.querySelector('[data-act="down"]').onclick = () => {
+          const arr = editorState.seasonal || []; const idx = arr.indexOf(s);
+          if (idx < arr.length - 1) { const a = arr[idx + 1]; arr[idx + 1] = arr[idx]; arr[idx] = a; debouncedApply(); }
+        };
+        row.querySelector('[data-act="del"]').onclick = () => {
+          const arr = editorState.seasonal || []; const idx = arr.indexOf(s); arr.splice(idx, 1); debouncedApply();
+        };
+      });
+
+      const addBar = document.createElement('div');
+      addBar.style.marginTop = '10px';
+      const addBtn = document.createElement('button');
+      addBtn.type = 'button';
+      addBtn.textContent = `＋ ${kind === 'static' ? 'static' : 'recurring'}`;
+      addBtn.onclick = () => {
+        if (!editorState.seasonal) editorState.seasonal = [];
+        editorState.seasonal.push(kind === 'static'
+          ? { date: `${new Date().getUTCFullYear()}-01`, id: 'season', name: 'Season', desc: '' }
+          : { date: '01', id: 'season', name: 'Season', desc: '' });
+        debouncedApply();
+      };
+      addBar.appendChild(addBtn);
+      sect.appendChild(addBar);
+
+      return sect;
+    }
+
+    /** ===== Persistence actions ===== */
+    function onDownloadJSON() {
+      const blob = new Blob([JSON.stringify(editorState, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'data.json';
+      document.body.appendChild(a);
+      a.click();
+      URL.revokeObjectURL(a.href);
+      a.remove();
+    }
+
+    async function onImportJSON() {
+      const inp = document.createElement('input');
+      inp.type = 'file'; inp.accept = '.json,application/json';
+      inp.onchange = async () => {
+        const file = inp.files[0]; if (!file) return;
+        try {
+          const text = await file.text();
+          const json = JSON.parse(text);
+          if (!json || !Array.isArray(json.timelines)) throw new Error('Invalid JSON shape');
+          editorState = json;
+          saveToLocal();
+          await applyStateToRenderer();
+          renderSidebar(); renderMain();
+        } catch (e) {
+          alert('Failed to import: ' + (e.message || e));
+        }
+      };
+      inp.click();
+    }
+
+    async function onReloadFromDisk() {
+      try {
+        const r = await fetch(`${JSON_PATH}?v=${Date.now()}`, { cache: 'no-store' });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const json = await r.json();
+        if (!json || !Array.isArray(json.timelines)) throw new Error('Invalid JSON');
+        editorState = json; saveToLocal();
+        await applyStateToRenderer();
+        renderSidebar(); renderMain();
+      } catch (e) {
+        alert('Could not reload from data.json: ' + (e.message || e));
+      }
+    }
 
 
     /** ===================== RENDER ===================== **/
-    async function renderGridVertical(timelines, seasonalMarkers = []){
+    async function renderGridVertical(timelines, seasonalMarkers = []) {
       const grid = $('grid'); grid.innerHTML = '';
 
       // Global week range from timelines only
@@ -998,11 +1048,11 @@ function renderSidebar(){
 
       // Active weeks (for badge/count on week rows)
       const activeWeekCounts = new Map();
-      for (const tl of timelines){
-        for (const ev of tl.events){
+      for (const tl of timelines) {
+        for (const ev of tl.events) {
           const start = ev.startIdx;
-          const end   = ev.startIdx + ev.durationWeeks; // exclusive
-          for (let idx = start; idx < end; idx++){
+          const end = ev.startIdx + ev.durationWeeks; // exclusive
+          for (let idx = start; idx < end; idx++) {
             activeWeekCounts.set(idx, (activeWeekCounts.get(idx) || 0) + 1);
           }
         }
@@ -1013,14 +1063,14 @@ function renderSidebar(){
       const { year: maxYear } = idxToISOWeek(maxIdx - 1);
 
       const expandedSeasonal = [];
-      for (const m of seasonalMarkers){
-        if (m.type === 'static'){
+      for (const m of seasonalMarkers) {
+        if (m.type === 'static') {
           expandedSeasonal.push(m);
-        } else if (m.type === 'recurring'){
+        } else if (m.type === 'recurring') {
           const ww = String(m.week).padStart(2, '0');
-          for (let y = minYear; y <= maxYear; y++){
+          for (let y = minYear; y <= maxYear; y++) {
             const idx = isoWeekToIdx(`${y}-${ww}`);
-            if (idx >= minIdx && idx < maxIdx){
+            if (idx >= minIdx && idx < maxIdx) {
               expandedSeasonal.push({ ...m, type: 'static', weekIdx: idx });
             }
           }
@@ -1029,24 +1079,24 @@ function renderSidebar(){
 
       // Group seasonals by weekIdx and count them
       const seasonalByIdx = new Map();
-      for (const m of expandedSeasonal){
+      for (const m of expandedSeasonal) {
         if (!seasonalByIdx.has(m.weekIdx)) seasonalByIdx.set(m.weekIdx, []);
         seasonalByIdx.get(m.weekIdx).push(m);
       }
       const seasonalCountByIdx = new Map();
-      for (const [idx, arr] of seasonalByIdx.entries()){
+      for (const [idx, arr] of seasonalByIdx.entries()) {
         seasonalCountByIdx.set(idx, arr.length);
       }
 
       // Build combined rows: newest → oldest; after each week row, insert seasonal rows for that week
       const rows = []; // { type:'week', idx } | { type:'seasonal', idx, data }
       const weekRowIndex = new Map(); // weekIdx -> row index (in rows array)
-      for (let i = maxIdx - 1; i >= minIdx; i--){
+      for (let i = maxIdx - 1; i >= minIdx; i--) {
         weekRowIndex.set(i, rows.length);
         rows.push({ type: 'week', idx: i });
         const arr = seasonalByIdx.get(i);
-        if (arr && arr.length){
-          for (const m of arr){
+        if (arr && arr.length) {
+          for (const m of arr) {
             rows.push({ type: 'seasonal', idx: i, data: m });
           }
         }
@@ -1076,7 +1126,7 @@ function renderSidebar(){
 
       // Render rows
       rows.forEach((row, rIdx) => {
-        if (row.type === 'week'){
+        if (row.type === 'week') {
           const { year, week } = idxToISOWeek(row.idx);
 
           const wl = document.createElement('div');
@@ -1085,10 +1135,10 @@ function renderSidebar(){
 
           const inner = document.createElement('div');
           inner.className = 'wlabel__inner';
-          inner.textContent = `Week ${String(week).padStart(2,'0')}`;
+          inner.textContent = `Week ${String(week).padStart(2, '0')}`;
 
           const count = activeWeekCounts.get(row.idx) || 0;
-          if (count > 0){
+          if (count > 0) {
             inner.classList.add('has-events');
             inner.dataset.count = String(count);
           }
@@ -1128,7 +1178,7 @@ function renderSidebar(){
           inner.appendChild(nameEl);
 
           // optional description
-          if (m.desc){
+          if (m.desc) {
             const descEl = document.createElement('span');
             descEl.className = 'seasonal-desc';
             descEl.textContent = m.desc;
@@ -1155,17 +1205,17 @@ function renderSidebar(){
       setupCornerYearTracker(grid, corner);
 
       // ---- Events (account for seasonal rows crossed) ----
-      function countSeasonalsBetween(start, endExclusive){
+      function countSeasonalsBetween(start, endExclusive) {
         let total = 0;
-        for (let idx = start; idx < endExclusive; idx++){
+        for (let idx = start; idx < endExclusive; idx++) {
           total += seasonalCountByIdx.get(idx) || 0;
         }
         return total;
       }
 
-      for (let cIdx = 0; cIdx < timelines.length; cIdx++){
+      for (let cIdx = 0; cIdx < timelines.length; cIdx++) {
         const tl = timelines[cIdx];
-        for (const ev of tl.events){
+        for (const ev of tl.events) {
           const start = ev.startIdx;
           const endExclusive = ev.startIdx + ev.durationWeeks;
 
@@ -1176,8 +1226,8 @@ function renderSidebar(){
           if (!weekRowIndex.has(visStart) || !weekRowIndex.has(visEndWk)) continue;
 
           // Determine which week is visually on top (newer week → smaller row index)
-          const topWeek    = Math.max(visStart, visEndWk);
-          const topRowIdx  = weekRowIndex.get(topWeek);
+          const topWeek = Math.max(visStart, visEndWk);
+          const topRowIdx = weekRowIndex.get(topWeek);
 
           // Base span = number of weeks covered (ignore seasonal rows here)
           const baseSpanWeeks = Math.abs(visEndWk - visStart) + 1;
@@ -1197,10 +1247,10 @@ function renderSidebar(){
 
           // Place from the top-most covered row downward for `span` rows
           el.style.gridColumn = `${2 + cIdx} / ${3 + cIdx}`;
-          el.style.gridRow    = `${2 + topRowIdx} / ${2 + topRowIdx + span}`;
+          el.style.gridRow = `${2 + topRowIdx} / ${2 + topRowIdx + span}`;
 
-          const {year, week} = idxToISOWeek(start);
-          const labelStart = `${year}-${String(week).padStart(2,'0')}`;
+          const { year, week } = idxToISOWeek(start);
+          const labelStart = `${year}-${String(week).padStart(2, '0')}`;
 
           const topline = document.createElement('div');
           topline.className = 'topline';
@@ -1209,7 +1259,7 @@ function renderSidebar(){
           prependEventMedia(el, ev);
 
           // Category → Title → Date & duration
-          if (ev.category){
+          if (ev.category) {
             const cat = document.createElement('div');
             cat.className = 'cat';
             cat.textContent = ev.category;
@@ -1265,13 +1315,13 @@ function renderSidebar(){
       }
 
       // Meta line
-      const firstLabel = (function(){ const {year, week} = idxToISOWeek(minIdx); return `${year}-${String(week).padStart(2,'0')}`; })();
-      const lastLabel  = (function(){ const {year, week} = idxToISOWeek(maxIdx - 1); return `${year}-${String(week).padStart(2,'0')}`; })();
+      const firstLabel = (function () { const { year, week } = idxToISOWeek(minIdx); return `${year}-${String(week).padStart(2, '0')}`; })();
+      const lastLabel = (function () { const { year, week } = idxToISOWeek(maxIdx - 1); return `${year}-${String(week).padStart(2, '0')}`; })();
       setText('meta', `Timelines: ${timelines.length} • Weeks: ${totalWeeks} • Range: ${firstLabel} → ${lastLabel}`);
     }
 
     /** ===================== BOOT ===================== **/
-    (async function main(){
+    (async function main() {
       try {
         await bootstrapState();
         await applyStateToRenderer();
@@ -1290,4 +1340,5 @@ function renderSidebar(){
     })();
   </script>
 </body>
+
 </html>

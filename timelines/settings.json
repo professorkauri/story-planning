@@ -1,0 +1,88 @@
+{
+  "categories": [
+    {
+      "id": 1,
+      "name": "Ordinary World",
+      "emoji": "📚",
+      "color": "#80acff",
+      "text": "white"
+    },
+    {
+      "id": 2,
+      "name": "Call To Adventure",
+      "emoji": "📞",
+      "color": "#80c0ff",
+      "text": "white"
+    },
+    {
+      "id": 3,
+      "name": "Refusal Of The Call",
+      "emoji": "⚔️",
+      "color": "#80f9ff",
+      "text": "black"
+    },
+    {
+      "id": 4,
+      "name": "Meeting The Mentor",
+      "emoji": "🧭",
+      "color": "#80ffc8",
+      "text": "black"
+    },
+    {
+      "id": 5,
+      "name": "Crossing The Threshold",
+      "emoji": "➡️",
+      "color": "#80ff93",
+      "text": "black"
+    },
+    {
+      "id": 6,
+      "name": "Tests, Allies & Enemies",
+      "emoji": "🧪",
+      "color": "#f7ff80",
+      "text": "black"
+    },
+    {
+      "id": 7,
+      "name": "Approach To The Inmost Cave",
+      "emoji": "🛡️",
+      "color": "#ffca80",
+      "text": "black"
+    },
+    {
+      "id": 8,
+      "name": "The Ordeal",
+      "emoji": "🔥",
+      "color": "#ff8080",
+      "text": "white"
+    },
+    {
+      "id": 9,
+      "name": "Reward",
+      "emoji": "🏆",
+      "color": "#ff809c",
+      "text": "white"
+    },
+    {
+      "id": 10,
+      "name": "The Road Back",
+      "emoji": "🛣️",
+      "color": "#ff80e1",
+      "text": "white"
+    },
+    {
+      "id": 11,
+      "name": "Resurrection",
+      "emoji": "🌅",
+      "color": "#8f80ff",
+      "text": "white"
+    },
+    {
+      "id": 12,
+      "name": "The Return",
+      "emoji": "🏡",
+      "color": "#80acff",
+      "text": "white"
+    }
+  ]
+}

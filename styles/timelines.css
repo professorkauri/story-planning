@@ -13,69 +13,60 @@
 
   --seasonal-line: #fff3e3;
   --seasonal-bg: #fffcf7;
+
+  --jemoji: "🏡"; /** default emoji **/
 }
 
-[data-category="OrdinaryWorld"] {
+/*
+[data-cat-id="1"] {
   --jcolor: #80acff;
   --jtext: white;
-  --jemoji: "📚";
 }
-[data-category="CallToAdventure"] {
+[data-cat-id="2"] {
   --jcolor: #80c0ff;
   --jtext: white;
-  --jemoji: "📞";
 }
-[data-category="RefusalOfTheCall"] {
+[data-cat-id="3"] {
   --jcolor: #80f9ff;
   --jtext: var(--ink);
-  --jemoji: "⚔️";
 }
-[data-category="MeetingTheMentor"] {
+[data-cat-id="4"] {
   --jcolor: #80ffc8;
   --jtext: var(--ink);
-  --jemoji: "🧭";
 }
-[data-category="CrossingTheThreshold"] {
+[data-cat-id="5"] {
   --jcolor: #80ff93;
   --jtext: var(--ink);
-  --jemoji: "➡️";
 }
-[data-category="TestsAlliesEnemies"] {
+[data-cat-id="6"] {
   --jcolor: #f7ff80;
   --jtext: var(--ink);
-  --jemoji: "🧪";
 }
-[data-category="ApproachToTheInmostCave"] {
+[data-cat-id="7"] {
   --jcolor: #ffca80;
   --jtext: var(--ink);
-  --jemoji: "🛡️";
 }
-[data-category="TheOrdeal"] {
+[data-cat-id="8"] {
   --jcolor: #ff8080;
   --jtext: white;
-  --jemoji: "🔥";
 }
-[data-category="Reward"] {
+[data-cat-id="9"] {
   --jcolor: #ff809c;
   --jtext: white;
-  --jemoji: "🏆";
 }
-[data-category="TheRoadBack"] {
+[data-cat-id="10"] {
   --jcolor: #ff80e1;
   --jtext: white;
-  --jemoji: "🛣️";
 }
-[data-category="Resurrection"] {
+[data-cat-id="11"] {
   --jcolor: #8f80ff;
   --jtext: white;
-  --jemoji: "🌅";
 }
-[data-category="TheReturn"] {
+[data-cat-id="12"] {
   --jcolor: #80acff;
   --jtext: white;
-  --jemoji: "🏡";
 }
-
+*/
 html,
 body {
   height: 100%;
@@ -226,6 +217,7 @@ header .err {
   flex-direction: column;
   gap: 6px;
   margin: 10px 30px;
+  --jemoji: attr(data-cat-emoji);
 }
 .event .topline {
   display: flex;
@@ -322,7 +314,6 @@ header .err {
   color: var(--ink);
   outline: 1.5px solid var(--jcolor);
 }
-
 .event .topline:before {
   content: var(--jemoji);
   display: flex;
@@ -592,21 +583,25 @@ body.editing {
 .ed-table th {
   position: sticky;
   top: 0;
-  background: #0b0d10;
+  background: var(--g-bar);
   z-index: 1;
 }
 
 .ed-table td {
   gap: 20px;
   padding: 20px;
+  text-align: center;
 }
+.ed-timelines input[type="text"],
 .ed-table input[type="text"] {
+  --pad:6px;
   background: white;
   color: var(--ink);
   border: 1px solid var(--g-bar);
-  border-radius: 6px;
-  padding: 6px;
+  border-radius: var(--pad);
+  padding: var(--pad);
   flex-grow:1;
+  width:calc(100% - var(--pad) - var(--pad));
 }
 
 .ed-row-btns {
