@@ -1,6 +1,148 @@
 {
   "timelines": [
     {
+      "id": "02_Frodo",
+      "title": "Lord of the Rings",
+      "events": [
+        {
+          "date": "2024-48",
+          "duration": "7w",
+          "desc": "Ordinary World - young scholar in city archives",
+          "category": "OrdinaryWorld",
+          "image": "",
+          "characters": [
+            "Frodo"
+          ],
+          "locations": [
+            "Hobbiton"
+          ],
+          "categoryId": 1
+        },
+        {
+          "date": "0w",
+          "duration": "1w",
+          "desc": "Call to Adventure - discovery of forbidden manuscript",
+          "category": "CallToAdventure",
+          "image": "ring",
+          "characters": [],
+          "locations": [
+            "Hobbiton"
+          ],
+          "categoryId": 2
+        },
+        {
+          "date": "0w",
+          "duration": "1w",
+          "desc": "Refusal of the Call - fears punishment for knowledge",
+          "category": "RefusalOfTheCall",
+          "image": "",
+          "characters": [],
+          "locations": [
+            "Hobbiton"
+          ],
+          "categoryId": 3
+        },
+        {
+          "date": "6w",
+          "duration": "2w",
+          "desc": "Meeting the Mentor - eccentric professor offers help",
+          "category": "MeetingTheMentor",
+          "image": "",
+          "characters": [],
+          "locations": [
+            "Hobbiton"
+          ],
+          "categoryId": 4
+        },
+        {
+          "date": "2w",
+          "duration": "3w",
+          "desc": "Crossing the Threshold - journey to ancient ruins",
+          "category": "CrossingTheThreshold",
+          "image": "",
+          "characters": [],
+          "locations": [],
+          "categoryId": 5
+        },
+        {
+          "date": "1w",
+          "duration": "2w",
+          "desc": "Tests - Allies - Enemies - rival scholars and puzzles",
+          "category": "TestsAlliesEnemies",
+          "image": "",
+          "characters": [],
+          "locations": [],
+          "categoryId": 6
+        },
+        {
+          "date": "1w",
+          "duration": "2w",
+          "desc": "Approach to the Inmost Cave - descends into hidden catacombs",
+          "category": "ApproachToTheInmostCave",
+          "image": "",
+          "characters": [],
+          "locations": [],
+          "categoryId": 7
+        },
+        {
+          "date": "0w",
+          "duration": "5w",
+          "desc": "Ordeal - confrontation with cursed guardian",
+          "category": "TheOrdeal",
+          "image": "",
+          "characters": [
+            "Sam"
+          ],
+          "locations": [
+            "Mordor"
+          ],
+          "categoryId": 8
+        },
+        {
+          "date": "1w",
+          "duration": "1w",
+          "desc": "Reward - gains secret of eternal flame",
+          "category": "Reward",
+          "image": "",
+          "characters": [],
+          "locations": [],
+          "categoryId": 9
+        },
+        {
+          "date": "2w",
+          "duration": "2w",
+          "desc": "The Road Back - chased by collapsing ruins",
+          "category": "TheRoadBack",
+          "image": "",
+          "characters": [],
+          "locations": [],
+          "categoryId": 10
+        },
+        {
+          "date": "2025-39",
+          "duration": "2w",
+          "desc": "Resurrection - uses knowledge to save companions",
+          "category": "Resurrection",
+          "image": "ring",
+          "characters": [],
+          "locations": [],
+          "categoryId": 11
+        },
+        {
+          "date": "1w",
+          "duration": "12w",
+          "desc": "Return with the Elixir - teaches wisdom to new generation",
+          "category": "TheReturn",
+          "image": "",
+          "characters": [],
+          "locations": [
+            "Hobbiton"
+          ],
+          "categoryId": 12
+        }
+      ]
+    },
+    {
       "id": "01_Harry",
       "title": "Harry Potter and the Goblet of Fire",
       "events": [
@@ -154,148 +296,6 @@
           ],
           "locations": [
             "Hogwarts"
-          ],
-          "categoryId": 12
-        }
-      ]
-    },
-    {
-      "id": "02_Frodo",
-      "title": "Lord of the Rings",
-      "events": [
-        {
-          "date": "2024-48",
-          "duration": "7w",
-          "desc": "Ordinary World - young scholar in city archives",
-          "category": "OrdinaryWorld",
-          "image": "",
-          "characters": [
-            "Frodo"
-          ],
-          "locations": [
-            "Hobbiton"
-          ],
-          "categoryId": 1
-        },
-        {
-          "date": "0w",
-          "duration": "1w",
-          "desc": "Call to Adventure - discovery of forbidden manuscript",
-          "category": "CallToAdventure",
-          "image": "ring",
-          "characters": [],
-          "locations": [
-            "Hobbiton"
-          ],
-          "categoryId": 2
-        },
-        {
-          "date": "0w",
-          "duration": "1w",
-          "desc": "Refusal of the Call - fears punishment for knowledge",
-          "category": "RefusalOfTheCall",
-          "image": "",
-          "characters": [],
-          "locations": [
-            "Hobbiton"
-          ],
-          "categoryId": 3
-        },
-        {
-          "date": "6w",
-          "duration": "2w",
-          "desc": "Meeting the Mentor - eccentric professor offers help",
-          "category": "MeetingTheMentor",
-          "image": "",
-          "characters": [],
-          "locations": [
-            "Hobbiton"
-          ],
-          "categoryId": 4
-        },
-        {
-          "date": "2w",
-          "duration": "3w",
-          "desc": "Crossing the Threshold - journey to ancient ruins",
-          "category": "CrossingTheThreshold",
-          "image": "",
-          "characters": [],
-          "locations": [],
-          "categoryId": 5
-        },
-        {
-          "date": "1w",
-          "duration": "2w",
-          "desc": "Tests - Allies - Enemies - rival scholars and puzzles",
-          "category": "TestsAlliesEnemies",
-          "image": "",
-          "characters": [],
-          "locations": [],
-          "categoryId": 6
-        },
-        {
-          "date": "1w",
-          "duration": "2w",
-          "desc": "Approach to the Inmost Cave - descends into hidden catacombs",
-          "category": "ApproachToTheInmostCave",
-          "image": "",
-          "characters": [],
-          "locations": [],
-          "categoryId": 7
-        },
-        {
-          "date": "0w",
-          "duration": "5w",
-          "desc": "Ordeal - confrontation with cursed guardian",
-          "category": "TheOrdeal",
-          "image": "",
-          "characters": [
-            "Sam"
-          ],
-          "locations": [
-            "Mordor"
-          ],
-          "categoryId": 8
-        },
-        {
-          "date": "1w",
-          "duration": "1w",
-          "desc": "Reward - gains secret of eternal flame",
-          "category": "Reward",
-          "image": "",
-          "characters": [],
-          "locations": [],
-          "categoryId": 9
-        },
-        {
-          "date": "2w",
-          "duration": "2w",
-          "desc": "The Road Back - chased by collapsing ruins",
-          "category": "TheRoadBack",
-          "image": "",
-          "characters": [],
-          "locations": [],
-          "categoryId": 10
-        },
-        {
-          "date": "2025-39",
-          "duration": "2w",
-          "desc": "Resurrection - uses knowledge to save companions",
-          "category": "Resurrection",
-          "image": "ring",
-          "characters": [],
-          "locations": [],
-          "categoryId": 11
-        },
-        {
-          "date": "1w",
-          "duration": "12w",
-          "desc": "Return with the Elixir - teaches wisdom to new generation",
-          "category": "TheReturn",
-          "image": "",
-          "characters": [],
-          "locations": [
-            "Hobbiton"
           ],
           "categoryId": 12
         }

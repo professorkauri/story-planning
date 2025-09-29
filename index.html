@@ -494,7 +494,7 @@
             <div class="ed-btn-box small">
               <button class="ghost" data-act="up" title="Move up">▲</button>
               <button class="ghost" data-act="down" title="Move down">▼</button>
-              <button class="danger" data-act="del" title="Delete timeline">🞬</button>
+              <button class="danger" data-act="del" title="Delete timeline">X</button>
             </div>
           </div>`;
         list.appendChild(row);
@@ -562,8 +562,8 @@
         <div><strong>${tl.title || 'Untitled'}</strong></div>
         <div class="ed-btn-box">
           <button id="ed-add-ev" type="button"><b>＋</b></button>
-          <button id="ed-dup-evs" class="ghost" type="button">🗐 All</button>
-          <button id="ed-clear-evs" class="danger" type="button">🞬 All</button>
+          <button id="ed-dup-evs" class="ghost" type="button">++ All</button>
+          <button id="ed-clear-evs" class="danger" type="button">X All</button>
         </div>`;
       host.appendChild(head);
 
@@ -607,8 +607,8 @@
           <div class="ed-btn-box small">
             <button data-act="up" class="ghost" title="Move up">▲</button>
             <button data-act="down" class="ghost" title="Move down">▼</button>
-            <button data-act="dup" class="ghost" title="Duplicate">🗐</button>
-            <button data-act="del" class="danger" title="Delete">🞬</button>
+            <button data-act="dup" class="ghost" title="Duplicate">++</button>
+            <button data-act="del" class="danger" title="Delete">X</button>
           </div>
         </div>
       </td>`;
@@ -665,8 +665,8 @@
         iLo.addEventListener('input', () => { ev.locations = tokenise(iLo.value); debouncedApply(); });
 
         // row actions
-        tr.querySelector('[data-act="up"]').onclick = () => { if (i > 0) { const a = evs[i - 1]; evs[i - 1] = evs[i]; evs[i] = a; renderMain(); debouncedApply(); } };
-        tr.querySelector('[data-act="down"]').onclick = () => { if (i < evs.length - 1) { const a = evs[i + 1]; evs[i + 1] = evs[i]; evs[i] = a; renderMain(); debouncedApply(); } };
+        tr.querySelector('[data-act="down"]').onclick = () => { if (i > 0) { const a = evs[i - 1]; evs[i - 1] = evs[i]; evs[i] = a; renderMain(); debouncedApply(); } };
+        tr.querySelector('[data-act="up"]').onclick = () => { if (i < evs.length - 1) { const a = evs[i + 1]; evs[i + 1] = evs[i]; evs[i] = a; renderMain(); debouncedApply(); } };
         tr.querySelector('[data-act="dup"]').onclick = () => { evs.splice(i + 1, 0, structuredClone(ev)); renderMain(); debouncedApply(); };
         tr.querySelector('[data-act="del"]').onclick = () => { evs.splice(i, 1); renderMain(); debouncedApply(); };
       });
@@ -1117,6 +1117,7 @@
           el.dataset.catColor = catColor || '';
           el.style.setProperty('--jcolor', catColor || 'transparent');
           el.style.setProperty('--jtext', catText || 'black');
+          el.style.setProperty('--jemoji', "\"" + catEmoji + "\"" || 'black');
 
           el.style.gridColumn = `${2 + cIdx} / ${3 + cIdx}`;
           el.style.gridRow = `${2 + topRowIdx} / ${2 + topRowIdx + span}`;
@@ -1133,7 +1134,7 @@
           if (catName) {
             const cat = document.createElement('div');
             cat.className = 'cat';
-            cat.textContent = (catEmoji ? catEmoji + ' ' : '') + catName;
+            cat.textContent = catName;
             topline.appendChild(cat);
           }
 

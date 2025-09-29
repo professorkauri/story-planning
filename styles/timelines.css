@@ -14,7 +14,7 @@
   --seasonal-line: #fff3e3;
   --seasonal-bg: #fffcf7;
 
-  --jemoji: "🏡"; /** default emoji **/
+  /**  --jemoji: "🏡"; default emoji **/
 }
 
 /*
@@ -230,6 +230,24 @@ header .err {
   padding: 1em;
   flex-grow: 1;
 }
+.event .topline:before {
+  content: var(--jemoji);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  top: 0%;
+  left: 50%;
+  margin-top: -27px;
+  margin-left: -15px;
+  background-color: white;
+  border-radius: 50%;
+  border: 2px solid var(--jcolor);
+  font-size: 18px;
+  line-height: 1;
+}
 .event .thumb {
   display: block;
   width: 100%;
@@ -313,24 +331,6 @@ header .err {
   background: white;
   color: var(--ink);
   outline: 1.5px solid var(--jcolor);
-}
-.event .topline:before {
-  content: var(--jemoji);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: absolute;
-  width: 30px;
-  height: 30px;
-  top: 0%;
-  left: 50%;
-  margin-top: -27px;
-  margin-left: -15px;
-  background-color: white;
-  border-radius: 50%;
-  border: 2px solid var(--jcolor);
-  font-size: 18px;
-  line-height: 1;
 }
 
 /* Seasonal left label row */
