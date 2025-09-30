@@ -1,13 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="utf-8" />
   <title>Vertical Timelines (events + character/location icons)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="styles/timelines.css">
 </head>
-
 <body>
   <header>
     <h1>Vertical Timelines</h1>
@@ -31,25 +29,25 @@
     const CHAR_IMAGES_DIR = 'images/characters/';
     const LOC_IMAGES_DIR = 'images/locations/';
     const SEASONAL_IMAGES_DIR = 'images/seasonal/';
+    const TIMELINE_IMAGES_DIR = 'images/timelines/';
 
     // ===== SIZING (edit these) =====
     const GRID_SIZING = {
       vertical: {
-        namesColWidth:  '120px',  // left "Weeks" column width (vertical layout)
-        timelineColMin: '280px',  // min width for each timeline column
-        timelineColMax: '1fr',    // max width for each timeline column
-        weekRowMin:     '80px',   // min height for each week row
-        weekHeaderRow:  'auto',   // height for header row
+        namesColWidth:  '90px',
+        timelineColMin: 'auto',
+        timelineColMax: '1fr',
+        weekRowMin:     'auto',
+        weekHeaderRow:  'auto',
       },
       horizontal: {
-        namesColWidth:  '160px',  // left "Timeline names" column width (horizontal layout)
-        weekColWidth:   '140px',  // width for each week column
-        timelineRowMin: '90px',   // min height for each timeline row
-        weekHeaderRow:  'auto',   // height for header row
+        namesColWidth:  '160px',
+        weekColWidth:   'auto',
+        timelineRowMin: '110px',
+        weekHeaderRow:  'auto',
       }
     };
 
-    // PRESET_CATEGORIES is now derived from settings.json (IDs 1-12). Kept here for legacy fallback only.
     const LEGACY_PRESET_CATEGORIES = [
       '', 'OrdinaryWorld','CallToAdventure','RefusalOfTheCall','MeetingTheMentor','CrossingTheThreshold',
       'TestsAlliesEnemies','ApproachToTheInmostCave','TheOrdeal','Reward','TheRoadBack','Resurrection','TheReturn'
@@ -58,19 +56,16 @@
     const IMAGE_EXTS = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg', 'avif'];
 
     /** ===================== SETTINGS (CATEGORIES) ===================== **/
-    // shape: { categories: [{id:1..12, name:'', emoji:''}, ...] }
     let settingsState = null;
 
-    // NEW: site/UI defaults
     const DEFAULT_UI = {
       title: 'Vertical Timelines',
-      theme: 'light',       // 'light' | 'dark'  → toggles class on <body>
-      layout: 'vertical'    // 'vertical' | 'horizontal' → toggles class on #grid
+      theme: 'light',
+      layout: 'vertical'
     };
 
-    // Extend DEFAULT_SETTINGS
     const DEFAULT_SETTINGS = {
-      ui: { ...DEFAULT_UI },   // <— NEW
+      ui: { ...DEFAULT_UI },
       categories: Array.from({ length: 12 }, (_, i) => ({
         id: i + 1,
         name: LEGACY_PRESET_CATEGORIES[i + 1] || `Category ${i + 1}`,
@@ -80,23 +75,16 @@
       }))
     };
 
-    // Apply UI settings to the page (call on load & whenever UI changes)
     function applyUIFromSettings() {
       const ui = (settingsState?.ui) || DEFAULT_UI;
-
-      // Title
       const h1 = document.querySelector('header h1');
       if (h1) h1.textContent = ui.title || DEFAULT_UI.title;
-
-      // Theme toggle on <body>
       document.body.classList.toggle('theme-dark', ui.theme === 'dark');
-      document.body.classList.toggle('theme-light', ui.theme !== 'dark'); // optional helper class
-
-      // Layout toggle on #viewport
+      document.body.classList.toggle('theme-light', ui.theme !== 'dark');
       const viewportEl = document.getElementById('viewport');
       if (viewportEl) {
         viewportEl.classList.toggle('layout-horizontal', ui.layout === 'horizontal');
-        viewportEl.classList.toggle('layout-vertical', ui.layout !== 'horizontal'); // optional helper class
+        viewportEl.classList.toggle('layout-vertical', ui.layout !== 'horizontal');
       }
       applyGridSizing(ui.layout === 'horizontal' ? 'horizontal' : 'vertical');
     }
@@ -116,7 +104,6 @@
         const json = await r.json();
         if (!json || !Array.isArray(json.categories)) return null;
 
-        // Normalize UI (NEW)
         const ui = json.ui || {};
         json.ui = {
           title: String(ui.title || DEFAULT_UI.title),
@@ -124,7 +111,6 @@
           layout: (ui.layout === 'horizontal') ? 'horizontal' : 'vertical'
         };
 
-        // Normalize categories (existing)
         json.categories = json.categories
           .filter(c => Number.isInteger(c.id) && c.id >= 1 && c.id <= 12)
           .map(c => ({
@@ -136,9 +122,7 @@
           }));
 
         return json;
-      } catch {
-        return null;
-      }
+      } catch { return null; }
     }
 
     function getCatById(id) {
@@ -160,7 +144,6 @@
       if (!s) return 0;
       const asNum = Number(s);
       if (Number.isInteger(asNum)) return asNum;
-      // assume legacy category name
       return getCatIdByName(s);
     }
 
@@ -173,7 +156,6 @@
     function stripExt(name) { return name.replace(/\.[^.]+$/, ''); }
     function encSeg(s) { return encodeURIComponent(s).replace(/%2F/g, '/'); }
 
-    /* Robust ISO week helpers */
     function isoWeekToDate(iso) {
       const [yStr, wStr] = iso.split('-'); const Y = +yStr, W = +wStr;
       const jan4 = new Date(Date.UTC(Y, 0, 4)); const d = jan4.getUTCDay() || 7;
@@ -202,7 +184,6 @@
       if (!g) return;
       const sz = GRID_SIZING[layout] || GRID_SIZING.vertical;
 
-      // Common
       if (sz.namesColWidth) g.style.setProperty('--names-col-width', sz.namesColWidth);
       if (sz.weekHeaderRow) g.style.setProperty('--week-header-row', sz.weekHeaderRow);
 
@@ -210,44 +191,73 @@
         g.style.setProperty('--timeline-col-min', sz.timelineColMin);
         g.style.setProperty('--timeline-col-max', sz.timelineColMax);
         g.style.setProperty('--week-row-min',     sz.weekRowMin);
-        // clear horizontal-only vars to avoid confusion
         g.style.removeProperty('--week-col-width');
         g.style.removeProperty('--timeline-row-min');
       } else {
         g.style.setProperty('--week-col-width',   sz.weekColWidth);
         g.style.setProperty('--timeline-row-min', sz.timelineRowMin);
-        // clear vertical-only vars
         g.style.removeProperty('--timeline-col-min');
         g.style.removeProperty('--timeline-col-max');
         g.style.removeProperty('--week-row-min');
       }
     }
 
+    function buildTimelineHeaderEl(tl) {
+      const th = document.createElement('div');
+      th.className = 'thead';
 
-    function getCatText(id) {
-      return getCatById(id)?.text || 'black';
+      // image (fallback to a grey square if missing/not found)
+      const insertPh = () => {
+        const ph = document.createElement('div');
+        ph.className = 'thead-thumb thead-thumb--ph';
+        th.appendChild(ph);
+      };
+
+      const thumb = makeSmartImgFallback(
+        TIMELINE_IMAGES_DIR,
+        tl.imageName || '',
+        'thead-thumb',
+        tl.title || ''
+      , insertPh);
+
+      if (thumb) th.appendChild(thumb);
+
+      // title span
+      const title = document.createElement('span');
+      title.className = 'thead-title';
+      title.textContent = tl.title || '';
+      th.appendChild(title);
+
+      return th;
     }
+
+
+    function normalizeEditorState(es) {
+      if (!es || !Array.isArray(es.timelines)) return es;
+      es.timelines.forEach(tl => {
+        if (typeof tl.image !== 'string') tl.image = '';
+        if (!Array.isArray(tl.events)) tl.events = [];
+      });
+      if (!Array.isArray(es.seasonal)) es.seasonal = [];
+      return es;
+    }
+
+    function getCatText(id) { return getCatById(id)?.text || 'black'; }
 
     function normalizeHexColor(v) {
       const s = String(v || '').trim().replace(/^#/, '');
-      // accept 3, 4, 6, or 8 hex digits; return canonical with '#'
       if (/^[0-9a-f]{3}$/i.test(s)) return '#' + s;
       if (/^[0-9a-f]{4}$/i.test(s)) return '#' + s;
       if (/^[0-9a-f]{6}$/i.test(s)) return '#' + s;
       if (/^[0-9a-f]{8}$/i.test(s)) return '#' + s;
-      return ''; // invalid -> clear
+      return '';
     }
 
     function applyAllFromSettings() {
-      // persist (optional but nice if you want it remembered)
       try { saveSettingsToLocal(); } catch {}
-      // update header/body classes
       applyUIFromSettings();
-      // re-render the grid with the current layout (vertical/horizontal)
       applyStateToRenderer();
     }
-
-
 
     async function tryLoadJSON() {
       try {
@@ -260,29 +270,24 @@
     }
 
     async function bootstrapState() {
-      // SETTINGS: always load from settings.json on disk
       const setDisk = await tryLoadSettings();
       settingsState = setDisk || DEFAULT_SETTINGS;
-      
-      // NEW: apply UI immediately
       applyUIFromSettings();
 
-      // DATA
       const json = await tryLoadJSON();
       if (json && Array.isArray(json.timelines)) {
-        editorState = json;
+        editorState = normalizeEditorState(json);
         saveToLocal();
         return;
       }
       const local = loadFromLocal();
       if (local && Array.isArray(local.timelines)) {
-        editorState = local;
+        editorState = normalizeEditorState(local);
         return;
       }
-      editorState = { timelines: [], seasonal: [] };
+      editorState = normalizeEditorState({ timelines: [], seasonal: [] });
       saveToLocal();
     }
-
 
     /** CSV parse */
     function parseCSV(text) {
@@ -323,18 +328,30 @@
       img.onerror = tryNext; tryNext(); return img;
     }
 
-    function prependEventMedia(el, ev) {
-      const insertPlaceholder = () => { const ph = document.createElement('div'); ph.className = 'thumb'; el.prepend(ph); };
+    function prependEventMedia(el, ev, setHasImage) {
+      const setFlag = (v) => { if (typeof setHasImage === 'function') setHasImage(!!v); };
+      const insertPlaceholder = () => {
+        const ph = document.createElement('div');
+        ph.className = 'thumb';
+        el.prepend(ph);
+        setFlag(false);
+      };
       const tryLocation = () => {
         const firstLoc = (ev.locations && ev.locations[0]) ? ev.locations[0] : '';
         if (firstLoc) {
           const locImg = makeSmartImgFallback(LOC_IMAGES_DIR, firstLoc, 'thumb', firstLoc, insertPlaceholder);
-          if (locImg) el.prepend(locImg);
+          if (locImg) {
+            locImg.addEventListener('load', () => setFlag(true), { once: true });
+            el.prepend(locImg);
+          }
         } else insertPlaceholder();
       };
       if (ev.imageName) {
         const img = makeSmartImgFallback(EVENT_IMAGES_DIR, ev.imageName, 'thumb', ev.imageName, tryLocation);
-        if (img) el.prepend(img);
+        if (img) {
+          img.addEventListener('load', () => setFlag(true), { once: true });
+          el.prepend(img);
+        }
       } else tryLocation();
     }
 
@@ -361,7 +378,6 @@
 
         const characters = (chars ? chars.split(/\s+/).filter(Boolean) : []);
         const locations = (locs ? locs.split(/\s+/).filter(Boolean) : []);
-        // cat may be legacy text or numeric id
         const categoryId = toCatId(cat);
         events.push({ rawDate: d, durationWeeks, desc, categoryId, imageName: img || '', characters, locations });
       }
@@ -369,7 +385,6 @@
       return { title, events };
     }
 
-    /** Resolve relative dates */
     function resolveTimelineWeeks(tl) {
       let prevEnd = null;
       const events = tl.events.map(ev => {
@@ -381,7 +396,7 @@
         prevEnd = endIdx;
         return { ...ev, startIdx, durationWeeks };
       });
-      return { title: tl.title, events };
+      return { title: tl.title, imageName: tl.imageName || '', events };
     }
 
     /** ===================== CORNER YEAR HELPERS ===================== **/
@@ -418,20 +433,76 @@
       update();
     }
 
+    function setupCornerYearTrackerHorizontal(grid, corner) {
+      const scroller = grid.parentElement;
+
+      function getNamesColWidthPx() {
+        const v = getComputedStyle(grid).getPropertyValue('--names-col-width').trim();
+        const n = parseFloat(v);
+        return Number.isFinite(n) ? n : 0;
+      }
+
+      function headerMidY() {
+        const any = grid.querySelector('.wlabel');
+        if (!any) return 0;
+        const r = any.getBoundingClientRect();
+        return r.top + r.height / 2;
+      }
+
+      function update() {
+        const leftX = scroller.getBoundingClientRect().left;
+        const contentLeftX = leftX + getNamesColWidthPx() + 1;
+        const y = headerMidY();
+        if (!y) return;
+
+        let header = null;
+        const stack = (document.elementsFromPoint?.(contentLeftX, y) || []);
+        for (const el of stack) {
+          if (el.classList && el.classList.contains('wlabel')) { header = el; break; }
+        }
+
+        if (!header) {
+          const all = Array.from(grid.querySelectorAll('.wlabel'));
+          for (const h of all) {
+            const r = h.getBoundingClientRect();
+            if (contentLeftX >= r.left && contentLeftX < r.right) { header = h; break; }
+          }
+          if (!header && all.length) {
+            let best = null, bestDx = Infinity;
+            for (const h of all) {
+              const dx = h.getBoundingClientRect().left - contentLeftX;
+              if (dx >= 0 && dx < bestDx) { best = h; bestDx = dx; }
+            }
+            header = best || all[all.length - 1];
+          }
+        }
+
+        if (header) {
+          const idx = parseInt(header.dataset.weekIdx, 10);
+          if (Number.isFinite(idx)) {
+            const { year } = idxToISOWeek(idx);
+            corner.textContent = String(year);
+          }
+        }
+      }
+
+      scroller.addEventListener('scroll', update, { passive: true });
+      window.addEventListener('resize', update);
+      update();
+    }
+
     /** Editor Helpers **/
     function renderHeaderActions() {
       const host = document.getElementById('ed-actions');
       if (!host) return;
       host.innerHTML = '';
 
-      // Settings context → show settings buttons
       if (selPane?.type === 'settings') {
         host.innerHTML = `
           <button id="ed-settings-download" type="button">Download settings.json</button>
           <button id="ed-settings-reload" class="ghost" type="button">Reload from settings.json</button>
         `;
 
-        // Wire settings buttons
         document.getElementById('ed-settings-download').onclick = () => {
           const blob = new Blob([JSON.stringify(settingsState, null, 2)], { type: 'application/json' });
           const a = document.createElement('a');
@@ -444,32 +515,28 @@
           const s = await tryLoadSettings();
           if (!s) return alert('Could not reload settings.json');
           settingsState = s;
-          renderMain();              // rebuild settings UI
-          applyStateToRenderer();    // update grid with new names/colors
-          renderHeaderActions();     // keep header in sync
+          renderMain();
+          applyStateToRenderer();
+          renderHeaderActions();
         };
 
       } else {
-        // Data context → show data JSON buttons
         host.innerHTML = `
           <button id="ed-import" class="ghost" type="button">Import JSON</button>
           <button id="ed-download" type="button">Download JSON</button>
           <button id="ed-reload" class="ghost" type="button">Reload from data.json</button>
         `;
 
-        // Wire data buttons
         document.getElementById('ed-import').onclick = onImportJSON;
         document.getElementById('ed-download').onclick = onDownloadJSON;
         document.getElementById('ed-reload').onclick = onReloadFromDisk;
       }
     }
 
-
     /** ===================== EDITOR (BASIC) ===================== **/
     let editorState = null;
     let editMode = false;
 
-    /** ===== Editor UI root ===== */
     function renderEditorUI() {
       const root = document.createElement('div');
       root.id = 'editor';
@@ -491,15 +558,12 @@
       `;
       document.body.appendChild(root);
 
-      // static wiring
       document.getElementById('ed-close').onclick = exitEditMode;
 
-      // initial paint
       renderSidebar();
       ensureSelectedPane();
       renderMain();
-      renderHeaderActions(); // NEW
-
+      renderHeaderActions();
     }
 
     function enterEditMode() { editMode = true; document.body.classList.add('editing'); renderEditorUI(); }
@@ -508,12 +572,39 @@
     function saveToLocal() { localStorage.setItem('timelineEditorState', JSON.stringify(editorState)); }
     function loadFromLocal() { try { return JSON.parse(localStorage.getItem('timelineEditorState') || 'null'); } catch { return null; } }
 
+    /* debouncedApply with flush() */
+    function debounce(fn, ms) {
+      let t, lastArgs, lastThis;
+      const d = function (...a) {
+        lastArgs = a; lastThis = this;
+        clearTimeout(t);
+        t = setTimeout(() => { t = null; fn.apply(lastThis, lastArgs); }, ms);
+      };
+      d.flush = () => {
+        if (t) { clearTimeout(t); t = null; fn.apply(lastThis, lastArgs); }
+      };
+      return d;
+    }
+    const AUTOSAVE_MS = 400;
+    const debouncedApply = debounce(() => { saveToLocal(); applyStateToRenderer(); }, AUTOSAVE_MS);
+
+    /* Force-commit any focused input and flush pending debounce */
+    function flushPendingEdits() {
+      const ae = document.activeElement;
+      if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable)) {
+        ae.dispatchEvent(new Event('input',  { bubbles: true }));
+        ae.dispatchEvent(new Event('change', { bubbles: true }));
+        ae.blur();
+      }
+      debouncedApply.flush?.();
+    }
+
     /* Use renderer from current in-memory editorState + settingsState */
     async function applyStateToRenderer() {
       const timelines = (editorState?.timelines || []).map(tl => ({
         title: tl.title,
+        imageName: tl.image || '',
         events: (tl.events || []).map(e => {
-          // legacy compatibility
           const categoryId = toCatId(e.categoryId ?? e.category ?? '');
           return {
             rawDate: e.date,
@@ -546,9 +637,6 @@
 
     /** ===== Selection state ===== */
     let selPane = null;
-    const AUTOSAVE_MS = 400;
-    const debouncedApply = debounce(() => { saveToLocal(); applyStateToRenderer(); }, AUTOSAVE_MS);
-    function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
 
     function ensureSelectedPane() {
       if (!selPane) return;
@@ -565,7 +653,7 @@
       const host = document.getElementById('ed-sidebar');
       host.innerHTML = '';
 
-      // ===== SETTINGS (first) =====
+      // ===== SETTINGS =====
       const settingsHead = document.createElement('div');
       settingsHead.className = 'ed-main-head';
       settingsHead.innerHTML = `<div><strong>Settings</strong></div>`;
@@ -586,7 +674,6 @@
         selPane = { type: 'settings' };
         renderSidebar(); renderMain(); renderHeaderActions();
       };
-
 
       // ===== WORLD EVENTS =====
       const worldHead = document.createElement('div');
@@ -630,6 +717,19 @@
       head.innerHTML = `<div><strong>Timelines</strong></div><div><button id="ed-add-tl" type="button"><b>＋</b></button></div>`;
       host.appendChild(head);
 
+      // single authoritative handler (includes image:"")
+      document.getElementById('ed-add-tl').onclick = () => {
+        const id = `tl_${Date.now()}`;
+        editorState.timelines.push({
+          id,
+          title: 'New Timeline',
+          image: '',
+          events: []
+        });
+        selPane = { type: 'timeline', idx: editorState.timelines.length - 1 };
+        debouncedApply(); renderSidebar(); renderMain();
+      };
+
       const list = document.createElement('div');
       list.className = 'ed-tl-list';
       host.appendChild(list);
@@ -652,15 +752,32 @@
 
         row.classList.toggle('is-active', selPane?.type === 'timeline' && selPane.idx === i);
         row.querySelector('.select-timeline').onclick = () => { selPane = { type: 'timeline', idx: i }; renderSidebar(); renderMain(); };
-        row.querySelector('.ed-tl__title').onchange = (e) => { tl.title = e.target.value; debouncedApply(); renderSidebar(); renderHeaderActions(); };
+
+        // commit title on *input* so state updates while typing
+        row.querySelector('.ed-tl__title').oninput = (e) => {
+          tl.title = e.target.value;
+          debouncedApply();
+          renderSidebar();           // keep sidebar counts/titles fresh
+          renderHeaderActions();
+        };
 
         row.querySelector('[data-act="up"]').onclick = () => {
-          if (i>0){ const a = editorState.timelines[i-1]; editorState.timelines[i-1] = editorState.timelines[i]; editorState.timelines[i] = a;
-            if (selPane?.type === 'timeline' && selPane.idx === i) selPane.idx = i-1; debouncedApply(); renderSidebar(); renderMain(); }
+          if (i>0){
+            const a = editorState.timelines[i-1];
+            editorState.timelines[i-1] = editorState.timelines[i];
+            editorState.timelines[i] = a;
+            if (selPane?.type === 'timeline' && selPane.idx === i) selPane.idx = i-1;
+            debouncedApply(); renderSidebar(); renderMain();
+          }
         };
         row.querySelector('[data-act="down"]').onclick = () => {
-          if (i<editorState.timelines.length-1){ const a = editorState.timelines[i+1]; editorState.timelines[i+1] = editorState.timelines[i]; editorState.timelines[i] = a;
-            if (selPane?.type === 'timeline' && selPane.idx === i) selPane.idx = i+1; debouncedApply(); renderSidebar(); renderMain(); }
+          if (i<editorState.timelines.length-1){
+            const a = editorState.timelines[i+1];
+            editorState.timelines[i+1] = editorState.timelines[i];
+            editorState.timelines[i] = a;
+            if (selPane?.type === 'timeline' && selPane.idx === i) selPane.idx = i+1;
+            debouncedApply(); renderSidebar(); renderMain();
+          }
         };
         row.querySelector('[data-act="del"]').onclick = () => {
           if (confirm(`Delete timeline "${tl.title}"?`)){
@@ -673,13 +790,6 @@
           }
         };
       });
-
-      document.getElementById('ed-add-tl').onclick = () => {
-        const id = `tl_${Date.now()}`;
-        editorState.timelines.push({ id, title: 'New Timeline', events: [] });
-        selPane = { type: 'timeline', idx: editorState.timelines.length - 1 };
-        debouncedApply(); renderSidebar(); renderMain();
-      };
     }
 
     /** ===== Main panel ===== */
@@ -701,7 +811,6 @@
         renderWorldEditor(host, selPane.type === 'world-static' ? 'static' : 'recurring'); return;
       }
 
-      // --- Timeline editor ---
       if (!editorState.timelines.length) {
         host.innerHTML = '<div class="ed-main-head"><em>No timelines. Add one from the left.</em></div>';
         return;
@@ -711,13 +820,68 @@
       const head = document.createElement('div');
       head.className = 'ed-main-head';
       head.innerHTML = `
-        <div><strong>${tl.title || 'Untitled'}</strong></div>
-        <div class="ed-btn-box">
-          <button id="ed-add-ev" type="button"><b>＋</b></button>
-          <button id="ed-dup-evs" class="ghost" type="button">++ All</button>
-          <button id="ed-clear-evs" class="danger" type="button">X All</button>
+        <div class="ed-main-titlebar" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <div class="ed-main-title" style="font-weight:700;">${tl.title || 'Untitled'}</div>
+
+          <div class="ed-tl-image" style="display:flex;align-items:center;gap:8px;">
+            <div class="ed-thumb ed-thumb--ph" aria-hidden="false" style="width:36px;height:36px;border-radius:6px;background:#f2f2f2;border:1px solid #ddd;"></div>
+            <input type="text" id="ed-tl-image-input" value="${tl.image || ''}"
+              placeholder="Timeline image slug" title="Timeline Image Slug"
+              style="min-width:220px;">
+          </div>
+
+          <div class="ed-btn-box" style="margin-left:auto;display:flex;gap:8px;">
+            <button id="ed-add-ev" type="button"><b>＋</b></button>
+            <button id="ed-dup-evs" class="ghost" type="button">++ All</button>
+            <button id="ed-clear-evs" class="danger" type="button">X All</button>
+          </div>
         </div>`;
       host.appendChild(head);
+
+      // Wire timeline image preview
+      (function () {
+        const wrap = head.querySelector('.ed-tl-image');
+        const input = head.querySelector('#ed-tl-image-input');
+
+        function updateTlImagePreview() {
+          wrap.querySelectorAll('.ed-thumb').forEach(n => n.remove());
+
+          const slug = (input.value || '').trim();
+          if (!slug) {
+            const ph = document.createElement('div');
+            ph.className = 'ed-thumb ed-thumb--ph';
+            ph.setAttribute('aria-hidden','false');
+            ph.style.cssText = 'width:36px;height:36px;border-radius:6px;background:#f2f2f2;border:1px solid #ddd;';
+            wrap.insertBefore(ph, input);
+            return;
+          }
+          const imgEl = makeSmartImgFallback(
+            TIMELINE_IMAGES_DIR,
+            slug,
+            'ed-thumb',
+            slug,
+            () => {
+              const ph = document.createElement('div');
+              ph.className = 'ed-thumb ed-thumb--ph';
+              ph.setAttribute('aria-hidden','false');
+              ph.style.cssText = 'width:36px;height:36px;border-radius:6px;background:#f2f2f2;border:1px solid #ddd;';
+              wrap.insertBefore(ph, input);
+            }
+          );
+          if (imgEl) {
+            imgEl.style.cssText = 'width:36px;height:36px;border-radius:6px;object-fit:cover;border:1px solid #ddd;';
+            wrap.insertBefore(imgEl, input);
+          }
+        }
+
+        updateTlImagePreview();
+
+        input.addEventListener('input', () => {
+          tl.image = input.value.trim();
+          updateTlImagePreview();
+          debouncedApply();
+        });
+      })();
 
       const table = document.createElement('table');
       table.className = 'ed-table';
@@ -729,7 +893,6 @@
 
       evs.slice().reverse().forEach((ev, rIdx) => {
         const i = evs.length - 1 - rIdx;
-        // normalise legacy -> numeric
         ev.categoryId = toCatId(ev.categoryId ?? ev.category ?? '');
 
         const tr = document.createElement('tr');
@@ -848,7 +1011,7 @@
       wrap.className = 'ed-sect';
       host.appendChild(wrap);
 
-      // === General (put this FIRST) ===
+      // === General
       const uiCard = document.createElement('div');
       uiCard.className = 'ed-sect';
       uiCard.innerHTML = `
@@ -886,7 +1049,6 @@
       `;
       wrap.appendChild(uiCard);
 
-      // Wire UI controls
       const iTitle = uiCard.querySelector('#ui-title');
       iTitle.addEventListener('input', () => {
         if (!settingsState.ui) settingsState.ui = { ...DEFAULT_UI };
@@ -910,7 +1072,7 @@
         });
       });
 
-      // === Categories table (AFTER General) ===
+      // === Categories
       const table = document.createElement('table');
       table.className = 'ed-table';
       table.innerHTML = `
@@ -979,7 +1141,7 @@
       });
     }
 
-    /** ===== World Events editor (kind: 'static' | 'recurring') ===== */
+    /** ===== World Events editor ===== */
     function renderWorldEditor(host, kind) {
       const isStatic = (kind === 'static');
       const title = isStatic ? 'One-off Events' : 'Recurring Events';
@@ -1079,10 +1241,7 @@
       };
     }
 
-    
-    function getCatColor(id) {
-      return getCatById(id)?.color || '';
-    }
+    function getCatColor(id) { return getCatById(id)?.color || ''; }
 
     function tokenise(s) {
       if (!s) return [];
@@ -1092,7 +1251,26 @@
 
     /** ===================== Persistence actions ===== */
     function onDownloadJSON() {
-      const blob = new Blob([JSON.stringify(editorState, null, 2)], { type: 'application/json' });
+      // 1) Force-commit whatever you're typing and flush the debounce
+      flushPendingEdits();
+
+      // 2) Write the current editorState immediately (no debounce)
+      try { saveToLocal(); } catch {}
+
+      // 3) Read the canonical, most-recent state from localStorage
+      let latest = null;
+      try {
+        latest = loadFromLocal();
+      } catch {
+        latest = null;
+      }
+
+      // 4) Fall back to in-memory if localStorage read fails
+      const toExport = latest && Array.isArray(latest.timelines) ? latest : editorState;
+
+      // 5) Normalize and download as a Blob (guaranteed, no server fetch)
+      const out = normalizeEditorState(structuredClone(toExport));
+      const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
       a.download = 'data.json';
@@ -1101,6 +1279,7 @@
       URL.revokeObjectURL(a.href);
       a.remove();
     }
+
 
     async function onImportJSON() {
       const inp = document.createElement('input');
@@ -1111,7 +1290,7 @@
           const text = await file.text();
           const json = JSON.parse(text);
           if (!json || !Array.isArray(json.timelines)) throw new Error('Invalid JSON shape');
-          editorState = json;
+          editorState = normalizeEditorState(json);
           saveToLocal();
           await applyStateToRenderer();
           renderSidebar(); renderMain();
@@ -1128,34 +1307,38 @@
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         const json = await r.json();
         if (!json || !Array.isArray(json.timelines)) throw new Error('Invalid JSON');
-        editorState = json; saveToLocal();
+        editorState = normalizeEditorState(json);
+        saveToLocal();
         await applyStateToRenderer();
         renderSidebar(); renderMain();
       } catch (e) {
         alert('Could not reload from data.json: ' + (e.message || e));
       }
     }
-    
-    /** ===================== RENDER HORIZONTAL TIMELINES ===================== **/
+
+    /** ===================== RENDER TIMELINES (Horizontal) ===================== **/
     async function renderGridHorizontal(timelines, seasonalMarkers = []) {
       const grid = $('grid');
       grid.innerHTML = '';
 
-      // 1) Compute bounds
       const bounds = timelines.flatMap(tl => tl.events.map(ev => [ev.startIdx, ev.startIdx + ev.durationWeeks]));
       const minIdx = Math.min(...bounds.map(b => b[0]));
       const maxIdx = Math.max(...bounds.map(b => b[1]));
       const totalWeeks = Math.max(1, maxIdx - minIdx);
 
-      // 2) Expand seasonal markers into absolute week indices
+      const activeWeekCounts = new Map();
+      for (const tl of timelines) for (const ev of tl.events) {
+        const start = ev.startIdx, end = ev.startIdx + ev.durationWeeks;
+        for (let idx = start; idx < end; idx++) activeWeekCounts.set(idx, (activeWeekCounts.get(idx) || 0) + 1);
+      }
+
       const { year: minYear } = idxToISOWeek(minIdx);
       const { year: maxYear } = idxToISOWeek(maxIdx - 1);
 
       const expandedSeasonal = [];
       for (const m of seasonalMarkers) {
-        if (m.type === 'static') {
-          expandedSeasonal.push(m);
-        } else if (m.type === 'recurring') {
+        if (m.type === 'static') expandedSeasonal.push(m);
+        else if (m.type === 'recurring') {
           const ww = String(m.week).padStart(2, '0');
           for (let y = minYear; y <= maxYear; y++) {
             const idx = isoWeekToIdx(`${y}-${ww}`);
@@ -1170,53 +1353,51 @@
         seasonalByIdx.get(m.weekIdx).push(m);
       }
 
-      // 3) Build columns array: week column + N seasonal columns (for that week)
-      const columns = [];                 // [{type:'week', idx} | {type:'seasonal', data}]
-      const weekColIndex = new Map();     // weekIdx -> first column index for that week
+      const columns = [];
+      const weekColIndex = new Map();
       for (let w = minIdx; w < maxIdx; w++) {
+        const arr = seasonalByIdx.get(w);
+        if (arr && arr.length) for (const m of arr) columns.push({ type: 'seasonal', data: m, idx: w });
         weekColIndex.set(w, columns.length);
         columns.push({ type: 'week', idx: w });
-        const arr = seasonalByIdx.get(w);
-        if (arr && arr.length) {
-          for (const m of arr) columns.push({ type: 'seasonal', data: m, idx: w });
-        }
       }
 
-      // 4) Sizing (uses CSS vars you set via applyGridSizing)
       grid.style.gridTemplateRows = [
-        'var(--week-header-row)',                                 // header row
+        'var(--week-header-row)',
         ...timelines.map(() => 'minmax(var(--timeline-row-min), auto)')
       ].join(' ');
 
       grid.style.gridTemplateColumns = [
-        'var(--names-col-width)',                                 // names column
+        'var(--names-col-width)',
         ...columns.map(() => 'var(--week-col-width)')
       ].join(' ');
 
-      // 5) Header names cell (top-left)
       const corner = document.createElement('div');
       corner.className = 'corner';
       corner.style.gridRow = '1 / 2';
       corner.style.gridColumn = '1 / 2';
-      corner.textContent = 'Timeline';
+      corner.textContent = String(idxToISOWeek(minIdx).year);
       grid.appendChild(corner);
 
-      // 6) Header: one cell per column
       columns.forEach((col, c) => {
         const header = document.createElement('div');
-        const gridCol = 2 + c;     // +1 for the names col, +1 because CSS grid is 1-based
+        const gridCol = 2 + c;
         header.style.gridRow = '1 / 2';
         header.style.gridColumn = `${gridCol} / ${gridCol + 1}`;
 
         if (col.type === 'week') {
           header.className = 'wlabel';
+          header.dataset.weekIdx = String(col.idx);
           const { week } = idxToISOWeek(col.idx);
           const inner = document.createElement('div');
           inner.className = 'wlabel__inner';
           inner.textContent = `Week ${String(week).padStart(2, '0')}`;
+          const count = activeWeekCounts.get(col.idx) || 0;
+          if (count > 0) { inner.classList.add('has-events'); inner.dataset.count = String(count); }
           header.appendChild(inner);
         } else {
           header.className = 'wlabel wlabel--seasonal';
+          header.dataset.weekIdx = String(col.idx);
           const inner = document.createElement('div');
           inner.className = 'wlabel__inner wlabel__inner--seasonal';
           const m = col.data;
@@ -1234,23 +1415,49 @@
           }
           header.appendChild(inner);
         }
-
         grid.appendChild(header);
       });
 
-      // 7) Timeline name cells + background cells
+      setupCornerYearTrackerHorizontal(grid, corner);
+
       timelines.forEach((tl, r) => {
         const gridRow = 2 + r;
 
-        // left names column
+        // left names column (with image + wrapped title)
         const name = document.createElement('div');
         name.className = 'thead';
-        name.textContent = tl.title;
         name.style.gridRow = `${gridRow} / ${gridRow + 1}`;
         name.style.gridColumn = '1 / 2';
+
+        // build inner
+        const inner = document.createElement('div');
+        inner.className = 'thead__inner';
+
+        // thumbnail
+        const img = makeSmartImgFallback(
+          TIMELINE_IMAGES_DIR,
+          tl.imageName,
+          'thead-thumb',
+          tl.title,
+          () => {
+            const ph = document.createElement('div');
+            ph.className = 'thead-thumb thead-thumb--ph';
+            inner.appendChild(ph);
+          }
+        );
+        if (img) {
+          inner.appendChild(img);
+        }
+
+        // title span
+        const titleSpan = document.createElement('span');
+        titleSpan.className = 'thead__title';
+        titleSpan.textContent = tl.title || '';
+        inner.appendChild(titleSpan);
+
+        name.appendChild(inner);
         grid.appendChild(name);
 
-        // background cells for each column (separate class for seasonal columns)
         columns.forEach((col, c) => {
           const bg = document.createElement('div');
           bg.className = 'cell' + (col.type === 'seasonal' ? ' cell--seasonal' : '');
@@ -1260,7 +1467,6 @@
         });
       });
 
-      // Helper: how many seasonal columns between week indices [start, end)
       function countSeasonalsBetween(startWeekIdx, endWeekIdx) {
         let total = 0;
         for (let idx = startWeekIdx; idx < endWeekIdx; idx++) {
@@ -1269,18 +1475,15 @@
         return total;
       }
 
-      // 8) Place events as horizontal spans (across week + seasonal columns)
       for (let r = 0; r < timelines.length; r++) {
         const tl = timelines[r];
         for (const ev of tl.events) {
           const start = ev.startIdx;
           const endExclusive = ev.startIdx + ev.durationWeeks;
 
-          // clamp weeks to visible range
           const visStart = Math.min(Math.max(start, minIdx), maxIdx - 1);
           const visEndWk = Math.min(Math.max(endExclusive - 1, minIdx), maxIdx - 1);
 
-          // must have week columns for both ends
           if (!weekColIndex.has(visStart) || !weekColIndex.has(visEndWk)) continue;
 
           const colStart = weekColIndex.get(visStart);
@@ -1308,20 +1511,24 @@
           el.style.setProperty('--jtext',  catText  || 'black');
           el.style.setProperty('--jemoji', `"${catEmoji}"`);
 
-          // position
           const gridRow = 2 + r;
           const gridColStart = 2 + colStart;
           el.style.gridRow = `${gridRow} / ${gridRow + 1}`;
           el.style.gridColumn = `${gridColStart} / ${gridColStart + span}`;
 
-          // content
           const { year, week } = idxToISOWeek(start);
           const labelStart = `${year}-${String(week).padStart(2, '0')}`;
 
           const topline = document.createElement('div');
           topline.className = 'topline';
 
-          prependEventMedia(el, ev);
+          const sticky = document.createElement('div');
+          sticky.className = 'event-sticky';
+          sticky.dataset.image = 'false';
+
+          prependEventMedia(sticky, ev, (has) => {
+            sticky.dataset.image = has ? 'true' : 'false';
+          });
 
           if (catName) {
             const cat = document.createElement('div');
@@ -1340,9 +1547,8 @@
           meta.textContent = `${labelStart} • ${ev.durationWeeks}w`;
           topline.appendChild(meta);
 
-          el.appendChild(topline);
+          sticky.appendChild(topline);
 
-          // chips
           const charChips = document.createElement('div');
           charChips.className = 'chips chips--characters';
           for (const n of ev.characters || []) {
@@ -1357,7 +1563,7 @@
             a.appendChild(label);
             charChips.appendChild(a);
           }
-          if (charChips.children.length) el.appendChild(charChips);
+          if (charChips.children.length) topline.appendChild(charChips);
 
           const locChips = document.createElement('div');
           locChips.className = 'chips chips--locations';
@@ -1371,19 +1577,17 @@
             a.appendChild(label);
             locChips.appendChild(a);
           }
-          if (locChips.children.length) el.appendChild(locChips);
+          if (locChips.children.length) topline.appendChild(locChips);
 
+          el.appendChild(sticky);
           grid.appendChild(el);
         }
       }
 
-      // meta line
       const firstLabel = (function(){const {year,week}=idxToISOWeek(minIdx); return `${year}-${String(week).padStart(2,'0')}`})();
       const lastLabel  = (function(){const {year,week}=idxToISOWeek(maxIdx-1); return `${year}-${String(week).padStart(2,'0')}`})();
       setText('meta', `Timelines: ${timelines.length} • Weeks: ${totalWeeks} • Range: ${firstLabel} → ${lastLabel}`);
     }
-
-
 
     /** ===================== RENDER VERTICAL TIMELINES ===================== **/
     async function renderGridVertical(timelines, seasonalMarkers = []) {
@@ -1399,9 +1603,7 @@
         for (const ev of tl.events) {
           const start = ev.startIdx;
           const end = ev.startIdx + ev.durationWeeks;
-          for (let idx = start; idx < end; idx++) {
-            activeWeekCounts.set(idx, (activeWeekCounts.get(idx) || 0) + 1);
-          }
+          for (let idx = start; idx < end; idx++) activeWeekCounts.set(idx, (activeWeekCounts.get(idx) || 0) + 1);
         }
       }
 
@@ -1444,7 +1646,6 @@
         .map(() => 'minmax(var(--week-row-min), auto)')
         .join(' ');
 
-
       const corner = document.createElement('div');
       corner.className = 'corner';
       corner.style.gridColumn = '1 / 2';
@@ -1455,11 +1656,36 @@
       timelines.forEach((tl, cIdx) => {
         const th = document.createElement('div');
         th.className = 'thead';
-        th.textContent = tl.title;
         th.style.gridColumn = `${2 + cIdx} / ${3 + cIdx}`;
         th.style.gridRow = '1 / 2';
+
+        const inner = document.createElement('div');
+        inner.className = 'thead__inner';
+
+        const img = makeSmartImgFallback(
+          TIMELINE_IMAGES_DIR,
+          tl.imageName,
+          'thead-thumb',
+          tl.title,
+          () => {
+            const ph = document.createElement('div');
+            ph.className = 'thead-thumb thead-thumb--ph';
+            inner.appendChild(ph);
+          }
+        );
+        if (img) {
+          inner.appendChild(img);
+        }
+
+        const titleSpan = document.createElement('span');
+        titleSpan.className = 'thead__title';
+        titleSpan.textContent = tl.title || '';
+        inner.appendChild(titleSpan);
+
+        th.appendChild(inner);
         grid.appendChild(th);
       });
+
 
       rows.forEach((row, rIdx) => {
         if (row.type === 'week') {
@@ -1570,14 +1796,19 @@
           el.style.gridColumn = `${2 + cIdx} / ${3 + cIdx}`;
           el.style.gridRow = `${2 + topRowIdx} / ${2 + topRowIdx + span}`;
 
-
           const { year, week } = idxToISOWeek(start);
           const labelStart = `${year}-${String(week).padStart(2, '0')}`;
 
           const topline = document.createElement('div');
           topline.className = 'topline';
 
-          prependEventMedia(el, ev);
+          const sticky = document.createElement('div');
+          sticky.className = 'event-sticky';
+          sticky.dataset.image = 'false';
+
+          prependEventMedia(sticky, ev, (has) => {
+            sticky.dataset.image = has ? 'true' : 'false';
+          });
 
           if (catName) {
             const cat = document.createElement('div');
@@ -1596,7 +1827,7 @@
           meta.textContent = `${labelStart} • ${ev.durationWeeks}w`;
           topline.appendChild(meta);
 
-          el.appendChild(topline);
+          sticky.appendChild(topline);
 
           const charChips = document.createElement('div');
           charChips.className = 'chips chips--characters';
@@ -1612,7 +1843,7 @@
             a.appendChild(label);
             charChips.appendChild(a);
           }
-          if (charChips.children.length) el.appendChild(charChips);
+          if (charChips.children.length) topline.appendChild(charChips);
 
           const locChips = document.createElement('div');
           locChips.className = 'chips chips--locations';
@@ -1626,8 +1857,9 @@
             a.appendChild(label);
             locChips.appendChild(a);
           }
-          if (locChips.children.length) el.appendChild(locChips);
+          if (locChips.children.length) topline.appendChild(locChips);
 
+          el.appendChild(sticky);
           grid.appendChild(el);
         }
       }

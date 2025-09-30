@@ -2,7 +2,7 @@
   "timelines": [
     {
       "id": "02_Frodo",
-      "title": "Lord of the Rings",
+      "title": "Lord of the Rings ",
       "events": [
         {
           "date": "2024-48",
@@ -140,7 +140,8 @@
           ],
           "categoryId": 12
         }
-      ]
+      ],
+      "image": "lordoftherings"
     },
     {
       "id": "01_Harry",
@@ -149,7 +150,7 @@
         {
           "date": "2025-02",
           "duration": "4w",
-          "desc": "Living a quiet village life",
+          "desc": "Living a quiet village life (Yay!)",
           "category": "OrdinaryWorld",
           "image": "Wand",
           "characters": [
@@ -299,7 +300,8 @@
           ],
           "categoryId": 12
         }
-      ]
+      ],
+      "image": "harrypotter"
     },
     {
       "id": "tl_1759107743249",
@@ -377,7 +379,8 @@
           ],
           "categoryId": 5
         }
-      ]
+      ],
+      "image": "red"
     }
   ],
   "seasonal": [
