@@ -1,3 +1,19 @@
+/* =========================================================
+   0) TABLE OF CONTENTS
+   1) Design tokens & base
+   2) Layout wrappers
+   3) Grid primitives
+   4) Timeline components (thead, cell, event)
+   5) Seasonal components
+   6) Editor (overlay) UI
+   7) Sidebar, tables, forms & buttons
+========================================================= */
+
+
+/* =========================================================
+   1) DESIGN TOKENS & BASE
+========================================================= */
+
 :root {
   --timeline-col-min: 260px;   /* each timeline column (VERTICAL layout) */
   --timeline-col-max: 1fr;
@@ -48,6 +64,12 @@ body.theme-light {
   
   background: var(--background);
 }
+
+
+/* =========================================================
+   2) LAYOUT WRAPPERS
+========================================================= */
+
 header {
   display: flex;
   align-items: baseline;
@@ -96,6 +118,12 @@ header .err {
   grid-template-columns: var(--col-min);
 }
 
+
+/* =========================================================
+   3) GRID PRIMITIVES
+   (corner/year label, week labels)
+========================================================= */
+
 .corner {
   position: sticky;
   display: flex;
@@ -136,6 +164,17 @@ header .err {
   border-radius: 10px;
   background: var(--g-outline);
 }
+
+
+/* =========================================================
+   4) TIMELINE COMPONENTS
+   - Column header (.thead)
+   - Timeline cells (.cell)
+   - Event cards (.event)
+   (Horizontal overrides colocated)
+========================================================= */
+
+/* ---- Column header (timeline name) ---- */
 .thead {
   display:block;
   position: sticky;
@@ -182,6 +221,8 @@ header .err {
   border-radius:5px;
   border: 1px solid var(--muted);
 }
+
+/* ---- Timeline cells ---- */
 .cell {
   position: relative;
   background: var(--g-panel);
@@ -201,6 +242,7 @@ header .err {
   border-radius: 0;
   pointer-events: none;
 }
+/* horizontal override */
 .layout-horizontal .cell:before {
   content: "";
   position: absolute;
@@ -214,6 +256,7 @@ header .err {
   pointer-events: none;
 }
 
+/* ---- Event cards ---- */
 .event {
   border-radius: 10px;
   position: relative;
@@ -299,7 +342,7 @@ header .err {
 .event .chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 16px 6px;
   margin: 0 2px 5px 2px;
   padding: 5px;
   justify-content: center;
@@ -337,7 +380,6 @@ header .err {
 .event .chip .icon + span {
   padding-left: 31px;
 }
-
 .event .chips.chips--locations {
   position: absolute;
   top: -30px;
@@ -349,7 +391,103 @@ header .err {
   outline: 1.5px solid var(--jcolor);
 }
 
-/* Seasonal left label row */
+/* ---- Event: horizontal overrides ---- */
+.layout-horizontal .event .event-sticky {
+  display:flex;
+  align-items: stretch;
+}
+.layout-horizontal .event .event-sticky[data-image=true] {
+  position: sticky;
+  width:fit-content;
+  top: 0px;
+  left:160px;
+}
+.layout-horizontal .event .event-sticky[data-image=false] {
+  position: sticky;
+  width:fit-content;
+  top: 0px;
+  left:160px;
+}
+.layout-horizontal .event {
+  display:flex;
+  justify-content: center;
+  gap:0px;
+  min-width:250px;
+  height:fit-content;
+  margin:auto 15px;
+}
+.layout-horizontal .event .topline,
+.layout-horizontal .event .chips--characters,
+.layout-horizontal .event .chips--locations {
+  flex-grow:0;
+  justify-content: start;
+  width: fit-content;
+}
+.layout-horizontal .event .chips--characters {
+  padding:0;
+  margin:10px 0 0 0;
+}
+.layout-horizontal .event .topline {
+  gap:3px;
+}
+.layout-horizontal .event .topline > * {
+  width:100%;
+  text-align: left;
+}
+.layout-horizontal .event .chips--locations {
+  top:initial;
+  bottom:0px;
+  left:initial;
+  right:100%;
+  width: fit-content;
+}
+.layout-horizontal .event .chips {
+  gap: 6px;
+}
+.layout-horizontal .event .chip .icon {
+  height:100%;
+  width:auto;
+  aspect-ratio: 1 / 1;
+  top:0;
+  margin-top:0;
+}
+.layout-horizontal .event .chip .icon + span {
+  padding-left:22px;
+}
+.layout-horizontal .event .thumb {
+  display:block;
+  position:relative;
+  width:25px;
+  height:auto;
+  border-radius:5px 0 0 5px;
+  outline:2px solid var(--jcolor);
+}
+.layout-horizontal .event img.thumb {
+  display:block;
+  position:relative;
+  width:80px;
+  height:auto;
+  object-fit: cover;
+  border-radius:5px 0 0 5px;
+  outline:2px solid var(--jcolor);
+  flex-grow: 1;
+}
+.layout-horizontal .event .topline:before {
+  display:none;
+}
+.layout-horizontal .event .cat:before {
+  display:inline-block;
+  content: var(--jemoji);
+  margin-right:4px
+}
+
+
+/* =========================================================
+   5) SEASONAL COMPONENTS
+   (labels + background lanes)
+   (Horizontal overrides colocated)
+========================================================= */
+
 .wlabel--seasonal {
   /* different base if you want */
   position: relative;
@@ -363,7 +501,6 @@ header .err {
   background-color: transparent;
   border-style: none;
 }
-
 .cell--seasonal:after {
   content: "";
   position: absolute;
@@ -377,7 +514,6 @@ header .err {
   pointer-events: none;
   opacity: 0.5;
 }
-
 .wlabel--seasonal::before,
 .cell--seasonal::before {
   content: " ";
@@ -419,7 +555,6 @@ header .err {
   object-fit: contain;
   border-radius: 4px;
 }
-
 .seasonal-name {
   font-weight: 600;
   font-size: 8px;
@@ -430,6 +565,8 @@ header .err {
   font-size: 7px;
   text-transform: uppercase;
 }
+
+/* seasonal: horizontal overrides */
 .layout-horizontal .wlabel--seasonal {
   min-width:100px;
 }
@@ -457,93 +594,11 @@ header .err {
   margin-left: -1px;
 }
 
-.layout-horizontal .event .event-sticky {
-  display:flex;
-  align-items: stretch;
-}
-.layout-horizontal .event .event-sticky[data-image=true] {
-  position: sticky;
-  width:fit-content;
-  top: 0px;
-  left:160px;
-}
-.layout-horizontal .event .event-sticky[data-image=false] {
-  position: sticky;
-  width:fit-content;
-  top: 0px;
-  left:160px;
-}
-.layout-horizontal .event {
-  display:flex;
-  justify-content: center;
-  gap:0px;
-  min-width:250px;
-  height:fit-content;
-  margin:auto 15px;
-}
-.layout-horizontal .event .topline,
-.layout-horizontal .event .chips--characters,
-.layout-horizontal .event .chips--locations {
-  flex-grow:0;
-  justify-content: start;
-  width: fit-content;
-}
-.layout-horizontal .event .chips--characters {
-  padding:0;
-  margin:0;
-}
-.layout-horizontal .event .topline {
-  gap:3px;
-}
-.layout-horizontal .event .topline > * {
-  width:100%;
-  text-align: left;
-}
-.layout-horizontal .event .chips--locations {
-  top:initial;
-  bottom:0px;
-  left:initial;
-  right:100%;
-  width: fit-content;
-}
-.layout-horizontal .event .chip .icon {
-  height:100%;
-  width:auto;
-  aspect-ratio: 1 / 1;
-  top:0;
-  margin-top:0;
-}
-.layout-horizontal .event .chip .icon + span {
-  padding-left:22px;
-}
-.layout-horizontal .event .thumb {
-  display:block;
-  position:relative;
-  width:25px;
-  height:auto;
-  border-radius:5px 0 0 5px;
-  outline:2px solid var(--jcolor);
-}
-.layout-horizontal .event img.thumb {
-  display:block;
-  position:relative;
-  width:80px;
-  height:auto;
-  object-fit: cover;
-  border-radius:5px 0 0 5px;
-  outline:2px solid var(--jcolor);
-  flex-grow: 1;
-}
-.layout-horizontal .event .topline:before {
-  display:none;
-}
-.layout-horizontal .event .cat:before {
-  display:inline-block;
-  content: var(--jemoji);
-  margin-right:4px
-}
 
-/* ===== Editor (overlay) ===== */
+/* =========================================================
+   6) EDITOR (OVERLAY) UI
+========================================================= */
+
 body.editing {
   overflow: hidden;
 }
@@ -616,6 +671,11 @@ body.editing {
   background-color: var(--g-outline);
   padding: 10px;
 }
+
+
+/* =========================================================
+   7) SIDEBAR, TABLES, FORMS & BUTTONS
+========================================================= */
 
 /* Sidebar list */
 .ed-tl-list {
@@ -717,11 +777,9 @@ body.editing {
   background: var(--g-bar);
   z-index: 1;
 }
-
 .ed-table tr {
   --jcolor: attr[data-cat-id];
 }
-
 .ed-table td {
   gap: 20px;
   padding: 20px;
@@ -742,14 +800,12 @@ input[type="text"] {
   display:flex;
   justify-content: space-between;
 }
-
 .ed-row-data {
   display:flex;
   flex-direction: column;
   gap:8px;
   margin-bottom:8px;
 }
-
 .ed-row-data-top,
 .ed-row-data-bottom {
   display: flex;
@@ -767,13 +823,11 @@ input[type="text"] {
   flex-shrink: 0;
   flex-grow:0;
 }
-
 .ed-image {
   display:flex;
   align-items: center;
   gap:6px;
 }
-
 .ed-btn-box {
   display:flex;
   align-items: stretch;
@@ -789,7 +843,6 @@ input[type="text"] {
 .ed-btn-box.small button {
   font-size:0.5rem !important;
 }
-
 .ed-thumb {
   display: inline-block;
   width: 30px;
@@ -868,12 +921,12 @@ button.ghost {
   background: transparent;
   border-color: var(--muted);
 }
-
 button.ghost:hover {
   background-color: var(--muted);
   color:var(--background);
 }
 
+/* Selects */
 .ed-table select {
   width: 100%;
   background: var(--background);

@@ -43,7 +43,7 @@
       horizontal: {
         namesColWidth:  '160px',
         weekColWidth:   'auto',
-        timelineRowMin: '110px',
+        timelineRowMin: '120px',
         weekHeaderRow:  'auto',
       }
     };
@@ -200,6 +200,32 @@
         g.style.removeProperty('--timeline-col-max');
         g.style.removeProperty('--week-row-min');
       }
+    }
+
+    function toColorInputValue(v) {
+      // Normalize, then coerce to #RRGGBB for <input type="color">
+      const s = normalizeHexColor(v);
+      if (!s) return '#000000';
+      let hex = s.slice(1);
+      if (hex.length === 3) hex = hex.split('').map(ch => ch + ch).join('');         // #RGB -> #RRGGBB
+      if (hex.length === 4) hex = hex.slice(0, 3).split('').map(ch => ch + ch).join(''); // #RGBA -> #RRGGBB (drop A)
+      if (hex.length === 8) hex = hex.slice(0, 6);                                   // #RRGGBBAA -> #RRGGBB (drop AA)
+      return '#' + hex.toLowerCase();
+    }
+
+    // Convert any hex (3/4/6/8) to a valid <input type="color"> value (#RRGGBB)
+    function toColorInputValue(hex) {
+      const norm = normalizeHexColor(hex || '');
+      if (!norm) return '#000000';
+      let s = norm.replace(/^#/, '');
+      // strip alpha if 8 digits
+      if (s.length === 8) s = s.slice(0, 6);
+      // expand #RGB / #RGBA -> #RRGGBB
+      if (s.length === 3) s = s.split('').map(ch => ch + ch).join('');
+      if (s.length === 4) s = s.slice(0, 3).split('').map(ch => ch + ch).join('');
+      // pad defensively
+      if (s.length !== 6) return '#000000';
+      return '#' + s.toUpperCase();
     }
 
     function buildTimelineHeaderEl(tl) {
@@ -1082,7 +1108,7 @@
             <th>Name</th>
             <th style="width:120px;">Emoji</th>
             <th style="width:160px;">Color</th>
-            <th style="width:90px;">Text</th>
+            <th style="width:90px;">Inner Text</th>
           </tr>
         </thead>
         <tbody></tbody>`;
@@ -1098,7 +1124,7 @@
           <td><input type="text" class="cat-emoji" value="${cat.emoji || ''}" placeholder="e.g. 🔥" /></td>
           <td>
             <div style="display:flex; align-items:center; gap:.5rem;">
-              <span class="cat-swatch" style="width:20px;height:20px;border-radius:4px;border:1px solid #ccc;display:inline-block;background:${cat.color || 'transparent'}"></span>
+              <input type="color" class="cat-color-picker" value="${toColorInputValue(cat.color)}" />
               <input type="text" class="cat-color" value="${cat.color || ''}" placeholder="#RRGGBB" />
             </div>
           </td>
@@ -1116,21 +1142,66 @@
 
         const iName = tr.querySelector('.cat-name');
         const iEmoji = tr.querySelector('.cat-emoji');
-        const iColor = tr.querySelector('.cat-color');
-        const swatch = tr.querySelector('.cat-swatch');
-        const textBtn = tr.querySelector('.cat-text-toggle');
+        const iColorText   = tr.querySelector('.cat-color');
+        const iColorPicker = tr.querySelector('.cat-color-picker');
+        const textBtn      = tr.querySelector('.cat-text-toggle');
 
         iName.addEventListener('input', () => { cat.name = iName.value; applyStateToRenderer(); });
         iEmoji.addEventListener('input', () => { cat.emoji = iEmoji.value; applyStateToRenderer(); });
 
-        iColor.addEventListener('input', () => {
-          const norm = normalizeHexColor(iColor.value);
-          if (iColor.value.trim() === '' || norm) {
-            cat.color = norm;
+        // Text field -> model + picker + swatch
+        iColorText.addEventListener('input', () => {
+          const raw = iColorText.value;
+          const norm = normalizeHexColor(raw); // '' if invalid
+          if (raw.trim() === '' || norm) {
+            cat.color = norm; // '' clears color
             swatch.style.background = norm || 'transparent';
             textBtn.style.background = norm || 'transparent';
+            if (norm) iColorPicker.value = toColorInputValue(norm);
             applyStateToRenderer();
           }
+        });
+
+        // Picker ➜ Text
+        iColorPicker.addEventListener('input', () => {
+          const val = iColorPicker.value;              // always #RRGGBB
+          const norm = normalizeHexColor(val);         // stays #rrggbb with '#'
+          cat.color = norm;
+          iColorText.value = norm;
+          swatch.style.background = norm || 'transparent';
+          textBtn.style.background = norm || 'transparent';
+          applyStateToRenderer();
+        });
+
+        // Text ➜ Picker (NEW)
+        iColorText.addEventListener('input', () => {
+          const raw  = iColorText.value.trim();
+          if (raw === '') {
+            // allow clearing
+            cat.color = '';
+            textBtn.style.background = 'transparent';
+            // don't force-set the picker; leave last chosen color visible
+            applyStateToRenderer();
+            return;
+          }
+
+          const norm = normalizeHexColor(raw); // accepts #RGB/#RGBA/#RRGGBB/#RRGGBBAA
+          if (!norm) {
+            // invalid so far — do nothing (user might still be typing)
+            return;
+          }
+
+          // commit normalized value back to text (nice & consistent)
+          iColorText.value = norm.toUpperCase();
+          cat.color = norm;
+
+          // update the picker (must be #RRGGBB)
+          iColorPicker.value = toColorInputValue(norm);
+
+          // live preview on the toggle button
+          textBtn.style.background = norm || 'transparent';
+
+          applyStateToRenderer();
         });
 
         textBtn.addEventListener('click', () => {
@@ -1487,12 +1558,23 @@
           if (!weekColIndex.has(visStart) || !weekColIndex.has(visEndWk)) continue;
 
           const colStart = weekColIndex.get(visStart);
+          // base weeks (inclusive)
           const baseSpanWeeks = Math.abs(visEndWk - visStart) + 1;
+
+          // clamp the raw start/end to the visible range
+          const clampedStart = Math.max(Math.min(start, endExclusive), minIdx);
+          const clampedEnd   = Math.min(Math.max(start, endExclusive), maxIdx);
+
+          // IMPORTANT: since seasonal columns come *before* each week column in horizontal,
+          // we must NOT count seasonals at the starting week (they’re to the left of the start).
+          // Count seasonals for weeks (start+1 ... endExclusive-1).
           const extraSeasonal = countSeasonalsBetween(
-            Math.max(Math.min(start, endExclusive), minIdx),
-            Math.min(Math.max(start, endExclusive), maxIdx)
+            clampedStart + 1,  // exclude start week’s seasonals
+            clampedEnd         // end is exclusive already
           );
+
           const span = baseSpanWeeks + extraSeasonal;
+
 
           const el = document.createElement('div');
           el.className = 'event';
