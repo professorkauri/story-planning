@@ -215,13 +215,7 @@ header .err {
   white-space: wrap;
   overflow: hidden;
   border-radius:5px;
-}
-.thead__inner {
-  display:flex;
-  align-items: center;
-  justify-content: center;
-  width:100%;
-  height:100%;
+  min-height:80px;
 }
 .thead-thumb {
   display:block;
@@ -236,11 +230,27 @@ header .err {
   border: 1px solid var(--g-bar);
   z-index:1;
 }
-.thead__title {
+.thead:before {
   display:block;
-  position:relative;
+  position:absolute;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  content:" ";
+  background: #485459;
+  background: linear-gradient(180deg,rgba(72, 84, 89, 0) 33%, rgba(72, 84, 89, 1) 100%);
+  z-index: 2;
+  mix-blend-mode: multiply;;
+}
+.thead-title {
+  display:block;
+  position:absolute;
+  left:10px;
+  bottom:10px;
+  width:calc(100% - 20px - 1.5px - 20px);
   font-size:0.7em;
-  z-index:2;
+  z-index:5 !important;
   background:var(--background);
   padding:5px 10px 6px 10px;
   border-radius:5px;
@@ -295,13 +305,13 @@ header .err {
   flex-direction: column;
   justify-content: start;
   gap: 6px;
-  margin: 10px 30px;
+  margin: 10px 10px;
   --jemoji: attr(data-cat-emoji);
 }
 .layout-vertical .event .event-sticky {
   display: block;
   position: sticky;
-  top: 80px;
+  top: 130px;
 }
 .event .topline {
   display: flex;
@@ -391,10 +401,11 @@ header .err {
 .event .chip .icon {
   position: absolute;
   left: 0%;
-  top: 50%;
-  margin: -13px 0 0 0;
-  width: 26px;
-  height: 26px;
+  top: 0%;
+  margin: 0;
+  height:100%;
+  width:auto;
+  aspect-ratio: 1 / 1;
   object-fit: cover;
   border-radius: 50%;
   outline: 1px solid var(--jcolor);
@@ -403,7 +414,7 @@ header .err {
   padding: 0 7px 1px 7px;
 }
 .event .chip .icon + span {
-  padding-left: 31px;
+  padding-left: 22px;
 }
 .event .chips.chips--locations {
   position: absolute;
@@ -468,16 +479,6 @@ header .err {
 }
 .layout-horizontal .event .chips {
   gap: 6px;
-}
-.layout-horizontal .event .chip .icon {
-  height:100%;
-  width:auto;
-  aspect-ratio: 1 / 1;
-  top:0;
-  margin-top:0;
-}
-.layout-horizontal .event .chip .icon + span {
-  padding-left:22px;
 }
 .layout-horizontal .event .thumb {
   display:block;

@@ -43,7 +43,7 @@
       vertical: {
         namesColWidth:  '90px',
         timelineColMin: 'auto',
-        timelineColMax: '1fr',
+        timelineColMax: '200px',
         weekRowMin:     'auto',
         weekHeaderRow:  'auto',
       },
@@ -175,6 +175,13 @@
       settingsState.ui.layout = (settingsState.ui.layout === 'horizontal') ? 'vertical' : 'horizontal';
       applyAllFromSettings();            // flips layout & re-renders
       syncHeaderControlsFromSettings();  // refresh button labels
+    }
+
+    function isOutsideBuffered(range, dayIdx, pad = 1) {
+      if (!range) return true;
+      const left  = range.start + pad;  // first inside day
+      const right = range.end   - pad;  // exclusive upper bound
+      return dayIdx < left || dayIdx >= right;
     }
 
     
@@ -1687,9 +1694,7 @@
           // Mark outside for BOTH day and seasonal cells using the same rule
           const range = tlRanges[r];
           if (typeof col.dayIdx === 'number') {
-            if (!range || col.dayIdx < range.start || col.dayIdx >= range.end) {
-              bg.classList.add('outside');
-            }
+            if (isOutsideBuffered(range, col.dayIdx, 1)) bg.classList.add('outside');
           } else {
             // (Defensive fall-back; seasonal columns should carry dayIdx)
             bg.classList.add('outside');
@@ -1942,9 +1947,7 @@
 
             const range = tlRanges[cIdx];
             const d = row.dayIdx;
-            if (!range || d < range.start || d >= range.end) {
-              bg.classList.add('outside');
-            }
+            if (isOutsideBuffered(range, d, 1)) bg.classList.add('outside');
 
             grid.appendChild(bg);
           });
@@ -1987,9 +1990,7 @@
 
             const range = tlRanges[cIdx];
             const d = row.dayIdx; // seasonal rows carry the day they belong to
-            if (!range || d < range.start || d >= range.end) {
-              bg.classList.add('outside');
-            }
+            if (isOutsideBuffered(range, d, 1)) bg.classList.add('outside');
 
             grid.appendChild(bg);
           });

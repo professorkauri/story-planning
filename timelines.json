@@ -3,7 +3,7 @@
     "ui": {
       "title": "My Timeline",
       "theme": "light",
-      "layout": "vertical"
+      "layout": "horizontal"
     },
     "categories": [
       {
