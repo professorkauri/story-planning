@@ -11,8 +11,13 @@
     <h1>Vertical Timelines</h1>
     <div class="meta" id="meta">Loading…</div>
     <div class="err" id="err"></div>
-    <button id="toggle-editor" type="button">Edit</button>
+    <div class="actions">
+      <button id="btn-import" class="ghost" type="button">Import</button>
+      <button id="btn-download" type="button">Download</button>
+      <button id="toggle-editor" type="button">Edit</button>
+    </div>
   </header>
+  
 
   <div id="viewport" class="viewport">
     <div id="grid" class="grid" role="table" aria-label="Timelines grid"></div>
@@ -20,8 +25,7 @@
 
   <script>
     /** ===================== CONFIG ===================== **/
-    const JSON_PATH = 'timelines/data.json';
-    const SETTINGS_PATH = 'timelines/settings.json';
+    const JSON_PATH = 'timelines.json';
 
     const visualDebug = false;
 
@@ -87,42 +91,6 @@
         viewportEl.classList.toggle('layout-vertical', ui.layout !== 'horizontal');
       }
       applyGridSizing(ui.layout === 'horizontal' ? 'horizontal' : 'vertical');
-    }
-
-    function loadSettingsFromLocal() {
-      try { return JSON.parse(localStorage.getItem('timelineSettings') || 'null'); }
-      catch { return null; }
-    }
-    function saveSettingsToLocal() {
-      localStorage.setItem('timelineSettings', JSON.stringify(settingsState));
-    }
-
-    async function tryLoadSettings() {
-      try {
-        const r = await fetch(`${SETTINGS_PATH}?v=${Date.now()}`, { cache: 'no-store' });
-        if (!r.ok) return null;
-        const json = await r.json();
-        if (!json || !Array.isArray(json.categories)) return null;
-
-        const ui = json.ui || {};
-        json.ui = {
-          title: String(ui.title || DEFAULT_UI.title),
-          theme: (ui.theme === 'dark') ? 'dark' : 'light',
-          layout: (ui.layout === 'horizontal') ? 'horizontal' : 'vertical'
-        };
-
-        json.categories = json.categories
-          .filter(c => Number.isInteger(c.id) && c.id >= 1 && c.id <= 12)
-          .map(c => ({
-            id: c.id,
-            name: String(c.name || ''),
-            emoji: String(c.emoji || ''),
-            color: normalizeHexColor(c.color),
-            text: String(c.text || '').toLowerCase() === 'white' ? 'white' : 'black'
-          }));
-
-        return json;
-      } catch { return null; }
     }
 
     function getCatById(id) {
@@ -280,7 +248,6 @@
     }
 
     function applyAllFromSettings() {
-      try { saveSettingsToLocal(); } catch {}
       applyUIFromSettings();
       applyStateToRenderer();
     }
@@ -289,31 +256,32 @@
       try {
         const r = await fetch(`${JSON_PATH}?v=${Date.now()}`, { cache: 'no-store' });
         if (!r.ok) return null;
-        const json = await r.json();
-        if (!json || !Array.isArray(json.timelines)) return null;
-        return json;
+        const raw = await r.json();
+        const combined = coerceCombinedJson(raw);
+        if (!Array.isArray(combined.timelines)) return null;
+        return combined; // { settings, timelines, seasonal }
       } catch { return null; }
     }
 
-    async function bootstrapState() {
-      const setDisk = await tryLoadSettings();
-      settingsState = setDisk || DEFAULT_SETTINGS;
-      applyUIFromSettings();
 
-      const json = await tryLoadJSON();
-      if (json && Array.isArray(json.timelines)) {
-        editorState = normalizeEditorState(json);
-        saveToLocal();
+    async function bootstrapState() {
+      const disk = await tryLoadJSON();      // single source of truth
+      if (disk) {
+        settingsState = disk.settings || DEFAULT_SETTINGS;
+        editorState   = normalizeEditorState({
+          timelines: disk.timelines || [],
+          seasonal:  disk.seasonal  || []
+        });
+        applyUIFromSettings();
         return;
       }
-      const local = loadFromLocal();
-      if (local && Array.isArray(local.timelines)) {
-        editorState = normalizeEditorState(local);
-        return;
-      }
-      editorState = normalizeEditorState({ timelines: [], seasonal: [] });
-      saveToLocal();
+
+      // If file missing or invalid, start clean (still no localStorage)
+      settingsState = DEFAULT_SETTINGS;
+      editorState   = normalizeEditorState({ timelines: [], seasonal: [] });
+      applyUIFromSettings();
     }
+
 
     /** CSV parse */
     function parseCSV(text) {
@@ -517,46 +485,57 @@
       update();
     }
 
+    function coerceCombinedJson(json) {
+      // Accept legacy { timelines, seasonal } or new { settings, timelines, seasonal }
+      const out = {
+        settings: structuredClone(DEFAULT_SETTINGS),
+        timelines: [],
+        seasonal: []
+      };
+
+      if (!json || typeof json !== 'object') return out;
+
+      // Settings can be nested or (legacy) on root
+      const srcSettings = json.settings || {
+        ui: json.ui,
+        categories: json.categories
+      };
+
+      if (srcSettings) {
+        const ui = srcSettings.ui || {};
+        out.settings.ui = {
+          title: String(ui.title || DEFAULT_UI.title),
+          theme: ui.theme === 'dark' ? 'dark' : 'light',
+          layout: ui.layout === 'horizontal' ? 'horizontal' : 'vertical'
+        };
+
+        const cats = Array.isArray(srcSettings.categories) ? srcSettings.categories : DEFAULT_SETTINGS.categories;
+        out.settings.categories = cats
+          .filter(c => Number.isInteger(c.id) && c.id >= 1 && c.id <= 12)
+          .map(c => ({
+            id: c.id,
+            name: String(c.name || ''),
+            emoji: String(c.emoji || ''),
+            color: normalizeHexColor(c.color),
+            text: String(c.text || '').toLowerCase() === 'white' ? 'white' : 'black'
+          }));
+      }
+
+      out.timelines = Array.isArray(json.timelines) ? json.timelines : [];
+      out.seasonal  = Array.isArray(json.seasonal) ? json.seasonal : [];
+      return out;
+    }
+
     /** Editor Helpers **/
     function renderHeaderActions() {
       const host = document.getElementById('ed-actions');
       if (!host) return;
-      host.innerHTML = '';
-
-      if (selPane?.type === 'settings') {
-        host.innerHTML = `
-          <button id="ed-settings-download" type="button">Download settings.json</button>
-          <button id="ed-settings-reload" class="ghost" type="button">Reload from settings.json</button>
-        `;
-
-        document.getElementById('ed-settings-download').onclick = () => {
-          const blob = new Blob([JSON.stringify(settingsState, null, 2)], { type: 'application/json' });
-          const a = document.createElement('a');
-          a.href = URL.createObjectURL(blob);
-          a.download = 'settings.json';
-          document.body.appendChild(a); a.click(); URL.revokeObjectURL(a.href); a.remove();
-        };
-
-        document.getElementById('ed-settings-reload').onclick = async () => {
-          const s = await tryLoadSettings();
-          if (!s) return alert('Could not reload settings.json');
-          settingsState = s;
-          renderMain();
-          applyStateToRenderer();
-          renderHeaderActions();
-        };
-
-      } else {
-        host.innerHTML = `
-          <button id="ed-import" class="ghost" type="button">Import JSON</button>
-          <button id="ed-download" type="button">Download JSON</button>
-          <button id="ed-reload" class="ghost" type="button">Reload from data.json</button>
-        `;
-
-        document.getElementById('ed-import').onclick = onImportJSON;
-        document.getElementById('ed-download').onclick = onDownloadJSON;
-        document.getElementById('ed-reload').onclick = onReloadFromDisk;
-      }
+      host.innerHTML = `
+        <button id="ed-import" class="ghost" type="button">Import timelines.json</button>
+        <button id="ed-download" type="button">Download timelines.json</button>
+      `;
+      document.getElementById('ed-import').onclick = onImportJSON;
+      document.getElementById('ed-download').onclick = onDownloadJSON;
     }
 
     /** ===================== EDITOR (BASIC) ===================== **/
@@ -595,9 +574,6 @@
     function enterEditMode() { editMode = true; document.body.classList.add('editing'); renderEditorUI(); }
     function exitEditMode() { editMode = false; document.body.classList.remove('editing'); const panel = document.getElementById('editor'); if (panel) panel.remove(); }
 
-    function saveToLocal() { localStorage.setItem('timelineEditorState', JSON.stringify(editorState)); }
-    function loadFromLocal() { try { return JSON.parse(localStorage.getItem('timelineEditorState') || 'null'); } catch { return null; } }
-
     /* debouncedApply with flush() */
     function debounce(fn, ms) {
       let t, lastArgs, lastThis;
@@ -612,7 +588,7 @@
       return d;
     }
     const AUTOSAVE_MS = 400;
-    const debouncedApply = debounce(() => { saveToLocal(); applyStateToRenderer(); }, AUTOSAVE_MS);
+    const debouncedApply = debounce(() => { applyStateToRenderer(); }, AUTOSAVE_MS);
 
     /* Force-commit any focused input and flush pending debounce */
     function flushPendingEdits() {
@@ -691,7 +667,6 @@
         <button class="ghost select-settings" title="Open settings" type="button">●</button>
         <div class="ed-timelines">
           <div class="ed-tl__title">Settings</div>
-          <div class="ed-tl__meta">settings.json</div>
         </div>`;
       host.appendChild(settingsRow);
 
@@ -1322,34 +1297,24 @@
 
     /** ===================== Persistence actions ===== */
     function onDownloadJSON() {
-      // 1) Force-commit whatever you're typing and flush the debounce
-      flushPendingEdits();
+      flushPendingEdits(); // keep this to commit in-flight inputs
 
-      // 2) Write the current editorState immediately (no debounce)
-      try { saveToLocal(); } catch {}
+      const combined = {
+        settings: settingsState || DEFAULT_SETTINGS,
+        timelines: normalizeEditorState(structuredClone(editorState)).timelines || [],
+        seasonal:  normalizeEditorState(structuredClone(editorState)).seasonal  || []
+      };
 
-      // 3) Read the canonical, most-recent state from localStorage
-      let latest = null;
-      try {
-        latest = loadFromLocal();
-      } catch {
-        latest = null;
-      }
-
-      // 4) Fall back to in-memory if localStorage read fails
-      const toExport = latest && Array.isArray(latest.timelines) ? latest : editorState;
-
-      // 5) Normalize and download as a Blob (guaranteed, no server fetch)
-      const out = normalizeEditorState(structuredClone(toExport));
-      const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
+      const blob = new Blob([JSON.stringify(combined, null, 2)], { type: 'application/json' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = 'data.json';
+      a.download = 'timelines.json';
       document.body.appendChild(a);
       a.click();
       URL.revokeObjectURL(a.href);
       a.remove();
     }
+
 
 
     async function onImportJSON() {
@@ -1359,11 +1324,16 @@
         const file = inp.files[0]; if (!file) return;
         try {
           const text = await file.text();
-          const json = JSON.parse(text);
-          if (!json || !Array.isArray(json.timelines)) throw new Error('Invalid JSON shape');
-          editorState = normalizeEditorState(json);
-          saveToLocal();
-          await applyStateToRenderer();
+          const raw  = JSON.parse(text);
+          const combined = coerceCombinedJson(raw);
+
+          settingsState = combined.settings || DEFAULT_SETTINGS;
+          editorState   = normalizeEditorState({
+            timelines: combined.timelines || [],
+            seasonal:  combined.seasonal  || []
+          });
+
+          applyAllFromSettings();      // applies UI + renderer
           renderSidebar(); renderMain();
         } catch (e) {
           alert('Failed to import: ' + (e.message || e));
@@ -1372,20 +1342,7 @@
       inp.click();
     }
 
-    async function onReloadFromDisk() {
-      try {
-        const r = await fetch(`${JSON_PATH}?v=${Date.now()}`, { cache: 'no-store' });
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        const json = await r.json();
-        if (!json || !Array.isArray(json.timelines)) throw new Error('Invalid JSON');
-        editorState = normalizeEditorState(json);
-        saveToLocal();
-        await applyStateToRenderer();
-        renderSidebar(); renderMain();
-      } catch (e) {
-        alert('Could not reload from data.json: ' + (e.message || e));
-      }
-    }
+
 
     /** ===================== RENDER TIMELINES (Horizontal) ===================== **/
     async function renderGridHorizontal(timelines, seasonalMarkers = []) {
@@ -1961,6 +1918,11 @@
 
         const btn = document.getElementById('toggle-editor');
         if (btn) btn.addEventListener('click', () => (editMode ? exitEditMode() : enterEditMode()));
+
+        const btnImport = document.getElementById('btn-import');
+        const btnDownload = document.getElementById('btn-download');
+        if (btnImport) btnImport.onclick = onImportJSON;
+        if (btnDownload) btnDownload.onclick = onDownloadJSON;
 
       } catch (e) {
         console.error(e);
