@@ -119,8 +119,31 @@
     const $ = (id) => document.getElementById(id);
     const setText = (id, txt) => { const el = $(id); if (el) el.textContent = txt; };
 
-    function isSpecificWeek(s) { return /^\d{4}-\d{2}$/.test(s || ''); }
-    function parseRelWeeks(s) { const m = /^(\d+)\s*[wW]$/.exec(s || ''); return m ? parseInt(m[1], 10) : null; }
+    // Specifics
+    function isSpecificWeek(s) { return /^\d{4}-\d{2}$/.test(s || ''); }           // YYYY-WW
+    function isSpecificWeekDay(s) { return /^\d{4}-\d{2}-[1-7]$/.test(s || ''); } // YYYY-WW-D
+
+    // Relative dates
+    function parseRelDays(s) {                  // "#", "#d", "##D"
+      const m = /^(\d+)\s*[dD]?$/.exec(s || '');
+      return m ? parseInt(m[1], 10) : null;
+    }
+    function parseRelWeeks(s) {                  // "#w"
+      const m = /^(\d+)\s*[wW]$/.exec(s || '');
+      return m ? parseInt(m[1], 10) : null;
+    }
+
+    // Duration → days: accepts "#w", "#", or "#d"
+    function parseDurationToDays(s) {
+      if (!s) return 0;
+      const w = parseRelWeeks(s);
+      if (w != null) return w * 7;
+      const d = parseRelDays(s);
+      if (d != null) return d;
+      return 0;
+    }
+
+    
     function stripExt(name) { return name.replace(/\.[^.]+$/, ''); }
     function encSeg(s) { return encodeURIComponent(s).replace(/%2F/g, '/'); }
 
@@ -282,6 +305,29 @@
       applyUIFromSettings();
     }
 
+    function toStartDayIdx(rawDate, prevEndDayIdx) {
+      if (isSpecificWeekDay(rawDate)) {
+        const [Y, W, D] = rawDate.split('-').map(Number);
+        const base = isoWeekToDayIdx(`${Y}-${String(W).padStart(2, '0')}`);
+        return base + (D - 1); // D:1..7 (Mon..Sun)
+      }
+      if (isSpecificWeek(rawDate)) {
+        return isoWeekToDayIdx(rawDate); // Monday of that week
+      }
+      // Relative: "#w" OR "#" | "#d"
+      const relW = parseRelWeeks(rawDate);
+      if (relW != null) {
+        const relDays = relW * 7;
+        return (prevEndDayIdx == null) ? relDays : (prevEndDayIdx + relDays);
+      }
+      const relD = parseRelDays(rawDate);
+      if (relD != null) {
+        return (prevEndDayIdx == null) ? relD : (prevEndDayIdx + relD);
+      }
+      return null; // invalid
+    }
+
+
 
     /** CSV parse */
     function parseCSV(text) {
@@ -379,19 +425,19 @@
       return { title, events };
     }
 
-    function resolveTimelineWeeks(tl) {
+    function resolveTimelineDays(tl) {
       let prevEnd = null;
       const events = tl.events.map(ev => {
-        let startIdx;
-        if (isSpecificWeek(ev.rawDate)) startIdx = isoWeekToIdx(ev.rawDate);
-        else { const rel = parseRelWeeks(ev.rawDate) || 0; startIdx = (prevEnd == null) ? rel : (prevEnd + rel); }
-        const durationWeeks = Math.max(1, ev.durationWeeks | 0);
-        const endIdx = startIdx + durationWeeks;
+        const startIdx = toStartDayIdx(ev.rawDate, prevEnd);
+        if (startIdx == null) return null;
+        const durationDays = Math.max(1, ev.durationDays | 0);
+        const endIdx = startIdx + durationDays; // exclusive
         prevEnd = endIdx;
-        return { ...ev, startIdx, durationWeeks };
-      });
+        return { ...ev, startIdx, durationDays };
+      }).filter(Boolean);
       return { title: tl.title, imageName: tl.imageName || '', events };
     }
+
 
     /** ===================== CORNER YEAR HELPERS ===================== **/
     function setupCornerYearTracker(grid, corner) {
@@ -426,6 +472,58 @@
       window.addEventListener('resize', update);
       update();
     }
+
+    /** ============ DAY-LEVEL HELPERS ============ **/
+    const MS_PER_DAY = 24 * 3600 * 1000;
+    // Epoch Monday (same base as your week index code but at day granularity)
+    const EPOCH_MON = new Date(Date.UTC(1970, 0, 5)); // Monday 1970-01-05
+
+    // Returns Monday of ISO week YYYY-WW (00:00 UTC)
+    function isoWeekToDate(iso) {
+      const [yStr, wStr] = String(iso).split('-');
+      const Y = +yStr, W = +wStr;
+      const jan4 = new Date(Date.UTC(Y, 0, 4));
+      const d = jan4.getUTCDay() || 7; // 1..7
+      const monW1 = new Date(jan4);
+      monW1.setUTCDate(jan4.getUTCDate() - (d - 1)); // Monday of week 1
+      const monW = new Date(monW1);
+      monW.setUTCDate(monW1.getUTCDate() + (W - 1) * 7);
+      monW.setUTCHours(0, 0, 0, 0);
+      return monW;
+    }
+
+    // Day index: integer days since EPOCH_MON
+    function dateToDayIdx(d) {
+      return Math.floor((d.getTime() - EPOCH_MON.getTime()) / MS_PER_DAY);
+    }
+    function dayIdxToDate(idx) {
+      const d = new Date(EPOCH_MON);
+      d.setUTCDate(EPOCH_MON.getUTCDate() + idx);
+      d.setUTCHours(0,0,0,0);
+      return d;
+    }
+
+    // Convert "YYYY-WW" -> Monday dayIdx
+    function isoWeekToDayIdx(iso) {
+      return dateToDayIdx(isoWeekToDate(iso));
+    }
+
+    // Convert a dayIdx to ISO {year, week, day:1..7}
+    function idxToISODay(idx) {
+      const d = dayIdxToDate(idx);
+      // Find ISO week/year by moving to Thursday of this week
+      const day = d.getUTCDay() || 7;
+      const th = new Date(d);
+      th.setUTCDate(d.getUTCDate() + (4 - day));
+      const isoYear = th.getUTCFullYear();
+      const w1 = new Date(Date.UTC(isoYear, 0, 4));
+      const wd = w1.getUTCDay() || 7;
+      const w1Mon = new Date(w1);
+      w1Mon.setUTCDate(w1.getUTCDate() - (wd - 1));
+      const week = 1 + Math.floor((d - w1Mon) / MS_PER_DAY / 7);
+      return { year: isoYear, week, day };
+    }
+
 
     function setupCornerYearTrackerHorizontal(grid, corner) {
       const scroller = grid.parentElement;
@@ -609,8 +707,8 @@
         events: (tl.events || []).map(e => {
           const categoryId = toCatId(e.categoryId ?? e.category ?? '');
           return {
-            rawDate: e.date,
-            durationWeeks: parseRelWeeks(e.duration) || 0,
+            rawDate: e.date,                                    // now can be YYYY-WW, YYYY-WW-D, #w, #, #d
+            durationDays: parseDurationToDays(e.duration) || 0, // <-- CHANGED
             desc: e.desc,
             categoryId,
             imageName: e.image || '',
@@ -619,11 +717,13 @@
           };
         })
       }));
-      const resolved = timelines.map(resolveTimelineWeeks);
 
+      const resolved = timelines.map(resolveTimelineDays);
+
+      // Map seasonal → day indices (associate with the Monday of each week)
       const seasonalMarkers = (editorState?.seasonal || []).map(s => {
         if (isSpecificWeek(s.date)) {
-          return { type: 'static', weekIdx: isoWeekToIdx(s.date), id: s.id, name: s.name, desc: s.desc || '', imageName: s.id };
+          return { type: 'static', dayIdx: isoWeekToDayIdx(s.date), id: s.id, name: s.name, desc: s.desc || '', imageName: s.id };
         } else if (/^\d{2}$/.test(s.date)) {
           return { type: 'recurring', week: parseInt(s.date, 10), id: s.id, name: s.name, desc: s.desc || '', imageName: s.id };
         }
@@ -631,11 +731,12 @@
       }).filter(Boolean);
 
       if ((settingsState?.ui?.layout) === 'horizontal') {
-        await renderGridHorizontal(resolved, seasonalMarkers);
+        await renderGridHorizontalDays(resolved, seasonalMarkers);
       } else {
-        await renderGridVertical(resolved, seasonalMarkers);
+        await renderGridVerticalDays(resolved, seasonalMarkers);
       }
     }
+
 
     /** ===== Selection state ===== */
     let selPane = null;
@@ -1345,53 +1446,61 @@
 
 
     /** ===================== RENDER TIMELINES (Horizontal) ===================== **/
-    async function renderGridHorizontal(timelines, seasonalMarkers = []) {
+    async function renderGridHorizontalDays(timelines, seasonalMarkers = []) {
       const grid = $('grid');
       grid.innerHTML = '';
 
-      const bounds = timelines.flatMap(tl => tl.events.map(ev => [ev.startIdx, ev.startIdx + ev.durationWeeks]));
+      // Bounds from day indices
+      const bounds = timelines.flatMap(tl => tl.events.map(ev => [ev.startIdx, ev.startIdx + ev.durationDays]));
       const minIdx = Math.min(...bounds.map(b => b[0]));
       const maxIdx = Math.max(...bounds.map(b => b[1]));
-      const totalWeeks = Math.max(1, maxIdx - minIdx);
+      const totalDays = Math.max(1, maxIdx - minIdx);
 
-      const activeWeekCounts = new Map();
-      for (const tl of timelines) for (const ev of tl.events) {
-        const start = ev.startIdx, end = ev.startIdx + ev.durationWeeks;
-        for (let idx = start; idx < end; idx++) activeWeekCounts.set(idx, (activeWeekCounts.get(idx) || 0) + 1);
-      }
-
-      const { year: minYear } = idxToISOWeek(minIdx);
-      const { year: maxYear } = idxToISOWeek(maxIdx - 1);
-
+      // Expand recurring seasonal to concrete day indices (Monday of week)
+      const { year: minYear } = idxToISODay(minIdx);
+      const { year: maxYear } = idxToISODay(maxIdx - 1);
       const expandedSeasonal = [];
       for (const m of seasonalMarkers) {
         if (m.type === 'static') expandedSeasonal.push(m);
         else if (m.type === 'recurring') {
           const ww = String(m.week).padStart(2, '0');
           for (let y = minYear; y <= maxYear; y++) {
-            const idx = isoWeekToIdx(`${y}-${ww}`);
-            if (idx >= minIdx && idx < maxIdx) expandedSeasonal.push({ ...m, type: 'static', weekIdx: idx });
+            const dayIdx = isoWeekToDayIdx(`${y}-${ww}`);
+            if (dayIdx >= minIdx && dayIdx < maxIdx) expandedSeasonal.push({ ...m, type: 'static', dayIdx });
           }
         }
       }
 
-      const seasonalByIdx = new Map();
+      // seasonal mapped by dayIdx (insert before the "day column" of that day)
+      const seasonalByDay = new Map();
       for (const m of expandedSeasonal) {
-        if (!seasonalByIdx.has(m.weekIdx)) seasonalByIdx.set(m.weekIdx, []);
-        seasonalByIdx.get(m.weekIdx).push(m);
+        if (!seasonalByDay.has(m.dayIdx)) seasonalByDay.set(m.dayIdx, []);
+        seasonalByDay.get(m.dayIdx).push(m);
       }
 
+      // Build columns: for each visible day, optional seasonal cols then the day col
       const columns = [];
-      const weekColIndex = new Map();
-      for (let w = minIdx; w < maxIdx; w++) {
-        const arr = seasonalByIdx.get(w);
-        if (arr && arr.length) for (const m of arr) columns.push({ type: 'seasonal', data: m, idx: w });
-        weekColIndex.set(w, columns.length);
-        columns.push({ type: 'week', idx: w });
+      const dayColIndex = new Map(); // dayIdx -> column index (of the "day" column, not its seasonals)
+      for (let d = minIdx; d < maxIdx; d++) {
+        const seas = seasonalByDay.get(d);
+        if (seas) {
+          for (const m of seas) columns.push({ type: 'seasonal', dayIdx: d, data: m });
+        }
+        dayColIndex.set(d, columns.length);
+        columns.push({ type: 'day', dayIdx: d });
       }
 
+      // Active day counts (how many events touch that day)
+      const activeDayCounts = new Map();
+      for (const tl of timelines) for (const ev of tl.events) {
+        const start = ev.startIdx, end = ev.startIdx + ev.durationDays;
+        for (let i = start; i < end; i++) activeDayCounts.set(i, (activeDayCounts.get(i) || 0) + 1);
+      }
+
+      // Grid template: 2 header rows (Weeks, Days), then one row per timeline
       grid.style.gridTemplateRows = [
-        'var(--week-header-row)',
+        'var(--week-header-row)', // NEW week band
+        'var(--week-header-row)', // day header row (reusing the var)
         ...timelines.map(() => 'minmax(var(--timeline-row-min), auto)')
       ].join(' ');
 
@@ -1400,92 +1509,124 @@
         ...columns.map(() => 'var(--week-col-width)')
       ].join(' ');
 
+      // Corner cell (top-left)
       const corner = document.createElement('div');
       corner.className = 'corner';
-      corner.style.gridRow = '1 / 2';
+      corner.style.gridRow = '1 / 3';       // span both header rows
       corner.style.gridColumn = '1 / 2';
-      corner.textContent = String(idxToISOWeek(minIdx).year);
+      corner.textContent = 'Weeks/Days';
       grid.appendChild(corner);
 
+      // Row 2: Day headers + Seasonal headers
       columns.forEach((col, c) => {
-        const header = document.createElement('div');
         const gridCol = 2 + c;
-        header.style.gridRow = '1 / 2';
-        header.style.gridColumn = `${gridCol} / ${gridCol + 1}`;
+        if (col.type === 'day') {
+          const hdr = document.createElement('div');
+          hdr.className = 'wlabel';
+          hdr.dataset.dayIdx = String(col.dayIdx);
 
-        if (col.type === 'week') {
-          header.className = 'wlabel';
-          header.dataset.weekIdx = String(col.idx);
-          const { week } = idxToISOWeek(col.idx);
+          const { day } = idxToISODay(col.dayIdx);
+          const dname = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][day - 1];
+          const dt = dayIdxToDate(col.dayIdx);
+          const dd = String(dt.getUTCDate()).padStart(2, '0');
+
           const inner = document.createElement('div');
           inner.className = 'wlabel__inner';
-          inner.textContent = `Week ${String(week).padStart(2, '0')}`;
-          const count = activeWeekCounts.get(col.idx) || 0;
+          inner.textContent = `${dname} ${dd}`;
+          const count = activeDayCounts.get(col.dayIdx) || 0;
           if (count > 0) { inner.classList.add('has-events'); inner.dataset.count = String(count); }
-          header.appendChild(inner);
+
+          hdr.appendChild(inner);
+          hdr.style.gridRow = '2 / 3';
+          hdr.style.gridColumn = `${gridCol} / ${gridCol + 1}`;
+          grid.appendChild(hdr);
         } else {
-          header.className = 'wlabel wlabel--seasonal';
-          header.dataset.weekIdx = String(col.idx);
+          const hdr = document.createElement('div');
+          hdr.className = 'wlabel wlabel--seasonal';
+          hdr.dataset.dayIdx = String(col.dayIdx);
+
           const inner = document.createElement('div');
           inner.className = 'wlabel__inner wlabel__inner--seasonal';
+
           const m = col.data;
           const img = makeSmartImg(SEASONAL_IMAGES_DIR, m.imageName, 'seasonal-thumb', m.name);
           if (img) inner.appendChild(img);
+
           const nameEl = document.createElement('span');
           nameEl.className = 'seasonal-name';
           nameEl.textContent = m.name;
           inner.appendChild(nameEl);
+
           if (m.desc) {
             const descEl = document.createElement('span');
             descEl.className = 'seasonal-desc';
             descEl.textContent = m.desc;
             inner.appendChild(descEl);
           }
-          header.appendChild(inner);
+
+          hdr.appendChild(inner);
+          hdr.style.gridRow = '2 / 3';
+          hdr.style.gridColumn = `${gridCol} / ${gridCol + 1}`;
+          grid.appendChild(hdr);
         }
-        grid.appendChild(header);
       });
 
-      setupCornerYearTrackerHorizontal(grid, corner);
+      // Row 1: Week headers — span 7 days + any seasonals inside that span
+      // Iterate over each ISO week that intersects the visible range.
+      // Align at Monday dayIdx boundaries.
+      const firstMonday = isoWeekToDayIdx(`${idxToISODay(minIdx).year}-${String(idxToISODay(minIdx).week).padStart(2,'0')}`);
+      // We'll roll from the Monday at/just before minIdx
+      let wkStart = firstMonday;
+      while (wkStart < maxIdx) {
+        const wkEnd = wkStart + 7; // exclusive
+        // Find the first visible day column in this week
+        const dayStart = Math.max(wkStart, minIdx);
+        const dayEnd = Math.min(wkEnd, maxIdx);
 
-      timelines.forEach((tl, r) => {
-        const gridRow = 2 + r;
+        // If the band is outside the viewport, skip
+        if (dayStart < dayEnd) {
+          const { week } = idxToISODay(wkStart);
 
-        // left names column (with image + wrapped title)
-        const name = document.createElement('div');
-        name.className = 'thead';
-        name.style.gridRow = `${gridRow} / ${gridRow + 1}`;
-        name.style.gridColumn = '1 / 2';
-
-        // build inner
-        const inner = document.createElement('div');
-        inner.className = 'thead__inner';
-
-        // thumbnail
-        const img = makeSmartImgFallback(
-          TIMELINE_IMAGES_DIR,
-          tl.imageName,
-          'thead-thumb',
-          tl.title,
-          () => {
-            const ph = document.createElement('div');
-            ph.className = 'thead-thumb thead-thumb--ph';
-            inner.appendChild(ph);
+          // Compute span in columns: all seasonal columns for each day in [dayStart, dayEnd)
+          // plus the 7 (or fewer at edges) day columns.
+          let spanCols = 0;
+          let colStart = null;
+          for (let d = dayStart; d < dayEnd; d++) {
+            // seasonal columns for this day
+            const seas = seasonalByDay.get(d)?.length || 0;
+            if (colStart == null) {
+              // First visual column for this band is either the first seasonal (if any)
+              // or the day column index for dayStart.
+              colStart = 2 + (seas ? columns.findIndex((c) => c.type !== 'seasonal' ? false : (c.dayIdx === d)) : dayColIndex.get(d));
+            }
+            spanCols += seas + 1; // +1 for the day column
           }
-        );
-        if (img) {
-          inner.appendChild(img);
+
+          if (colStart != null && spanCols > 0) {
+            const wkHdr = document.createElement('div');
+            wkHdr.className = 'wlabel wlabel--weekband';
+            const inner = document.createElement('div');
+            inner.className = 'wlabel__inner wlabel__inner--weekband';
+            inner.textContent = `Week ${String(week).padStart(2, '0')}`;
+            wkHdr.appendChild(inner);
+            wkHdr.style.gridRow = '1 / 2';
+            wkHdr.style.gridColumn = `${colStart} / ${colStart + spanCols}`;
+            grid.appendChild(wkHdr);
+          }
         }
 
-        // title span
-        const titleSpan = document.createElement('span');
-        titleSpan.className = 'thead__title';
-        titleSpan.textContent = tl.title || '';
-        inner.appendChild(titleSpan);
+        wkStart += 7;
+      }
 
-        name.appendChild(inner);
+      // Left names column
+      timelines.forEach((tl, r) => {
+        const gridRow = 3 + r;
+        const name = buildTimelineHeaderEl({ title: tl.title, imageName: tl.imageName });
+        name.style.gridRow = `${gridRow} / ${gridRow + 1}`;
+        name.style.gridColumn = '1 / 2';
         grid.appendChild(name);
 
+        // draw background cells for each column in this row
         columns.forEach((col, c) => {
           const bg = document.createElement('div');
           bg.className = 'cell' + (col.type === 'seasonal' ? ' cell--seasonal' : '');
@@ -1495,43 +1636,357 @@
         });
       });
 
-      function countSeasonalsBetween(startWeekIdx, endWeekIdx) {
+      // Helper to count seasonal columns between two day indices
+      function countSeasonalsBetween(startDayIdx, endDayIdxExclusive, { excludeStart = false } = {}) {
         let total = 0;
-        for (let idx = startWeekIdx; idx < endWeekIdx; idx++) {
-          total += (seasonalByIdx.get(idx)?.length || 0);
+        const from = excludeStart ? startDayIdx + 1 : startDayIdx; // <- skip seasonals that sit before the start-day column
+        for (let idx = from; idx < endDayIdxExclusive; idx++) {
+          total += (seasonalByDay.get(idx)?.length || 0);
         }
         return total;
       }
 
+
+      // Place events
       for (let r = 0; r < timelines.length; r++) {
         const tl = timelines[r];
+        const gridRow = 3 + r;
         for (const ev of tl.events) {
           const start = ev.startIdx;
-          const endExclusive = ev.startIdx + ev.durationWeeks;
+          const endExclusive = ev.startIdx + ev.durationDays;
 
           const visStart = Math.min(Math.max(start, minIdx), maxIdx - 1);
-          const visEndWk = Math.min(Math.max(endExclusive - 1, minIdx), maxIdx - 1);
+          const visEndDay = Math.min(Math.max(endExclusive - 1, minIdx), maxIdx - 1);
+          if (!dayColIndex.has(visStart) || !dayColIndex.has(visEndDay)) continue;
 
-          if (!weekColIndex.has(visStart) || !weekColIndex.has(visEndWk)) continue;
+          const baseSpanDays = Math.abs(visEndDay - visStart) + 1;
+          const a = Math.max(Math.min(start, endExclusive), minIdx);
+          const b = Math.min(Math.max(start, endExclusive), maxIdx);
+          const extraSeasonal = (a + 1 <= b)
+            ? countSeasonalsBetween(a, b, { excludeStart: true })
+            : 0;
+          const span = baseSpanDays + extraSeasonal;
 
-          const colStart = weekColIndex.get(visStart);
-          // base weeks (inclusive)
-          const baseSpanWeeks = Math.abs(visEndWk - visStart) + 1;
+          const colStart = dayColIndex.get(visStart);
+          const el = document.createElement('div');
+          el.className = 'event';
 
-          // clamp the raw start/end to the visible range
-          const clampedStart = Math.max(Math.min(start, endExclusive), minIdx);
-          const clampedEnd   = Math.min(Math.max(start, endExclusive), maxIdx);
+          const catId   = toCatId(ev.categoryId);
+          const catName = getCatName(catId);
+          const catEmoji= getCatEmoji(catId);
+          const catColor= getCatColor(catId);
+          const catText = getCatText(catId);
 
-          // IMPORTANT: since seasonal columns come *before* each week column in horizontal,
-          // we must NOT count seasonals at the starting week (they’re to the left of the start).
-          // Count seasonals for weeks (start+1 ... endExclusive-1).
-          const extraSeasonal = countSeasonalsBetween(
-            clampedStart + 1,  // exclude start week’s seasonals
-            clampedEnd         // end is exclusive already
-          );
+          el.dataset.catId = String(catId || 0);
+          el.dataset.catEmoji = catEmoji || '';
+          el.dataset.catTitle = catName || '';
+          el.dataset.catColor = catColor || '';
+          el.style.setProperty('--jcolor', catColor || 'transparent');
+          el.style.setProperty('--jtext',  catText  || 'black');
+          el.style.setProperty('--jemoji', `"${catEmoji}"`);
 
-          const span = baseSpanWeeks + extraSeasonal;
+          const gridColStart = 2 + colStart;
+          el.style.gridRow = `${gridRow} / ${gridRow + 1}`;
+          el.style.gridColumn = `${gridColStart} / ${gridColStart + span}`;
 
+          const { year, week, day } = idxToISODay(start);
+          const labelStart = `${year}-${String(week).padStart(2,'0')}-${day}`;
+
+          const topline = document.createElement('div');
+          topline.className = 'topline';
+
+          const sticky = document.createElement('div');
+          sticky.className = 'event-sticky';
+          sticky.dataset.image = 'false';
+
+          prependEventMedia(sticky, ev, (has) => {
+            sticky.dataset.image = has ? 'true' : 'false';
+          });
+
+          if (catName) {
+            const cat = document.createElement('div');
+            cat.className = 'cat';
+            cat.textContent = catName;
+            topline.appendChild(cat);
+          }
+
+          const title = document.createElement('div');
+          title.className = 'desc';
+          title.textContent = ev.desc || '(no description)';
+          topline.appendChild(title);
+
+          const meta = document.createElement('div');
+          meta.className = 'meta';
+          meta.textContent = `${labelStart} • ${ev.durationDays}d`;
+          topline.appendChild(meta);
+
+          // chips
+          const charChips = document.createElement('div');
+          charChips.className = 'chips chips--characters';
+          for (const n of ev.characters || []) {
+            const a = document.createElement('a');
+            a.className = 'chip';
+            a.href = `characters/${encodeURIComponent(n)}.html`;
+            a.title = `Character: ${n}`;
+            const icon = makeSmartImg(CHAR_IMAGES_DIR, n, 'icon', n);
+            if (icon) a.appendChild(icon);
+            const label = document.createElement('span');
+            label.textContent = n;
+            a.appendChild(label);
+            charChips.appendChild(a);
+          }
+          if (charChips.children.length) topline.appendChild(charChips);
+
+          const locChips = document.createElement('div');
+          locChips.className = 'chips chips--locations';
+          for (const n of ev.locations || []) {
+            const a = document.createElement('a');
+            a.className = 'chip';
+            a.href = `locations/${encodeURIComponent(n)}.html`;
+            a.title = `Location: ${n}`;
+            const label = document.createElement('span');
+            label.textContent = n;
+            a.appendChild(label);
+            locChips.appendChild(a);
+          }
+          if (locChips.children.length) topline.appendChild(locChips);
+
+          sticky.appendChild(topline);
+          el.appendChild(sticky);
+          grid.appendChild(el);
+        }
+      }
+
+      // Meta text
+      const firstL = (function(){const {year,week,day}=idxToISODay(minIdx); return `${year}-W${String(week).padStart(2,'0')}-${day}`})();
+      const lastL  = (function(){const {year,week,day}=idxToISODay(maxIdx-1); return `${year}-W${String(week).padStart(2,'0')}-${day}`})();
+      setText('meta', `Timelines: ${timelines.length} • Days: ${totalDays} • Range: ${firstL} → ${lastL}`);
+    }
+
+    /** ===================== RENDER VERTICAL TIMELINES ===================== **/
+    async function renderGridVerticalDays(timelines, seasonalMarkers = []) {
+      const grid = $('grid');
+      grid.innerHTML = '';
+
+      const bounds = timelines.flatMap(tl => tl.events.map(ev => [ev.startIdx, ev.startIdx + ev.durationDays]));
+      const minIdx = Math.min(...bounds.map(b => b[0]));
+      const maxIdx = Math.max(...bounds.map(b => b[1]));
+      const totalDays = Math.max(1, maxIdx - minIdx);
+
+      const activeDayCounts = new Map();
+      for (const tl of timelines) for (const ev of tl.events) {
+        for (let i = ev.startIdx; i < ev.startIdx + ev.durationDays; i++) {
+          activeDayCounts.set(i, (activeDayCounts.get(i) || 0) + 1);
+        }
+      }
+
+      // Expand seasonal to day indices (Monday)
+      const { year: minYear } = idxToISODay(minIdx);
+      const { year: maxYear } = idxToISODay(maxIdx - 1);
+      const expandedSeasonal = [];
+      for (const m of seasonalMarkers) {
+        if (m.type === 'static') expandedSeasonal.push(m);
+        else if (m.type === 'recurring') {
+          const ww = String(m.week).padStart(2, '0');
+          for (let y = minYear; y <= maxYear; y++) {
+            const dayIdx = isoWeekToDayIdx(`${y}-${ww}`);
+            if (dayIdx >= minIdx && dayIdx < maxIdx) expandedSeasonal.push({ ...m, type: 'static', dayIdx });
+          }
+        }
+      }
+
+      // Build rows (top is newest): for each day descending, seasonal rows (if any) then the day row.
+      const seasonalByDay = new Map();
+      for (const m of expandedSeasonal) {
+        if (!seasonalByDay.has(m.dayIdx)) seasonalByDay.set(m.dayIdx, []);
+        seasonalByDay.get(m.dayIdx).push(m);
+      }
+
+      const rows = [];
+      const dayRowIndex = new Map();
+      for (let d = maxIdx - 1; d >= minIdx; d--) {
+        const seas = seasonalByDay.get(d);
+        if (seas) {
+          for (const m of seas) rows.push({ type: 'seasonal', dayIdx: d, data: m });
+        }
+        dayRowIndex.set(d, rows.length);
+        rows.push({ type: 'day', dayIdx: d });
+      }
+
+      // Two left header columns: Weeks band + Days/Seasonal labels
+      grid.style.gridTemplateColumns = [
+        'var(--names-col-width)', // week band
+        'var(--names-col-width)', // day labels
+        ...timelines.map(() => 'minmax(var(--timeline-col-min), var(--timeline-col-max))')
+      ].join(' ');
+
+      grid.style.gridTemplateRows = rows.map(() => 'minmax(var(--week-row-min), auto)').join(' ');
+
+      // Top-left corner cells
+      const cornerWeek = document.createElement('div');
+      cornerWeek.className = 'corner';
+      cornerWeek.style.gridColumn = '1 / 2';
+      cornerWeek.style.gridRow = '1 / 2';
+      cornerWeek.textContent = 'Week';
+      grid.appendChild(cornerWeek);
+
+      const cornerDay = document.createElement('div');
+      cornerDay.className = 'corner';
+      cornerDay.style.gridColumn = '2 / 3';
+      cornerDay.style.gridRow = '1 / 2';
+      cornerDay.textContent = 'Day';
+      grid.appendChild(cornerDay);
+
+      // Column headers (timeline titles)
+      timelines.forEach((tl, cIdx) => {
+        const th = buildTimelineHeaderEl({ title: tl.title, imageName: tl.imageName });
+        th.style.gridColumn = `${3 + cIdx} / ${4 + cIdx}`;
+        th.style.gridRow = '1 / 2';
+        grid.appendChild(th);
+      });
+
+      // Left day/seasonal header column (col 2)
+      rows.forEach((row, rIdx) => {
+        if (row.type === 'day') {
+          const { day } = idxToISODay(row.dayIdx);
+          const dname = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][day - 1];
+          const dt = dayIdxToDate(row.dayIdx);
+          const dd = String(dt.getUTCDate()).padStart(2, '0');
+
+          const wl = document.createElement('div');
+          wl.className = 'wlabel';
+          wl.dataset.dayIdx = String(row.dayIdx);
+
+          const inner = document.createElement('div');
+          inner.className = 'wlabel__inner';
+          inner.textContent = `${dname} ${dd}`;
+          const cnt = activeDayCounts.get(row.dayIdx) || 0;
+          if (cnt > 0) { inner.classList.add('has-events'); inner.dataset.count = String(cnt); }
+
+          wl.appendChild(inner);
+          wl.style.gridColumn = '2 / 3';
+          wl.style.gridRow = `${2 + rIdx} / ${3 + rIdx}`;
+          grid.appendChild(wl);
+
+          // background cells for each timeline column in this row
+          timelines.forEach((_, cIdx) => {
+            const bg = document.createElement('div');
+            bg.className = 'cell';
+            bg.style.gridColumn = `${3 + cIdx} / ${4 + cIdx}`;
+            bg.style.gridRow = `${2 + rIdx} / ${3 + rIdx}`;
+            grid.appendChild(bg);
+          });
+
+        } else {
+          // Seasonal row label (col 2)
+          const wl = document.createElement('div');
+          wl.className = 'wlabel wlabel--seasonal';
+
+          const inner = document.createElement('div');
+          inner.className = 'wlabel__inner wlabel__inner--seasonal';
+
+          const m = row.data;
+          const img = makeSmartImg(SEASONAL_IMAGES_DIR, m.imageName, 'seasonal-thumb', m.name);
+          if (img) inner.appendChild(img);
+
+          const nameEl = document.createElement('span');
+          nameEl.className = 'seasonal-name';
+          nameEl.textContent = m.name;
+          inner.appendChild(nameEl);
+
+          if (m.desc) {
+            const descEl = document.createElement('span');
+            descEl.className = 'seasonal-desc';
+            descEl.textContent = m.desc;
+            inner.appendChild(descEl);
+          }
+
+          wl.appendChild(inner);
+          wl.style.gridColumn = '2 / 3';
+          wl.style.gridRow = `${2 + rIdx} / ${3 + rIdx}`;
+          grid.appendChild(wl);
+
+          // background seasonal row stripes
+          timelines.forEach((_, cIdx) => {
+            const bg = document.createElement('div');
+            bg.className = 'cell cell--seasonal';
+            bg.style.gridColumn = `${3 + cIdx} / ${4 + cIdx}`;
+            bg.style.gridRow = `${2 + rIdx} / ${3 + rIdx}`;
+            grid.appendChild(bg);
+          });
+        }
+      });
+
+      // Left week band column (col 1): headers spanning 7 days + seasonal rows inside the week
+      // We iterate visible weeks (aligned to Mondays) and compute row spans across our rows structure.
+      const firstMonday = isoWeekToDayIdx(`${idxToISODay(minIdx).year}-${String(idxToISODay(minIdx).week).padStart(2,'0')}`);
+      let wkStart = firstMonday;
+      while (wkStart < maxIdx) {
+        const wkEnd = wkStart + 7; // exclusive
+        const dayStart = Math.max(wkStart, minIdx);
+        const dayEnd = Math.min(wkEnd, maxIdx);
+        if (dayStart < dayEnd) {
+          // find the topmost row index (remember rows are descending days with seasonals before each day)
+          let rowTop = null, spanRows = 0;
+          for (let d = dayStart; d < dayEnd; d++) {
+            const rDay = dayRowIndex.get(d);
+            if (rDay == null) continue;
+
+            // seasonal rows for this day come just before the day
+            const seas = seasonalByDay.get(d)?.length || 0;
+            const topForThisDay = rDay - seas; // first seasonal if any, else the day itself
+            if (rowTop == null || topForThisDay < rowTop) rowTop = topForThisDay;
+
+            // total rows consumed for this day block
+            spanRows += seas + 1;
+          }
+
+          if (rowTop != null && spanRows > 0) {
+            const { week } = idxToISODay(wkStart);
+            const wkHdr = document.createElement('div');
+            wkHdr.className = 'wlabel wlabel--weekband';
+            const inner = document.createElement('div');
+            inner.className = 'wlabel__inner wlabel__inner--weekband';
+            inner.textContent = `Week ${String(week).padStart(2, '0')}`;
+            wkHdr.appendChild(inner);
+
+            // +2 offset because first content row starts at grid row 2
+            const gridRowStart = 2 + rowTop;
+            wkHdr.style.gridColumn = '1 / 2';
+            wkHdr.style.gridRow = `${gridRowStart} / ${gridRowStart + spanRows}`;
+            grid.appendChild(wkHdr);
+          }
+        }
+        wkStart += 7;
+      }
+
+      // Place events
+      function countSeasonalsBetween(startDayIdx, endDayIdxExclusive) {
+        let total = 0;
+        for (let idx = startDayIdx; idx < endDayIdxExclusive; idx++) total += (seasonalByDay.get(idx)?.length || 0);
+        return total;
+      }
+
+      for (let cIdx = 0; cIdx < timelines.length; cIdx++) {
+        const tl = timelines[cIdx];
+        for (const ev of tl.events) {
+          const start = ev.startIdx;
+          const endExclusive = ev.startIdx + ev.durationDays;
+
+          const visStart = Math.min(Math.max(start, minIdx), maxIdx - 1);
+          const visEndDay = Math.min(Math.max(endExclusive - 1, minIdx), maxIdx - 1);
+          if (!dayRowIndex.has(visStart) || !dayRowIndex.has(visEndDay)) continue;
+
+          // top-most row for this event block (remember rows are descending)
+          // choose the row index of the later day (visually higher), add seasonal rows above it
+          const topDay = Math.max(visStart, visEndDay);
+          const baseSpanDays = Math.abs(visEndDay - visStart) + 1;
+          const extra = countSeasonalsBetween(Math.max(Math.min(start, endExclusive), minIdx), Math.min(Math.max(start, endExclusive), maxIdx));
+          const span = baseSpanDays + extra;
+
+          const rDayIndex = dayRowIndex.get(topDay);
+          const seasAbove = seasonalByDay.get(topDay)?.length || 0;
+          const topRow = rDayIndex - seasAbove;
 
           const el = document.createElement('div');
           el.className = 'event';
@@ -1550,13 +2005,11 @@
           el.style.setProperty('--jtext',  catText  || 'black');
           el.style.setProperty('--jemoji', `"${catEmoji}"`);
 
-          const gridRow = 2 + r;
-          const gridColStart = 2 + colStart;
-          el.style.gridRow = `${gridRow} / ${gridRow + 1}`;
-          el.style.gridColumn = `${gridColStart} / ${gridColStart + span}`;
+          el.style.gridColumn = `${3 + cIdx} / ${4 + cIdx}`;
+          el.style.gridRow = `${2 + topRow} / ${2 + topRow + span}`;
 
-          const { year, week } = idxToISOWeek(start);
-          const labelStart = `${year}-${String(week).padStart(2, '0')}`;
+          const { year, week, day } = idxToISODay(start);
+          const labelStart = `${year}-${String(week).padStart(2, '0')}-${day}`;
 
           const topline = document.createElement('div');
           topline.className = 'topline';
@@ -1564,10 +2017,7 @@
           const sticky = document.createElement('div');
           sticky.className = 'event-sticky';
           sticky.dataset.image = 'false';
-
-          prependEventMedia(sticky, ev, (has) => {
-            sticky.dataset.image = has ? 'true' : 'false';
-          });
+          prependEventMedia(sticky, ev, (has) => { sticky.dataset.image = has ? 'true' : 'false'; });
 
           if (catName) {
             const cat = document.createElement('div');
@@ -1583,23 +2033,17 @@
 
           const meta = document.createElement('div');
           meta.className = 'meta';
-          meta.textContent = `${labelStart} • ${ev.durationWeeks}w`;
+          meta.textContent = `${labelStart} • ${ev.durationDays}d`;
           topline.appendChild(meta);
 
-          sticky.appendChild(topline);
-
+          // chips
           const charChips = document.createElement('div');
           charChips.className = 'chips chips--characters';
           for (const n of ev.characters || []) {
-            const a = document.createElement('a');
-            a.className = 'chip';
-            a.href = `characters/${encodeURIComponent(n)}.html`;
-            a.title = `Character: ${n}`;
-            const icon = makeSmartImg(CHAR_IMAGES_DIR, n, 'icon', n);
-            if (icon) a.appendChild(icon);
-            const label = document.createElement('span');
-            label.textContent = n;
-            a.appendChild(label);
+            const a = document.createElement('a'); a.className = 'chip';
+            a.href = `characters/${encodeURIComponent(n)}.html`; a.title = `Character: ${n}`;
+            const icon = makeSmartImg(CHAR_IMAGES_DIR, n, 'icon', n); if (icon) a.appendChild(icon);
+            const label = document.createElement('span'); label.textContent = n; a.appendChild(label);
             charChips.appendChild(a);
           }
           if (charChips.children.length) topline.appendChild(charChips);
@@ -1607,305 +2051,22 @@
           const locChips = document.createElement('div');
           locChips.className = 'chips chips--locations';
           for (const n of ev.locations || []) {
-            const a = document.createElement('a');
-            a.className = 'chip';
-            a.href = `locations/${encodeURIComponent(n)}.html`;
-            a.title = `Location: ${n}`;
-            const label = document.createElement('span');
-            label.textContent = n;
-            a.appendChild(label);
+            const a = document.createElement('a'); a.className = 'chip';
+            a.href = `locations/${encodeURIComponent(n)}.html`; a.title = `Location: ${n}`;
+            const label = document.createElement('span'); label.textContent = n; a.appendChild(label);
             locChips.appendChild(a);
           }
           if (locChips.children.length) topline.appendChild(locChips);
-
-          el.appendChild(sticky);
-          grid.appendChild(el);
-        }
-      }
-
-      const firstLabel = (function(){const {year,week}=idxToISOWeek(minIdx); return `${year}-${String(week).padStart(2,'0')}`})();
-      const lastLabel  = (function(){const {year,week}=idxToISOWeek(maxIdx-1); return `${year}-${String(week).padStart(2,'0')}`})();
-      setText('meta', `Timelines: ${timelines.length} • Weeks: ${totalWeeks} • Range: ${firstLabel} → ${lastLabel}`);
-    }
-
-    /** ===================== RENDER VERTICAL TIMELINES ===================== **/
-    async function renderGridVertical(timelines, seasonalMarkers = []) {
-      const grid = $('grid'); grid.innerHTML = '';
-
-      const bounds = timelines.flatMap(tl => tl.events.map(ev => [ev.startIdx, ev.startIdx + ev.durationWeeks]));
-      const minIdx = Math.min(...bounds.map(b => b[0]));
-      const maxIdx = Math.max(...bounds.map(b => b[1]));
-      const totalWeeks = Math.max(1, maxIdx - minIdx);
-
-      const activeWeekCounts = new Map();
-      for (const tl of timelines) {
-        for (const ev of tl.events) {
-          const start = ev.startIdx;
-          const end = ev.startIdx + ev.durationWeeks;
-          for (let idx = start; idx < end; idx++) activeWeekCounts.set(idx, (activeWeekCounts.get(idx) || 0) + 1);
-        }
-      }
-
-      const { year: minYear } = idxToISOWeek(minIdx);
-      const { year: maxYear } = idxToISOWeek(maxIdx - 1);
-
-      const expandedSeasonal = [];
-      for (const m of seasonalMarkers) {
-        if (m.type === 'static') expandedSeasonal.push(m);
-        else if (m.type === 'recurring') {
-          const ww = String(m.week).padStart(2, '0');
-          for (let y = minYear; y <= maxYear; y++) {
-            const idx = isoWeekToIdx(`${y}-${ww}`);
-            if (idx >= minIdx && idx < maxIdx) expandedSeasonal.push({ ...m, type: 'static', weekIdx: idx });
-          }
-        }
-      }
-
-      const seasonalByIdx = new Map();
-      for (const m of expandedSeasonal) {
-        if (!seasonalByIdx.has(m.weekIdx)) seasonalByIdx.set(m.weekIdx, []);
-        seasonalByIdx.get(m.weekIdx).push(m);
-      }
-      const seasonalCountByIdx = new Map();
-      for (const [idx, arr] of seasonalByIdx.entries()) seasonalCountByIdx.set(idx, arr.length);
-
-      const rows = [];
-      const weekRowIndex = new Map();
-      for (let i = maxIdx - 1; i >= minIdx; i--) {
-        weekRowIndex.set(i, rows.length);
-        rows.push({ type: 'week', idx: i });
-        const arr = seasonalByIdx.get(i);
-        if (arr && arr.length) for (const m of arr) rows.push({ type: 'seasonal', idx: i, data: m });
-      }
-
-      grid.style.gridTemplateColumns = `[weeks] var(--names-col-width) ${timelines
-        .map(() => 'minmax(var(--timeline-col-min), var(--timeline-col-max))').join(' ')}`;
-
-      grid.style.gridTemplateRows = rows
-        .map(() => 'minmax(var(--week-row-min), auto)')
-        .join(' ');
-
-      const corner = document.createElement('div');
-      corner.className = 'corner';
-      corner.style.gridColumn = '1 / 2';
-      corner.style.gridRow = '1 / 2';
-      corner.textContent = 'Week';
-      grid.appendChild(corner);
-
-      timelines.forEach((tl, cIdx) => {
-        const th = document.createElement('div');
-        th.className = 'thead';
-        th.style.gridColumn = `${2 + cIdx} / ${3 + cIdx}`;
-        th.style.gridRow = '1 / 2';
-
-        const inner = document.createElement('div');
-        inner.className = 'thead__inner';
-
-        const img = makeSmartImgFallback(
-          TIMELINE_IMAGES_DIR,
-          tl.imageName,
-          'thead-thumb',
-          tl.title,
-          () => {
-            const ph = document.createElement('div');
-            ph.className = 'thead-thumb thead-thumb--ph';
-            inner.appendChild(ph);
-          }
-        );
-        if (img) {
-          inner.appendChild(img);
-        }
-
-        const titleSpan = document.createElement('span');
-        titleSpan.className = 'thead__title';
-        titleSpan.textContent = tl.title || '';
-        inner.appendChild(titleSpan);
-
-        th.appendChild(inner);
-        grid.appendChild(th);
-      });
-
-
-      rows.forEach((row, rIdx) => {
-        if (row.type === 'week') {
-          const { week } = idxToISOWeek(row.idx);
-          const wl = document.createElement('div');
-          wl.className = 'wlabel';
-          wl.dataset.weekIdx = String(row.idx);
-
-          const inner = document.createElement('div');
-          inner.className = 'wlabel__inner';
-          inner.textContent = `Week ${String(week).padStart(2, '0')}`;
-
-          const count = activeWeekCounts.get(row.idx) || 0;
-          if (count > 0) { inner.classList.add('has-events'); inner.dataset.count = String(count); }
-
-          wl.appendChild(inner);
-          wl.style.gridColumn = '1 / 2';
-          wl.style.gridRow = `${2 + rIdx} / ${3 + rIdx}`;
-          grid.appendChild(wl);
-
-          timelines.forEach((_, cIdx) => {
-            const bg = document.createElement('div');
-            bg.className = 'cell';
-            bg.style.gridColumn = `${2 + cIdx} / ${3 + cIdx}`;
-            bg.style.gridRow = `${2 + rIdx} / ${3 + rIdx}`;
-            grid.appendChild(bg);
-          });
-        } else {
-          const m = row.data;
-          const wl = document.createElement('div');
-          wl.className = 'wlabel wlabel--seasonal';
-
-          const inner = document.createElement('div');
-          inner.className = 'wlabel__inner wlabel__inner--seasonal';
-
-          const img = makeSmartImg(SEASONAL_IMAGES_DIR, m.imageName, 'seasonal-thumb', m.name);
-          if (img) inner.appendChild(img);
-
-          const nameEl = document.createElement('span');
-          nameEl.className = 'seasonal-name';
-          nameEl.textContent = m.name;
-          inner.appendChild(nameEl);
-
-          if (m.desc) {
-            const descEl = document.createElement('span');
-            descEl.className = 'seasonal-desc';
-            descEl.textContent = m.desc;
-            inner.appendChild(descEl);
-          }
-
-          wl.appendChild(inner);
-          wl.style.gridColumn = '1 / 2';
-          wl.style.gridRow = `${2 + rIdx} / ${3 + rIdx}`;
-          grid.appendChild(wl);
-
-          timelines.forEach((_, cIdx) => {
-            const bg = document.createElement('div');
-            bg.className = 'cell cell--seasonal';
-            bg.style.gridColumn = `${2 + cIdx} / ${3 + cIdx}`;
-            bg.style.gridRow = `${2 + rIdx} / ${3 + rIdx}`;
-            grid.appendChild(bg);
-          });
-        }
-      });
-
-      setupCornerYearTracker(grid, corner);
-
-      function countSeasonalsBetween(start, endExclusive) {
-        let total = 0;
-        for (let idx = start; idx < endExclusive; idx++) total += seasonalCountByIdx.get(idx) || 0;
-        return total;
-      }
-
-      for (let cIdx = 0; cIdx < timelines.length; cIdx++) {
-        const tl = timelines[cIdx];
-        for (const ev of tl.events) {
-          const start = ev.startIdx;
-          const endExclusive = ev.startIdx + ev.durationWeeks;
-
-          const visStart = Math.min(Math.max(start, minIdx), maxIdx - 1);
-          const visEndWk = Math.min(Math.max(endExclusive - 1, minIdx), maxIdx - 1);
-          if (!weekRowIndex.has(visStart) || !weekRowIndex.has(visEndWk)) continue;
-
-          const topWeek = Math.max(visStart, visEndWk);
-          const topRowIdx = weekRowIndex.get(topWeek);
-
-          const baseSpanWeeks = Math.abs(visEndWk - visStart) + 1;
-          const extra = countSeasonalsBetween(Math.max(Math.min(start, endExclusive), minIdx), Math.min(Math.max(start, endExclusive), maxIdx));
-          const span = baseSpanWeeks + extra;
-
-          const el = document.createElement('div');
-          el.className = 'event';
-
-          const catId = toCatId(ev.categoryId);
-          const catName = getCatName(catId);
-          const catEmoji = getCatEmoji(catId);
-          const catColor = getCatColor(catId);
-          const catText  = getCatText(catId);
-
-          el.dataset.catId = String(catId || 0);
-          el.dataset.catEmoji = catEmoji || '';
-          el.dataset.catTitle = catName || '';
-          el.dataset.catColor = catColor || '';
-          el.style.setProperty('--jcolor', catColor || 'transparent');
-          el.style.setProperty('--jtext', catText || 'black');
-          el.style.setProperty('--jemoji', "\"" + catEmoji + "\"" || 'black');
-
-          el.style.gridColumn = `${2 + cIdx} / ${3 + cIdx}`;
-          el.style.gridRow = `${2 + topRowIdx} / ${2 + topRowIdx + span}`;
-
-          const { year, week } = idxToISOWeek(start);
-          const labelStart = `${year}-${String(week).padStart(2, '0')}`;
-
-          const topline = document.createElement('div');
-          topline.className = 'topline';
-
-          const sticky = document.createElement('div');
-          sticky.className = 'event-sticky';
-          sticky.dataset.image = 'false';
-
-          prependEventMedia(sticky, ev, (has) => {
-            sticky.dataset.image = has ? 'true' : 'false';
-          });
-
-          if (catName) {
-            const cat = document.createElement('div');
-            cat.className = 'cat';
-            cat.textContent = catName;
-            topline.appendChild(cat);
-          }
-
-          const title = document.createElement('div');
-          title.className = 'desc';
-          title.textContent = ev.desc || '(no description)';
-          topline.appendChild(title);
-
-          const meta = document.createElement('div');
-          meta.className = 'meta';
-          meta.textContent = `${labelStart} • ${ev.durationWeeks}w`;
-          topline.appendChild(meta);
 
           sticky.appendChild(topline);
-
-          const charChips = document.createElement('div');
-          charChips.className = 'chips chips--characters';
-          for (const n of ev.characters || []) {
-            const a = document.createElement('a');
-            a.className = 'chip';
-            a.href = `characters/${encodeURIComponent(n)}.html`;
-            a.title = `Character: ${n}`;
-            const icon = makeSmartImg(CHAR_IMAGES_DIR, n, 'icon', n);
-            if (icon) a.appendChild(icon);
-            const label = document.createElement('span');
-            label.textContent = n;
-            a.appendChild(label);
-            charChips.appendChild(a);
-          }
-          if (charChips.children.length) topline.appendChild(charChips);
-
-          const locChips = document.createElement('div');
-          locChips.className = 'chips chips--locations';
-          for (const n of ev.locations || []) {
-            const a = document.createElement('a');
-            a.className = 'chip';
-            a.href = `locations/${encodeURIComponent(n)}.html`;
-            a.title = `Location: ${n}`;
-            const label = document.createElement('span');
-            label.textContent = n;
-            a.appendChild(label);
-            locChips.appendChild(a);
-          }
-          if (locChips.children.length) topline.appendChild(locChips);
-
           el.appendChild(sticky);
           grid.appendChild(el);
         }
       }
 
-      const firstLabel = (function () { const { year, week } = idxToISOWeek(minIdx); return `${year}-${String(week).padStart(2, '0')}`; })();
-      const lastLabel = (function () { const { year, week } = idxToISOWeek(maxIdx - 1); return `${year}-${String(week).padStart(2, '0')}`; })();
-      setText('meta', `Timelines: ${timelines.length} • Weeks: ${totalWeeks} • Range: ${firstLabel} → ${lastLabel}`);
+      const firstL = (function(){const {year,week,day}=idxToISODay(minIdx); return `${year}-W${String(week).padStart(2,'0')}-${day}`})();
+      const lastL  = (function(){const {year,week,day}=idxToISODay(maxIdx-1); return `${year}-W${String(week).padStart(2,'0')}-${day}`})();
+      setText('meta', `Timelines: ${timelines.length} • Days: ${totalDays} • Range: ${firstL} → ${lastL}`);
     }
 
     /** ===================== BOOT ===================== **/

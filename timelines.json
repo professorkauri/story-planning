@@ -1,5 +1,10 @@
 {
   "settings": {
+    "ui": {
+      "title": "My Timeline",
+      "theme": "light",
+      "layout": "horizontal"
+    },
     "categories": [
       {
         "id": 1,
@@ -85,12 +90,7 @@
         "color": "#80acff",
         "text": "white"
       }
-    ],
-    "ui": {
-      "title": "My Timeline",
-      "theme": "light",
-      "layout": "horizontal"
-    }
+    ]
   },
   "timelines": [
     {
@@ -99,7 +99,7 @@
       "events": [
         {
           "date": "2024-48",
-          "duration": "7w",
+          "duration": "9",
           "desc": "Young scholar in city archives",
           "category": "OrdinaryWorld",
           "image": "",
