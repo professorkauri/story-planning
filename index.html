@@ -12,11 +12,14 @@
     <div class="meta" id="meta">Loading…</div>
     <div class="err" id="err"></div>
     <div class="actions">
+      <button id="btn-theme" type="button">Light</button>
+      <button id="btn-layout" type="button">Vertical</button>
+      <button id="toggle-editor" type="button">Edit</button>
       <button id="btn-import" class="ghost" type="button">Import</button>
       <button id="btn-download" type="button">Download</button>
-      <button id="toggle-editor" type="button">Edit</button>
     </div>
   </header>
+  
   
 
   <div id="viewport" class="viewport">
@@ -91,6 +94,7 @@
         viewportEl.classList.toggle('layout-vertical', ui.layout !== 'horizontal');
       }
       applyGridSizing(ui.layout === 'horizontal' ? 'horizontal' : 'vertical');
+      syncHeaderControlsFromSettings();
     }
 
     function getCatById(id) {
@@ -141,6 +145,36 @@
       const d = parseRelDays(s);
       if (d != null) return d;
       return 0;
+    }
+
+    function syncHeaderControlsFromSettings() {
+      const themeBtn = document.getElementById('btn-theme');
+      const layoutBtn = document.getElementById('btn-layout');
+
+      // Show the *current* mode as the button label (press to toggle)
+      const theme = settingsState?.ui?.theme === 'dark' ? 'dark' : 'light';
+      if (themeBtn) themeBtn.textContent = theme === 'dark' ? 'Dark' : 'Light';
+
+      const layout = settingsState?.ui?.layout === 'horizontal' ? 'horizontal' : 'vertical';
+      if (layoutBtn) layoutBtn.textContent = layout === 'horizontal' ? 'Horizontal' : 'Vertical';
+
+      // (Optional) aria-pressed accessibility
+      if (themeBtn) themeBtn.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
+      if (layoutBtn) layoutBtn.setAttribute('aria-pressed', layout === 'horizontal' ? 'true' : 'false');
+    }
+
+    function toggleTheme() {
+      if (!settingsState.ui) settingsState.ui = { ...DEFAULT_UI };
+      settingsState.ui.theme = (settingsState.ui.theme === 'dark') ? 'light' : 'dark';
+      applyAllFromSettings();            // applies classes + re-render
+      syncHeaderControlsFromSettings();  // refresh button labels
+    }
+
+    function toggleLayout() {
+      if (!settingsState.ui) settingsState.ui = { ...DEFAULT_UI };
+      settingsState.ui.layout = (settingsState.ui.layout === 'horizontal') ? 'vertical' : 'horizontal';
+      applyAllFromSettings();            // flips layout & re-renders
+      syncHeaderControlsFromSettings();  // refresh button labels
     }
 
     
@@ -393,6 +427,19 @@
           el.prepend(img);
         }
       } else tryLocation();
+    }
+
+    function computeTimelineRanges(timelines) {
+      return timelines.map(tl => {
+        if (!tl.events || tl.events.length === 0) return null;
+        let start = Infinity, end = -Infinity;
+        for (const ev of tl.events) {
+          start = Math.min(start, ev.startIdx);
+          end   = Math.max(end, ev.startIdx + ev.durationDays); // end is exclusive
+        }
+        if (!Number.isFinite(start) || !Number.isFinite(end)) return null;
+        return { start, end }; // [start, end)
+      });
     }
 
     /** CSV -> timeline */
@@ -1509,12 +1556,12 @@
         ...columns.map(() => 'var(--week-col-width)')
       ].join(' ');
 
-      // Corner cell (top-left)
+      // Corner cell (top-left) shows dynamic ISO year while scrolling
       const corner = document.createElement('div');
       corner.className = 'corner';
       corner.style.gridRow = '1 / 3';       // span both header rows
       corner.style.gridColumn = '1 / 2';
-      corner.textContent = 'Weeks/Days';
+      corner.textContent = '';              // tracker will fill year
       grid.appendChild(corner);
 
       // Row 2: Day headers + Seasonal headers
@@ -1525,7 +1572,11 @@
           hdr.className = 'wlabel';
           hdr.dataset.dayIdx = String(col.dayIdx);
 
-          const { day } = idxToISODay(col.dayIdx);
+          // one destructure only
+          const { year, week, day } = idxToISODay(col.dayIdx);
+          const wIdx = isoWeekToIdx(`${year}-${String(week).padStart(2,'0')}`);
+          hdr.dataset.weekIdx = String(wIdx);
+
           const dname = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][day - 1];
           const dt = dayIdxToDate(col.dayIdx);
           const dd = String(dt.getUTCDate()).padStart(2, '0');
@@ -1585,24 +1636,20 @@
 
         // If the band is outside the viewport, skip
         if (dayStart < dayEnd) {
-          const { week } = idxToISODay(wkStart);
-
-          // Compute span in columns: all seasonal columns for each day in [dayStart, dayEnd)
-          // plus the 7 (or fewer at edges) day columns.
           let spanCols = 0;
           let colStart = null;
           for (let d = dayStart; d < dayEnd; d++) {
-            // seasonal columns for this day
             const seas = seasonalByDay.get(d)?.length || 0;
             if (colStart == null) {
-              // First visual column for this band is either the first seasonal (if any)
-              // or the day column index for dayStart.
-              colStart = 2 + (seas ? columns.findIndex((c) => c.type !== 'seasonal' ? false : (c.dayIdx === d)) : dayColIndex.get(d));
+              colStart = 2 + (seas
+                ? columns.findIndex((c) => c.type === 'seasonal' && c.dayIdx === d)
+                : dayColIndex.get(d));
             }
-            spanCols += seas + 1; // +1 for the day column
+            spanCols += seas + 1;
           }
 
           if (colStart != null && spanCols > 0) {
+            const { year, week } = idxToISODay(wkStart);   // <- single destructure
             const wkHdr = document.createElement('div');
             wkHdr.className = 'wlabel wlabel--weekband';
             const inner = document.createElement('div');
@@ -1611,12 +1658,16 @@
             wkHdr.appendChild(inner);
             wkHdr.style.gridRow = '1 / 2';
             wkHdr.style.gridColumn = `${colStart} / ${colStart + spanCols}`;
+            wkHdr.dataset.weekIdx = String(isoWeekToIdx(`${year}-${String(week).padStart(2,'0')}`));
             grid.appendChild(wkHdr);
           }
         }
 
         wkStart += 7;
       }
+
+      // Pre-compute [start,end) day ranges per timeline
+      const tlRanges = computeTimelineRanges(timelines);
 
       // Left names column
       timelines.forEach((tl, r) => {
@@ -1632,8 +1683,21 @@
           bg.className = 'cell' + (col.type === 'seasonal' ? ' cell--seasonal' : '');
           bg.style.gridRow = `${gridRow} / ${gridRow + 1}`;
           bg.style.gridColumn = `${2 + c} / ${3 + c}`;
+
+          // Mark outside for BOTH day and seasonal cells using the same rule
+          const range = tlRanges[r];
+          if (typeof col.dayIdx === 'number') {
+            if (!range || col.dayIdx < range.start || col.dayIdx >= range.end) {
+              bg.classList.add('outside');
+            }
+          } else {
+            // (Defensive fall-back; seasonal columns should carry dayIdx)
+            bg.classList.add('outside');
+          }
+
           grid.appendChild(bg);
         });
+
       });
 
       // Helper to count seasonal columns between two day indices
@@ -1761,6 +1825,7 @@
       const firstL = (function(){const {year,week,day}=idxToISODay(minIdx); return `${year}-W${String(week).padStart(2,'0')}-${day}`})();
       const lastL  = (function(){const {year,week,day}=idxToISODay(maxIdx-1); return `${year}-W${String(week).padStart(2,'0')}-${day}`})();
       setText('meta', `Timelines: ${timelines.length} • Days: ${totalDays} • Range: ${firstL} → ${lastL}`);
+      setupCornerYearTrackerHorizontal(grid, corner);
     }
 
     /** ===================== RENDER VERTICAL TIMELINES ===================== **/
@@ -1822,20 +1887,14 @@
 
       grid.style.gridTemplateRows = rows.map(() => 'minmax(var(--week-row-min), auto)').join(' ');
 
-      // Top-left corner cells
-      const cornerWeek = document.createElement('div');
-      cornerWeek.className = 'corner';
-      cornerWeek.style.gridColumn = '1 / 2';
-      cornerWeek.style.gridRow = '1 / 2';
-      cornerWeek.textContent = 'Week';
-      grid.appendChild(cornerWeek);
-
-      const cornerDay = document.createElement('div');
-      cornerDay.className = 'corner';
-      cornerDay.style.gridColumn = '2 / 3';
-      cornerDay.style.gridRow = '1 / 2';
-      cornerDay.textContent = 'Day';
-      grid.appendChild(cornerDay);
+      // Single top-left corner spanning both left header columns.
+      // Shows dynamic ISO year while scrolling.
+      const corner = document.createElement('div');
+      corner.className = 'corner';
+      corner.style.gridColumn = '1 / 3'; // span week band + day label columns
+      corner.style.gridRow = '1 / 2';
+      corner.textContent = '';           // tracker will fill year
+      grid.appendChild(corner);
 
       // Column headers (timeline titles)
       timelines.forEach((tl, cIdx) => {
@@ -1845,17 +1904,23 @@
         grid.appendChild(th);
       });
 
+      // Pre-compute [start,end) day ranges per timeline
+      const tlRanges = computeTimelineRanges(timelines);
+
       // Left day/seasonal header column (col 2)
       rows.forEach((row, rIdx) => {
         if (row.type === 'day') {
-          const { day } = idxToISODay(row.dayIdx);
+          const wl = document.createElement('div'); // create first
+          wl.className = 'wlabel';
+          wl.dataset.dayIdx = String(row.dayIdx);
+
+          const { year, week, day } = idxToISODay(row.dayIdx);
+          const wIdx = isoWeekToIdx(`${year}-${String(week).padStart(2,'0')}`);
+          wl.dataset.weekIdx = String(wIdx);        // now safe
+
           const dname = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][day - 1];
           const dt = dayIdxToDate(row.dayIdx);
           const dd = String(dt.getUTCDate()).padStart(2, '0');
-
-          const wl = document.createElement('div');
-          wl.className = 'wlabel';
-          wl.dataset.dayIdx = String(row.dayIdx);
 
           const inner = document.createElement('div');
           inner.className = 'wlabel__inner';
@@ -1874,6 +1939,13 @@
             bg.className = 'cell';
             bg.style.gridColumn = `${3 + cIdx} / ${4 + cIdx}`;
             bg.style.gridRow = `${2 + rIdx} / ${3 + rIdx}`;
+
+            const range = tlRanges[cIdx];
+            const d = row.dayIdx;
+            if (!range || d < range.start || d >= range.end) {
+              bg.classList.add('outside');
+            }
+
             grid.appendChild(bg);
           });
 
@@ -1912,8 +1984,16 @@
             bg.className = 'cell cell--seasonal';
             bg.style.gridColumn = `${3 + cIdx} / ${4 + cIdx}`;
             bg.style.gridRow = `${2 + rIdx} / ${3 + rIdx}`;
+
+            const range = tlRanges[cIdx];
+            const d = row.dayIdx; // seasonal rows carry the day they belong to
+            if (!range || d < range.start || d >= range.end) {
+              bg.classList.add('outside');
+            }
+
             grid.appendChild(bg);
           });
+
         }
       });
 
@@ -1942,7 +2022,7 @@
           }
 
           if (rowTop != null && spanRows > 0) {
-            const { week } = idxToISODay(wkStart);
+            const { year, week } = idxToISODay(wkStart);  // single destructure
             const wkHdr = document.createElement('div');
             wkHdr.className = 'wlabel wlabel--weekband';
             const inner = document.createElement('div');
@@ -1950,7 +2030,8 @@
             inner.textContent = `Week ${String(week).padStart(2, '0')}`;
             wkHdr.appendChild(inner);
 
-            // +2 offset because first content row starts at grid row 2
+            wkHdr.dataset.weekIdx = String(isoWeekToIdx(`${year}-${String(week).padStart(2,'0')}`));
+
             const gridRowStart = 2 + rowTop;
             wkHdr.style.gridColumn = '1 / 2';
             wkHdr.style.gridRow = `${gridRowStart} / ${gridRowStart + spanRows}`;
@@ -2067,6 +2148,7 @@
       const firstL = (function(){const {year,week,day}=idxToISODay(minIdx); return `${year}-W${String(week).padStart(2,'0')}-${day}`})();
       const lastL  = (function(){const {year,week,day}=idxToISODay(maxIdx-1); return `${year}-W${String(week).padStart(2,'0')}-${day}`})();
       setText('meta', `Timelines: ${timelines.length} • Days: ${totalDays} • Range: ${firstL} → ${lastL}`);
+      setupCornerYearTracker(grid, corner);
     }
 
     /** ===================== BOOT ===================== **/
@@ -2084,6 +2166,13 @@
         const btnDownload = document.getElementById('btn-download');
         if (btnImport) btnImport.onclick = onImportJSON;
         if (btnDownload) btnDownload.onclick = onDownloadJSON;
+
+        const btnTheme = document.getElementById('btn-theme');
+        const btnLayout = document.getElementById('btn-layout');
+        if (btnTheme) btnTheme.onclick = toggleTheme;
+        if (btnLayout) btnLayout.onclick = toggleLayout;
+        // Initial label sync (in case applyUIFromSettings hasn’t run yet)
+        syncHeaderControlsFromSettings();
 
       } catch (e) {
         console.error(e);

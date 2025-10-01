@@ -141,7 +141,7 @@ header .err {
   border-radius:5px;
 }
 .wlabel {
-  position: sticky;
+  position: relative;
   left: 0;
   z-index: 3;
   background: var(--background);
@@ -163,6 +163,31 @@ header .err {
   padding: 5px 7px 6px 7px;
   border-radius: 10px;
   background: var(--g-outline);
+}
+.wlabel--weekband {
+  justify-content: left;
+}
+.layout-vertical .wlabel--weekband:after {
+  display:block;
+  content:" ";
+  position:absolute;
+  top:10px;
+  left:100%;
+  width:5px;
+  height:calc(100% - 20px);
+  border:1px solid var(--g-bar);
+  border-right:none;
+}
+.layout-horizontal .wlabel--weekband:after {
+  display:block;
+  content:" ";
+  position:absolute;
+  top:100%;
+  left:10px;
+  width:calc(100% - 20px);
+  height:5px;
+  border:1px solid var(--g-bar);
+  border-bottom:none;
 }
 
 
@@ -512,7 +537,7 @@ header .err {
   border-left: 2px dashed var(--seasonal-line);
   border-radius: 0;
   pointer-events: none;
-  opacity: 0.5;
+  opacity: 1;
 }
 .wlabel--seasonal::before,
 .cell--seasonal::before {
@@ -526,6 +551,12 @@ header .err {
   background-color: var(--seasonal-line);
   border-radius: 0;
   pointer-events: none;
+}
+.layout-vertical .cell.outside:not(.cell--seasonal):before,
+.layout-vertical .cell--seasonal.outside:after,
+.layout-horizontal .cell.outside:before,
+.layout-horizontal .cell--seasonal.outside:before {
+  display:none;
 }
 
 .wlabel__inner--seasonal {

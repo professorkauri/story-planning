@@ -3,7 +3,7 @@
     "ui": {
       "title": "My Timeline",
       "theme": "light",
-      "layout": "horizontal"
+      "layout": "vertical"
     },
     "categories": [
       {
@@ -112,8 +112,8 @@
           "categoryId": 1
         },
         {
-          "date": "0w",
-          "duration": "1w",
+          "date": "0",
+          "duration": "1",
           "desc": "Discovery of forbidden manuscript",
           "category": "CallToAdventure",
           "image": "ring",
@@ -124,8 +124,8 @@
           "categoryId": 2
         },
         {
-          "date": "0w",
-          "duration": "1w",
+          "date": "0",
+          "duration": "1",
           "desc": "Fears punishment for knowledge",
           "category": "RefusalOfTheCall",
           "image": "",
@@ -136,7 +136,7 @@
           "categoryId": 3
         },
         {
-          "date": "6w",
+          "date": "3d",
           "duration": "2w",
           "desc": "Eccentric professor offers help",
           "category": "MeetingTheMentor",
@@ -148,8 +148,8 @@
           "categoryId": 4
         },
         {
-          "date": "2w",
-          "duration": "3w",
+          "date": "1w",
+          "duration": "12",
           "desc": "Journey to ancient ruins",
           "category": "CrossingTheThreshold",
           "image": "",
@@ -158,8 +158,8 @@
           "categoryId": 5
         },
         {
-          "date": "1w",
-          "duration": "2w",
+          "date": "0",
+          "duration": "1",
           "desc": "Rival scholars and puzzles",
           "category": "TestsAlliesEnemies",
           "image": "",
@@ -168,8 +168,8 @@
           "categoryId": 6
         },
         {
-          "date": "1w",
-          "duration": "2w",
+          "date": "0",
+          "duration": "2",
           "desc": "Descends into hidden catacombs",
           "category": "ApproachToTheInmostCave",
           "image": "",
@@ -178,8 +178,8 @@
           "categoryId": 7
         },
         {
-          "date": "0w",
-          "duration": "5w",
+          "date": "0",
+          "duration": "1",
           "desc": "Confrontation with cursed guardian",
           "category": "TheOrdeal",
           "image": "",
@@ -192,8 +192,8 @@
           "categoryId": 8
         },
         {
-          "date": "1w",
-          "duration": "1w",
+          "date": "0",
+          "duration": "1",
           "desc": "Gains secret of eternal flame",
           "category": "Reward",
           "image": "",
@@ -202,8 +202,8 @@
           "categoryId": 9
         },
         {
-          "date": "2w",
-          "duration": "2w",
+          "date": "0",
+          "duration": "1",
           "desc": "Chased by collapsing ruins",
           "category": "TheRoadBack",
           "image": "",
@@ -212,8 +212,8 @@
           "categoryId": 10
         },
         {
-          "date": "2025-39",
-          "duration": "2w",
+          "date": "1",
+          "duration": "1",
           "desc": "Uses knowledge to save companions",
           "category": "Resurrection",
           "image": "ring",
@@ -223,7 +223,7 @@
         },
         {
           "date": "1w",
-          "duration": "12w",
+          "duration": "2w",
           "desc": "Teaches wisdom to new generation",
           "category": "TheReturn",
           "image": "",
@@ -241,7 +241,7 @@
       "title": "Harry Potter and the Goblet of Fire",
       "events": [
         {
-          "date": "2025-02",
+          "date": "2024-50-3",
           "duration": "4w",
           "desc": "Living a quiet village life (Yay!)",
           "category": "OrdinaryWorld",
@@ -255,8 +255,8 @@
           "categoryId": 1
         },
         {
-          "date": "2w",
-          "duration": "1w",
+          "date": "0",
+          "duration": "1",
           "desc": "Mysterious stranger arrives",
           "category": "CallToAdventure",
           "image": "",
@@ -267,8 +267,8 @@
           "categoryId": 2
         },
         {
-          "date": "1w",
-          "duration": "1w",
+          "date": "1",
+          "duration": "4",
           "desc": "Doubts and fear",
           "category": "RefusalOfTheCall",
           "image": "",
@@ -279,8 +279,8 @@
           "categoryId": 3
         },
         {
-          "date": "4w",
-          "duration": "1w",
+          "date": "0",
+          "duration": "1",
           "desc": "Wise elder offers guidance",
           "category": "MeetingTheMentor",
           "image": "",
@@ -293,7 +293,7 @@
           "categoryId": 4
         },
         {
-          "date": "2w",
+          "date": "0",
           "duration": "3w",
           "desc": "Leaves village to unknown lands",
           "category": "CrossingTheThreshold",
@@ -305,7 +305,7 @@
           "categoryId": 5
         },
         {
-          "date": "0w",
+          "date": "0",
           "duration": "2w",
           "desc": "Faces trials and gains companions",
           "category": "TestsAlliesEnemies",
@@ -317,8 +317,8 @@
           "categoryId": 6
         },
         {
-          "date": "2w",
-          "duration": "7w",
+          "date": "0",
+          "duration": "4",
           "desc": "Enters dark forest",
           "category": "ApproachToTheInmostCave",
           "image": "",
@@ -329,8 +329,8 @@
           "categoryId": 7
         },
         {
-          "date": "0w",
-          "duration": "1w",
+          "date": "1",
+          "duration": "1",
           "desc": "Battles the shadow beast",
           "category": "TheOrdeal",
           "image": "",
@@ -341,8 +341,8 @@
           "categoryId": 8
         },
         {
-          "date": "0w",
-          "duration": "1w",
+          "date": "0",
+          "duration": "1",
           "desc": "Gains the sacred relic",
           "category": "Reward",
           "image": "",
@@ -353,8 +353,8 @@
           "categoryId": 9
         },
         {
-          "date": "0w",
-          "duration": "3w",
+          "date": "0",
+          "duration": "3",
           "desc": "Pursued by enemies",
           "category": "TheRoadBack",
           "image": "",
@@ -365,8 +365,8 @@
           "categoryId": 10
         },
         {
-          "date": "3w",
-          "duration": "2w",
+          "date": "0",
+          "duration": "1",
           "desc": "Final test of character",
           "category": "Resurrection",
           "image": "",
@@ -380,8 +380,8 @@
           "categoryId": 11
         },
         {
-          "date": "2w",
-          "duration": "2w",
+          "date": "1w",
+          "duration": "3w",
           "desc": "Brings knowledge to village",
           "category": "TheReturn",
           "image": "",
@@ -401,8 +401,8 @@
       "title": "Pokemon Red",
       "events": [
         {
-          "date": "2024-50",
-          "duration": "3w",
+          "date": "2024-48-6",
+          "duration": "1w",
           "desc": "Move into new home",
           "category": "OrdinaryWorld",
           "image": "",
@@ -415,8 +415,8 @@
           "categoryId": 1
         },
         {
-          "date": "0w",
-          "duration": "1w",
+          "date": "0",
+          "duration": "1",
           "desc": "Visit Professor Oak",
           "category": "CallToAdventure",
           "image": "oakslab",
@@ -430,8 +430,8 @@
           "categoryId": 2
         },
         {
-          "date": "0w",
-          "duration": "1w",
+          "date": "0",
+          "duration": "2w",
           "desc": "Can't, got to stay in school",
           "category": "RefusalOfTheCall",
           "image": "",
@@ -444,8 +444,8 @@
           "categoryId": 3
         },
         {
-          "date": "0w",
-          "duration": "1w",
+          "date": "1",
+          "duration": "1",
           "desc": "Met Rival Blue",
           "category": "MeetingTheMentor",
           "image": "",
@@ -459,8 +459,8 @@
           "categoryId": 4
         },
         {
-          "date": "0w",
-          "duration": "1w",
+          "date": "0",
+          "duration": "2w",
           "desc": "Starting off on my journey!",
           "category": "CrossingTheThreshold",
           "image": "",
