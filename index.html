@@ -32,18 +32,14 @@
 
     const visualDebug = false;
 
-    const EVENT_IMAGES_DIR = 'images/events/';
-    const CHAR_IMAGES_DIR = 'images/characters/';
-    const LOC_IMAGES_DIR = 'images/locations/';
-    const SEASONAL_IMAGES_DIR = 'images/seasonal/';
-    const TIMELINE_IMAGES_DIR = 'images/timelines/';
+    const IMAGES_DIR = 'images/';
 
     // ===== SIZING (edit these) =====
     const GRID_SIZING = {
       horizontal: {
-        namesColWidth:  '160px',
+        namesColWidth:  '80px',
         weekColWidth:   'auto',
-        timelineRowMin: '120px',
+        timelineRowMin: '50px',
         weekHeaderRow:  'auto',
       }
     };
@@ -69,7 +65,6 @@
       categories: Array.from({ length: 12 }, (_, i) => ({
         id: i + 1,
         name: LEGACY_PRESET_CATEGORIES[i + 1] || `Category ${i + 1}`,
-        emoji: '',
         color: '',
         text: 'black'
       }))
@@ -99,7 +94,6 @@
       return found ? found.id : 0;
     }
     function getCatName(id) { return getCatById(id)?.name || ''; }
-    function getCatEmoji(id) { return getCatById(id)?.emoji || ''; }
 
     function toCatId(val) {
       if (val == null) return 0;
@@ -221,7 +215,7 @@
       };
 
       const thumb = makeSmartImgFallback(
-        TIMELINE_IMAGES_DIR,
+        IMAGES_DIR,
         tl.imageName || '',
         'thead-thumb',
         tl.title || ''
@@ -248,13 +242,23 @@
 
     function normalizeEditorState(es) {
       if (!es || !Array.isArray(es.timelines)) return es;
+
       es.timelines.forEach(tl => {
         if (typeof tl.image !== 'string') tl.image = '';
         if (!Array.isArray(tl.events)) tl.events = [];
+
+        tl.events.forEach(ev => {
+          if (typeof ev.location !== 'string') ev.location = '';  // single string
+          if (!Array.isArray(ev.characters)) ev.characters = [];  // array
+          if (typeof ev.image !== 'string') ev.image = '';
+          // (No legacy ev.locations handling anymore)
+        });
       });
+
       if (!Array.isArray(es.seasonal)) es.seasonal = [];
       return es;
     }
+
 
     function getCatText(id) { return getCatById(id)?.text || 'black'; }
 
@@ -373,24 +377,18 @@
         el.prepend(ph);
         setFlag(false);
       };
-      const tryLocation = () => {
-        const firstLoc = (ev.locations && ev.locations[0]) ? ev.locations[0] : '';
-        if (firstLoc) {
-          const locImg = makeSmartImgFallback(LOC_IMAGES_DIR, firstLoc, 'thumb', firstLoc, insertPlaceholder);
-          if (locImg) {
-            locImg.addEventListener('load', () => setFlag(true), { once: true });
-            el.prepend(locImg);
-          }
-        } else insertPlaceholder();
-      };
+
       if (ev.imageName) {
-        const img = makeSmartImgFallback(EVENT_IMAGES_DIR, ev.imageName, 'thumb', ev.imageName, tryLocation);
+        const img = makeSmartImgFallback(IMAGES_DIR, ev.imageName, 'thumb', ev.imageName, insertPlaceholder);
         if (img) {
           img.addEventListener('load', () => setFlag(true), { once: true });
           el.prepend(img);
         }
-      } else tryLocation();
+      } else {
+        insertPlaceholder();
+      }
     }
+
 
     function computeTimelineRanges(timelines) {
       return timelines.map(tl => {
@@ -426,10 +424,10 @@
         if (!durationWeeks) continue;
         if (!isSpecificWeek(d) && parseRelWeeks(d) == null) continue;
 
-        const characters = (chars ? chars.split(/\s+/).filter(Boolean) : []);
-        const locations = (locs ? locs.split(/\s+/).filter(Boolean) : []);
+        const characters = (chars ? chars.split(',').map(s => s.trim()).filter(Boolean) : []);
+        const location = (locs || '').trim();
         const categoryId = toCatId(cat);
-        events.push({ rawDate: d, durationWeeks, desc, categoryId, imageName: img || '', characters, locations });
+        events.push({ rawDate: d, durationWeeks, desc, categoryId, imageName: img || '', characters, location });
       }
       if (!events.length) throw new Error('No valid events found');
       return { title, events };
@@ -718,7 +716,6 @@
           .map(c => ({
             id: c.id,
             name: String(c.name || ''),
-            emoji: String(c.emoji || ''),
             color: normalizeHexColor(c.color),
             text: String(c.text || '').toLowerCase() === 'white' ? 'white' : 'black'
           }));
@@ -812,13 +809,13 @@
         events: (tl.events || []).map(e => {
           const categoryId = toCatId(e.categoryId ?? e.category ?? '');
           return {
-            rawDate: e.date,              // may be YYYY-WW, YYYY-WW-D, "0", or "."
-            rawDuration: e.duration,      // may be "#d/#w/.", we'll parse later
-            desc: e.desc,
+            rawDate:     e.date,
+            rawDuration: e.duration,
+            desc:        e.desc,
             categoryId,
-            imageName: e.image || '',
-            characters: e.characters || [],
-            locations: e.locations || []
+            imageName:   e.image || '',
+            characters:  Array.isArray(e.characters) ? e.characters : [],
+            location:    String(e.location || '')
           };
         })
 
@@ -1062,7 +1059,7 @@
             return;
           }
           const imgEl = makeSmartImgFallback(
-            TIMELINE_IMAGES_DIR,
+            IMAGES_DIR,
             slug,
             'ed-thumb',
             slug,
@@ -1116,8 +1113,8 @@
           <div class="ed-row-data-bottom">
             <input type="text" class="ed-date" value="${ev.date || ''}" placeholder="Date" title="Date: YYYY-WW or 2w">
             <input type="text" class="ed-duration" value="${ev.duration || ''}" placeholder="Duration" title="Duration: e.g. 3w">
-            <input type="text" class="ed-characters" value="${(ev.characters || []).join(' ')}" placeholder="Characters" title="Characters: Space or comma separated">
-            <input type="text" class="ed-locations"  value="${(ev.locations || []).join(' ')}"  placeholder="Locations" title="Locations: Space or comma separated">
+            <input type="text" class="ed-characters" value="${(ev.characters || []).join(', ')}" placeholder="Characters" title="Characters: Comma separated">
+            <input type="text" class="ed-location" value="${ev.location || ''}" placeholder="Location"  title="Single location string">
           </div>
         </div>
         <div class="ed-row-btns">
@@ -1138,8 +1135,8 @@
         // Category select (from settings)
         const catCell = tr.querySelector('.ed-category');
         const sel = document.createElement('select');
-        const cats = [{ id: 0, name: '—', emoji: '' }].concat(settingsState.categories || []);
-        sel.innerHTML = cats.map(c => `<option value="${c.id}">${(c.emoji ? c.emoji + ' ' : '') + c.name}</option>`).join('');
+        const cats = [{ id: 0, name: '—' }].concat(settingsState.categories || []);
+        sel.innerHTML = cats.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
         sel.value = String(ev.categoryId || 0);
         catCell.appendChild(sel);
 
@@ -1155,7 +1152,11 @@
         const iDur = tr.querySelector('.ed-duration');
         const iImg = tr.querySelector('.ed-image-input');
         const iCh = tr.querySelector('.ed-characters');
-        const iLo = tr.querySelector('.ed-locations');
+        const iLo = tr.querySelector('.ed-location');
+        iLo.addEventListener('input', () => {
+          ev.location = (iLo.value || '').trim();
+          debouncedApply();
+        });
 
         // image preview
         const imgCell = tr.querySelector('.ed-image');
@@ -1168,7 +1169,7 @@
             imgCell.insertBefore(ph, iImg);
             return;
           }
-          const imgEl = makeSmartImgFallback(EVENT_IMAGES_DIR, slug, 'ed-thumb', slug, () => {
+          const imgEl = makeSmartImgFallback(IMAGES_DIR, slug, 'ed-thumb', slug, () => {
             const ph = document.createElement('div');
             ph.className = 'ed-thumb ed-thumb--ph';
             imgCell.insertBefore(ph, iImg);
@@ -1183,7 +1184,7 @@
         iDur.addEventListener('input', () => { ev.duration = iDur.value.trim(); debouncedApply(); });
         iImg.addEventListener('input', () => { ev.image = iImg.value.trim(); updateImagePreview(); debouncedApply(); });
         iCh.addEventListener('input', () => { ev.characters = tokenise(iCh.value); debouncedApply(); });
-        iLo.addEventListener('input', () => { ev.locations = tokenise(iLo.value); debouncedApply(); });
+        iLo.addEventListener('input', () => { ev.location = (iLo.value || '').trim(); debouncedApply(); });
 
         // row actions
         tr.querySelector('[data-act="down"]').onclick = () => { if (i > 0) { const a = evs[i - 1]; evs[i - 1] = evs[i]; evs[i] = a; renderMain(); debouncedApply(); } };
@@ -1194,7 +1195,7 @@
 
       // top buttons
       document.getElementById('ed-add-ev').onclick = () => {
-        evs.push({ date: '', duration: '1w', desc: '', categoryId: 0, image: '', characters: [], locations: [] });
+        evs.push({ date: '', duration: '1w', desc: '', categoryId: 0, image: '', characters: [], location: '' });
         renderMain(); debouncedApply();
       };
       document.getElementById('ed-dup-evs').onclick = () => {
@@ -1282,7 +1283,6 @@
           <tr>
             <th style="width:70px;">ID</th>
             <th>Name</th>
-            <th style="width:120px;">Emoji</th>
             <th style="width:160px;">Color</th>
             <th style="width:90px;">Inner Text</th>
           </tr>
@@ -1297,7 +1297,6 @@
         tr.innerHTML = `
           <td><code>${cat.id}</code></td>
           <td><input type="text" class="cat-name" value="${cat.name}" placeholder="Category ${cat.id}" /></td>
-          <td><input type="text" class="cat-emoji" value="${cat.emoji || ''}" placeholder="e.g. 🔥" /></td>
           <td>
             <div style="display:flex; align-items:center; gap:.5rem;">
               <input type="color" class="cat-color-picker" value="${toColorInputValue(cat.color)}" />
@@ -1317,13 +1316,11 @@
         tbody.appendChild(tr);
 
         const iName = tr.querySelector('.cat-name');
-        const iEmoji = tr.querySelector('.cat-emoji');
         const iColorText   = tr.querySelector('.cat-color');
         const iColorPicker = tr.querySelector('.cat-color-picker');
         const textBtn      = tr.querySelector('.cat-text-toggle');
 
         iName.addEventListener('input', () => { cat.name = iName.value; applyStateToRenderer(); });
-        iEmoji.addEventListener('input', () => { cat.emoji = iEmoji.value; applyStateToRenderer(); });
 
         // Text field -> model + picker + swatch
         iColorText.addEventListener('input', () => {
@@ -1448,7 +1445,7 @@
           imgWrap.querySelectorAll('.ed-thumb').forEach(n => n.remove());
           const slug = (iId.value || '').trim();
           if (!slug) { const ph = document.createElement('div'); ph.className = 'ed-thumb ed-thumb--ph'; ph.setAttribute('aria-hidden','false'); imgWrap.insertBefore(ph, iId); return; }
-          const imgEl = makeSmartImgFallback(SEASONAL_IMAGES_DIR, slug, 'ed-thumb', slug, () => {
+          const imgEl = makeSmartImgFallback(IMAGES_DIR, slug, 'ed-thumb', slug, () => {
             const ph = document.createElement('div'); ph.className = 'ed-thumb ed-thumb--ph'; ph.setAttribute('aria-hidden','false'); imgWrap.insertBefore(ph, iId);
           });
           if (imgEl) imgWrap.insertBefore(imgEl, iId);
@@ -1492,8 +1489,7 @@
 
     function tokenise(s) {
       if (!s) return [];
-      if (s.includes(',')) return [...new Set(s.split(',').map(x => x.trim()).filter(Boolean))];
-      return [...new Set(s.trim().split(/\s+/).filter(Boolean))];
+      return [...new Set(s.split(',').map(x => x.trim()).filter(Boolean))];
     }
 
     /** ===================== Persistence actions ===== */
@@ -1693,7 +1689,7 @@
           inner.className = 'wlabel__inner wlabel__inner--seasonal';
 
           const m = col.data;
-          const img = makeSmartImg(SEASONAL_IMAGES_DIR, m.imageName, 'seasonal-thumb', m.name);
+          const img = makeSmartImg(IMAGES_DIR, m.imageName, 'seasonal-thumb', m.name);
           if (img) inner.appendChild(img);
 
           const nameEl = document.createElement('span');
@@ -1806,17 +1802,14 @@
 
           const catId   = toCatId(ev.categoryId);
           const catName = getCatName(catId);
-          const catEmoji= getCatEmoji(catId);
           const catColor= getCatColor(catId);
           const catText = getCatText(catId);
 
           el.dataset.catId    = String(catId || 0);
-          el.dataset.catEmoji = catEmoji || '';
           el.dataset.catTitle = catName || '';
           el.dataset.catColor = catColor || '';
           el.style.setProperty('--jcolor', catColor || 'transparent');
           el.style.setProperty('--jtext',  catText  || 'black');
-          el.style.setProperty('--jemoji', `"${catEmoji}"`);
 
           if (!inBundle) {
             el.style.gridRow    = `${gridRow} / ${gridRow + 1}`;
@@ -1851,41 +1844,40 @@
           meta.textContent = ev.isSlice ? `${labelStart} • slice` : `${labelStart} • ${ev.durationDays}d`;
           topline.appendChild(meta);
 
-          // characters
-          if (ev.characters?.length) {
-            const charChips = document.createElement('div');
-            charChips.className = 'chips chips--characters';
-            for (const n of ev.characters) {
-              const a = document.createElement('a');
-              a.className = 'chip';
-              a.href = `characters/${encodeURIComponent(n)}.html`;
-              a.title = `Character: ${n}`;
-              const icon = makeSmartImg(CHAR_IMAGES_DIR, n, 'icon', n);
-              if (icon) a.appendChild(icon);
-              const label = document.createElement('span');
-              label.textContent = n;
-              a.appendChild(label);
-              charChips.appendChild(a);
+          // combined chips: [location] then [characters]
+          {
+            const chips = document.createElement('div');
+            chips.className = 'chips';
+
+            // location first (single string, no link)
+            const loc = (ev.location || '').trim();
+            if (loc) {
+              const chipLoc = document.createElement('span');
+              chipLoc.className = 'chip location';
+              chipLoc.title = `Location: ${loc}`;
+              chipLoc.textContent = loc;
+              chips.appendChild(chipLoc);
             }
-            topline.appendChild(charChips);
+
+            // characters next (plain text, no icons/links)
+            if (Array.isArray(ev.characters) && ev.characters.length) {
+              for (const n of ev.characters) {
+                const name = String(n).trim();
+                if (!name) continue;
+                const chipChar = document.createElement('span');
+                chipChar.className = 'chip character';
+                chipChar.title = `Character: ${name}`;
+                chipChar.textContent = name;
+                chips.appendChild(chipChar);
+              }
+            }
+
+            // only append if something exists
+            if (chips.children.length) {
+              topline.appendChild(chips);
+            }
           }
 
-          // locations
-          if (ev.locations?.length) {
-            const locChips = document.createElement('div');
-            locChips.className = 'chips chips--locations';
-            for (const n of ev.locations) {
-              const a = document.createElement('a');
-              a.className = 'chip';
-              a.href = `locations/${encodeURIComponent(n)}.html`;
-              a.title = `Location: ${n}`;
-              const label = document.createElement('span');
-              label.textContent = n;
-              a.appendChild(label);
-              locChips.appendChild(a);
-            }
-            topline.appendChild(locChips);
-          }
 
           sticky.appendChild(topline);
           el.appendChild(sticky);

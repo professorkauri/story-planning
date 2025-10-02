@@ -15,16 +15,7 @@
 ========================================================= */
 
 :root {
-  --timeline-col-min: 260px;   /* each timeline column (VERTICAL layout) */
-  --timeline-col-max: 1fr;
-  --week-row-min: 72px;        /* each week row (VERTICAL layout) */
-
-  /* for HORIZONTAL layout if you made a horizontal renderer */
-  --week-col-min: 110px;       /* each week column */
-  --week-col-max: 1fr;
-  --timeline-row-min: 90px;    /* each timeline row */
-
-  --jemoji: "?";
+  --thw: 80px; /* Timeline Header Width */
 }
 html,
 body {
@@ -120,8 +111,8 @@ header .err {
   top: 0;
   left: 0;
   z-index: 5;
-  background: var(--g-bar);
-  border: 1px solid var(--g-bar);
+  background: var(--g-panel);
+  border: 1px solid var(--g-panel);
   padding: 8px 10px;
   font-size: 12px;
   font-weight: 600;
@@ -186,7 +177,7 @@ header .err {
   left:0;
   z-index: 4;
   background: var(--background);
-  border: 1px solid var(--g-bar);
+  outline: 1px solid var(--g-bar);
   padding: 28px 12px;
   font-weight: 600;
   letter-spacing: 0.2px;
@@ -194,7 +185,7 @@ header .err {
   white-space: wrap;
   overflow: hidden;
   border-radius:5px;
-  min-height:80px;
+  min-height:30px;
 }
 .thead-thumb {
   display:block;
@@ -223,17 +214,21 @@ header .err {
   mix-blend-mode: multiply;;
 }
 .thead-title {
+  --sidepad: 5px;
+  --sidespace: 0.5px;
   display:block;
   position:absolute;
-  left:10px;
-  bottom:10px;
-  width:calc(100% - 20px - 1.5px - 20px);
-  font-size:0.7em;
+  left:var(--sidespace);
+  bottom:var(--sidespace);
+  width:calc(100% - var(--sidespace) - var(--sidespace) - var(--sidepad) - var(--sidepad));
+  font-size:6px;
+  text-transform: uppercase;
   z-index:5 !important;
   background:var(--background);
-  padding:5px 10px 6px 10px;
-  border-radius:5px;
-  border: 1px solid var(--muted);
+  padding:3px var(--sidepad) 3px var(--sidepad);
+  border-radius:0 0 2px;
+  outline: 1px solid var(--g-bar);
+  letter-spacing: 0.5px;
 }
 
 /* ---- Timeline cells ---- */
@@ -250,8 +245,8 @@ header .err {
   left: -1px;
   top: 50%;
   width: calc(100% + 15px);
-  height: 2px;
-  margin-top: -1px;
+  height: 1px;
+  margin-top: 0px;
   background-color: var(--g-bar);
   border-radius: 0;
   pointer-events: none;
@@ -264,8 +259,8 @@ header .err {
   padding: 0;
   font-size: 12px;
   line-height: 1.25;
-  border: 2px solid var(--jcolor);
-  box-shadow: 0 2px 10px rgba(0,0,0,.5);
+  outline: 1px solid var(--jcolor);
+  /* box-shadow: 0 2px 10px rgba(0,0,0,.5); */
   background: var(--background);
   display: flex;
   flex-direction: column;
@@ -274,87 +269,78 @@ header .err {
   gap: 0px;
   height:fit-content;
   margin:auto 15px;
-  --jemoji: attr(data-cat-emoji);
 }
 .event .topline {
   display: flex;
   position: relative;
   flex-direction: column;
   justify-content: center;
-  align-items: center;
-  gap: 8px;
+  align-items: flex-start;
+  gap: 0px;
   flex-wrap: wrap;
-  padding: 1em;
+  padding: 0.75em 0.5em 0.5em 1em;
   flex-grow: 0;
+  text-align: left;;
 }
 .event .thumb {
   display: block;
   position:relative;
-  width: 25px;
+  width: 10px;
   height: auto;
   object-fit: cover;
   border-radius:5px 0 0 5px;
-  outline:2px solid var(--jcolor);
+  outline:1px solid var(--jcolor);
   background-color: var(--jcolor);
   flex-grow: 1;
 }
 .event img.thumb {
   display:block;
   position:relative;
-  width:80px;
+  width:50px;
   height:auto;
   object-fit: cover;
   border-radius:5px 0 0 5px;
-  outline:2px solid var(--jcolor);
   flex-grow: 1;
+  padding-left: 3px;
 }
 .event .cat {
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--jcolor);
-  text-transform: uppercase;
+  display: inline-flex;
+  position: absolute;
+  top:-3.5px;
+  align-items: center;
+  gap: 0px;
+  padding: 0px 3px 0px 3px;
+  border-radius: 10px;
+  text-decoration: none;
+  text-transform:uppercase;
+  background: var(--jcolor);
+  outline: 1.5px solid var(--jcolor);
+  font-size: 6px;
   letter-spacing: 0.5px;
-  filter: brightness(75%);
-}
-.event .cat:before {
-  display:inline-block;
-  content: var(--jemoji);
-  margin-right:4px
+  color: var(--jtext);
+  white-space: nowrap;
+  width:fit-content;
 }
 .event .desc {
   width: 100%;
   font-weight: 600;
-  text-align: center;
 }
 .event .meta {
-  font-size: 11px;
+  font-size: 8px;
   color: var(--muted);
-  width: 100%;
-  text-align: center;
 }
 .event .chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin: 0 2px 5px 2px;
-  padding: 5px;
-  justify-content: center;
+  flex-grow:0;
+  justify-content: start;
+  width: fit-content;
+  padding:0;
+  margin:3px 0 0 0;
+  font-size:0.8em;
 }
-.event .chip {
-  display: inline-flex;
-  position: relative;
-  align-items: center;
-  gap: 0px;
-  padding: 0;
-  border-radius: 10px;
-  text-decoration: none;
-  background: var(--jcolor);
-  outline: 1px solid var(--jcolor);
-  font-size: 11px;
-  color: var(--jtext);
-}
-.event .chip:hover {
-  filter: brightness(1.1);
+.event .chip:not(.location) + .chip:before {
+  content:", ";
 }
 .event .chip .icon {
   position: absolute;
@@ -368,66 +354,55 @@ header .err {
   border-radius: 50%;
   outline: 1px solid var(--jcolor);
 }
-.event .chip span {
-  padding: 0 7px 1px 7px;
-}
 .event .chip .icon + span {
   padding-left: 22px;
 }
-.event .chips.chips--locations {
-  position: absolute;
-  top: initial;
-  bottom:0;
-  left:initial;
-  right: 100%;
-  flex-grow:0;
-  justify-content: start;
-  width: fit-content;
-}
-.event .chips.chips--locations .chip {
+.event .chips .chip.location {
   background: var(--background);
-  color: var(--ink);
-  outline: 1.5px solid var(--jcolor);
+  color: var(--muted);
+  font-style:italic;
+  outline:none;
+  padding: 0 10px 1px 0;
+}
+.event .chips .chip.location:before {
+  content:"@";
 }
 
 .event .event-sticky {
   display:flex;
   align-items: stretch;
+  padding-right:1em;
 }
-.event .event-sticky[data-image=true] {
+.event .event-sticky {
   position: sticky;
   width:fit-content;
   top: 0px;
-  left:160px;
-}
-.event .event-sticky[data-image=false] {
-  position: sticky;
-  width:fit-content;
-  top: 0px;
-  left:160px;
-}
-.event .chips--characters {
-  flex-grow:0;
-  justify-content: start;
-  width: fit-content;
-  padding:0;
-  margin:10px 0 0 0;
-}
-.event .topline > * {
-  width:100%;
-  text-align: left;
+  left:var(--thw);
 }
 
 /* Bundle host owns the day cell when present */
 .bundle-host {
   display:flex;
-  gap:8px;
+  align-items: stretch;
+  gap:0px;
   position: relative;
   margin: auto 15px;
 }
 .bundle-host .event {
   margin-left:0;
   margin-right:0;
+  border-radius:0px;
+}
+.bundle-host .event:nth-child(n+2) .thumb {
+  border-radius: 0px;
+}
+.bundle-host .event:first-child {
+  border-top-left-radius: 10px;
+  border-bottom-left-radius: 10px;
+}
+.bundle-host .event:last-child {
+  border-top-right-radius: 10px;
+  border-bottom-right-radius: 10px;
 }
 
 
@@ -470,8 +445,8 @@ header .err {
   left: -1px;
   top: 50%;
   width: calc(100% + 15px);
-  height: 2px;
-  margin-top: -1px;
+  height: 1px;
+  margin-top: 0px;
   background-color: var(--seasonal-line);
   border-radius: 0;
   pointer-events: none;

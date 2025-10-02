@@ -8,84 +8,72 @@
       {
         "id": 1,
         "name": "Ordinary World",
-        "emoji": "📚",
         "color": "#80acff",
         "text": "white"
       },
       {
         "id": 2,
         "name": "Call To Adventure",
-        "emoji": "📞",
         "color": "#80c0ff",
         "text": "white"
       },
       {
         "id": 3,
         "name": "Refusal Of The Call",
-        "emoji": "⚔️",
         "color": "#80f9ff",
         "text": "black"
       },
       {
         "id": 4,
         "name": "Meeting The Mentor",
-        "emoji": "🧭",
         "color": "#80ffc8",
         "text": "black"
       },
       {
         "id": 5,
         "name": "Crossing The Threshold",
-        "emoji": "➡️",
         "color": "#80ff93",
         "text": "black"
       },
       {
         "id": 6,
         "name": "Tests, Allies & Enemies",
-        "emoji": "🧪",
         "color": "#f7ff80",
         "text": "black"
       },
       {
         "id": 7,
         "name": "Approach To The Inmost Cave",
-        "emoji": "🛡️",
         "color": "#ffca80",
         "text": "black"
       },
       {
         "id": 8,
         "name": "The Ordeal",
-        "emoji": "🔥",
         "color": "#ff8080",
         "text": "white"
       },
       {
         "id": 9,
         "name": "Reward",
-        "emoji": "🏆",
         "color": "#ff809c",
         "text": "white"
       },
       {
         "id": 10,
         "name": "The Road Back",
-        "emoji": "🛣️",
         "color": "#ff80e1",
         "text": "white"
       },
       {
         "id": 11,
         "name": "Resurrection",
-        "emoji": "🌅",
         "color": "#8f80ff",
         "text": "white"
       },
       {
         "id": 12,
         "name": "The Return",
-        "emoji": "🏡",
         "color": "#80acff",
         "text": "white"
       }
@@ -94,21 +82,19 @@
   "timelines": [
     {
       "id": "02_Frodo",
-      "title": "Lord of the Rings ",
+      "title": "Harry Potter and the Goblet of Fire",
       "events": [
         {
           "date": "2024-48",
           "duration": "6",
           "desc": "Young scholar in city archives",
           "category": "OrdinaryWorld",
-          "image": "",
+          "image": "harry",
           "characters": [
-            "Frodo"
+            "Harry"
           ],
-          "locations": [
-            "Hobbiton"
-          ],
-          "categoryId": 1
+          "categoryId": 1,
+          "location": "Under the Stairs"
         },
         {
           "date": "3",
@@ -117,10 +103,8 @@
           "category": "CallToAdventure",
           "image": "ring",
           "characters": [],
-          "locations": [
-            "Hobbiton"
-          ],
-          "categoryId": 2
+          "categoryId": 2,
+          "location": ""
         },
         {
           "date": "0",
@@ -129,22 +113,20 @@
           "category": "RefusalOfTheCall",
           "image": "",
           "characters": [],
-          "locations": [
-            "Hobbiton"
-          ],
-          "categoryId": 3
+          "categoryId": 3,
+          "location": ""
         },
         {
           "date": "3d",
           "duration": "2w",
           "desc": "Eccentric professor offers help",
           "category": "MeetingTheMentor",
-          "image": "",
-          "characters": [],
-          "locations": [
-            "Hobbiton"
+          "image": "hogwarts",
+          "characters": [
+            "Snape"
           ],
-          "categoryId": 4
+          "categoryId": 4,
+          "location": "Hogwarts"
         },
         {
           "date": "1w",
@@ -153,8 +135,8 @@
           "category": "CrossingTheThreshold",
           "image": "",
           "characters": [],
-          "locations": [],
-          "categoryId": 5
+          "categoryId": 5,
+          "location": ""
         },
         {
           "date": "0",
@@ -163,8 +145,8 @@
           "category": "TestsAlliesEnemies",
           "image": "",
           "characters": [],
-          "locations": [],
-          "categoryId": 6
+          "categoryId": 6,
+          "location": ""
         },
         {
           "date": "0",
@@ -173,8 +155,8 @@
           "category": "ApproachToTheInmostCave",
           "image": "",
           "characters": [],
-          "locations": [],
-          "categoryId": 7
+          "categoryId": 7,
+          "location": ""
         },
         {
           "date": "0",
@@ -183,12 +165,10 @@
           "category": "TheOrdeal",
           "image": "",
           "characters": [
-            "Sam"
+            "Ron"
           ],
-          "locations": [
-            "Mordor"
-          ],
-          "categoryId": 8
+          "categoryId": 8,
+          "location": ""
         },
         {
           "date": "0",
@@ -196,9 +176,11 @@
           "desc": "Gains secret of eternal flame",
           "category": "Reward",
           "image": "",
-          "characters": [],
-          "locations": [],
-          "categoryId": 9
+          "characters": [
+            "Harry"
+          ],
+          "categoryId": 9,
+          "location": ""
         },
         {
           "date": "0",
@@ -207,18 +189,18 @@
           "category": "TheRoadBack",
           "image": "",
           "characters": [],
-          "locations": [],
-          "categoryId": 10
+          "categoryId": 10,
+          "location": ""
         },
         {
           "date": "1",
           "duration": "1",
           "desc": "Uses knowledge to save companions",
           "category": "Resurrection",
-          "image": "ring",
+          "image": "wand",
           "characters": [],
-          "locations": [],
-          "categoryId": 11
+          "categoryId": 11,
+          "location": ""
         },
         {
           "date": "1w",
@@ -227,31 +209,27 @@
           "category": "TheReturn",
           "image": "",
           "characters": [],
-          "locations": [
-            "Hobbiton"
-          ],
-          "categoryId": 12
+          "categoryId": 12,
+          "location": "Hobbiton"
         }
       ],
-      "image": "lordoftherings"
+      "image": "harrypotter"
     },
     {
       "id": "01_Harry",
-      "title": "Harry Potter and the Goblet of Fire",
+      "title": "Lord of the Rings",
       "events": [
         {
           "date": "2024-50-3",
           "duration": "4w",
           "desc": "Living a quiet village life (Yay!)",
           "category": "OrdinaryWorld",
-          "image": "Wand",
+          "image": "frodo",
           "characters": [
-            "HarryPotter"
+            "Frodo"
           ],
-          "locations": [
-            "UnderStairs"
-          ],
-          "categoryId": 1
+          "categoryId": 1,
+          "location": "Hobbiton"
         },
         {
           "date": "0",
@@ -259,11 +237,9 @@
           "desc": "Mysterious stranger arrives",
           "category": "CallToAdventure",
           "image": "",
-          "characters": [
-            "Hermoine"
-          ],
-          "locations": [],
-          "categoryId": 2
+          "characters": [],
+          "categoryId": 2,
+          "location": "Bag End"
         },
         {
           "date": "1",
@@ -271,11 +247,9 @@
           "desc": "Doubts and fear",
           "category": "RefusalOfTheCall",
           "image": "",
-          "characters": [
-            "Ron"
-          ],
-          "locations": [],
-          "categoryId": 3
+          "characters": [],
+          "categoryId": 3,
+          "location": "Hobbiton"
         },
         {
           "date": "0",
@@ -284,12 +258,10 @@
           "category": "MeetingTheMentor",
           "image": "",
           "characters": [
-            "Snape"
+            "Gandalf"
           ],
-          "locations": [
-            "Hogwarts"
-          ],
-          "categoryId": 4
+          "categoryId": 4,
+          "location": ""
         },
         {
           "date": "0",
@@ -297,11 +269,9 @@
           "desc": "Leaves village to unknown lands",
           "category": "CrossingTheThreshold",
           "image": "",
-          "characters": [
-            "Dumbledorf"
-          ],
-          "locations": [],
-          "categoryId": 5
+          "characters": [],
+          "categoryId": 5,
+          "location": ""
         },
         {
           "date": "0",
@@ -309,11 +279,9 @@
           "desc": "Faces trials and gains companions",
           "category": "TestsAlliesEnemies",
           "image": "",
-          "characters": [
-            "HarryPotter"
-          ],
-          "locations": [],
-          "categoryId": 6
+          "characters": [],
+          "categoryId": 6,
+          "location": ""
         },
         {
           "date": "0",
@@ -322,10 +290,10 @@
           "category": "ApproachToTheInmostCave",
           "image": "",
           "characters": [
-            "Hermione"
+            "Frodo"
           ],
-          "locations": [],
-          "categoryId": 7
+          "categoryId": 7,
+          "location": ""
         },
         {
           "date": "1",
@@ -334,10 +302,10 @@
           "category": "TheOrdeal",
           "image": "",
           "characters": [
-            "Ron"
+            "Gandalf"
           ],
-          "locations": [],
-          "categoryId": 8
+          "categoryId": 8,
+          "location": ""
         },
         {
           "date": "0",
@@ -345,55 +313,47 @@
           "desc": "Gains the sacred relic",
           "category": "Reward",
           "image": "",
-          "characters": [
-            "Snape"
-          ],
-          "locations": [],
-          "categoryId": 9
+          "characters": [],
+          "categoryId": 9,
+          "location": ""
         },
         {
           "date": "0",
           "duration": "3",
           "desc": "Pursued by enemies",
           "category": "TheRoadBack",
-          "image": "",
-          "characters": [
-            "Dumbledorf"
-          ],
-          "locations": [],
-          "categoryId": 10
+          "image": "sam",
+          "characters": [],
+          "categoryId": 10,
+          "location": ""
         },
         {
           "date": "0",
           "duration": "1",
           "desc": "Final test of character",
           "category": "Resurrection",
-          "image": "",
+          "image": "mordor",
           "characters": [
-            "Ron",
-            "HarryPotter"
+            "Sam"
           ],
-          "locations": [
-            "Hogwarts"
-          ],
-          "categoryId": 11
+          "categoryId": 11,
+          "location": "Mordor"
         },
         {
           "date": "1w",
           "duration": "3w",
           "desc": "Brings knowledge to village",
           "category": "TheReturn",
-          "image": "",
+          "image": "hobbiton",
           "characters": [
-            "HarryPotter"
+            "Frodo",
+            "Sam"
           ],
-          "locations": [
-            "Hogwarts"
-          ],
-          "categoryId": 12
+          "categoryId": 12,
+          "location": "Hobbiton"
         }
       ],
-      "image": "harrypotter"
+      "image": "lordoftherings"
     },
     {
       "id": "tl_1759107743249",
@@ -404,14 +364,12 @@
           "duration": "2",
           "desc": "Move into new home",
           "category": "OrdinaryWorld",
-          "image": "",
+          "image": "Pallet_Town",
           "characters": [
             "Red"
           ],
-          "locations": [
-            "Pallet_Town"
-          ],
-          "categoryId": 1
+          "categoryId": 1,
+          "location": "Pallet Town"
         },
         {
           "date": "0",
@@ -421,12 +379,10 @@
           "image": "oakslab",
           "characters": [
             "Red",
-            "ProfOak"
+            "Professor Oak"
           ],
-          "locations": [
-            "Pallet_Town"
-          ],
-          "categoryId": 2
+          "categoryId": 2,
+          "location": "Oak's Lab"
         },
         {
           "date": ".",
@@ -437,25 +393,21 @@
           "characters": [
             "Red"
           ],
-          "locations": [
-            "Pallet_Town"
-          ],
-          "categoryId": 3
+          "categoryId": 3,
+          "location": "Pallet Town"
         },
         {
           "date": ".",
           "duration": ".",
           "desc": "Met Rival Blue",
           "category": "MeetingTheMentor",
-          "image": "",
+          "image": "red",
           "characters": [
             "Red",
             "Blue"
           ],
-          "locations": [
-            "Pallet_Town"
-          ],
-          "categoryId": 4
+          "categoryId": 4,
+          "location": "Pallet Town"
         },
         {
           "date": "1",
@@ -466,10 +418,8 @@
           "characters": [
             "Red"
           ],
-          "locations": [
-            "Route1"
-          ],
-          "categoryId": 5
+          "categoryId": 5,
+          "location": "Route 1"
         }
       ],
       "image": "red"
