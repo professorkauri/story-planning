@@ -2,7 +2,11 @@
   "settings": {
     "ui": {
       "title": "My Timeline",
-      "theme": "light"
+      "theme": "light",
+      "collapseEmptyDays": false,
+      "granularity": "day",
+      "showSeasonalInYear": false,
+      "maxChipsPerBin": 5
     },
     "categories": [
       {
@@ -210,10 +214,11 @@
           "image": "",
           "characters": [],
           "categoryId": 12,
-          "location": "Hobbiton"
+          "location": "Hogwarts"
         }
       ],
-      "image": "harrypotter"
+      "image": "harrypotter",
+      "preferredGranularity": "day"
     },
     {
       "id": "01_Harry",
@@ -353,7 +358,8 @@
           "location": "Hobbiton"
         }
       ],
-      "image": "lordoftherings"
+      "image": "lordoftherings",
+      "preferredGranularity": "day"
     },
     {
       "id": "tl_1759107743249",
@@ -422,7 +428,8 @@
           "location": "Route 1"
         }
       ],
-      "image": "red"
+      "image": "red",
+      "preferredGranularity": "day"
     }
   ],
   "seasonal": [

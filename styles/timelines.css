@@ -136,6 +136,7 @@ header .err {
   display: block;
   position: relative;
   text-align: center;
+  font-size:8px;
 }
 /* Week row has at least one active event */
 .wlabel .wlabel__inner.has-events {
