@@ -409,7 +409,7 @@
             "Red"
           ],
           "locations": [
-            "PalletTown"
+            "Pallet_Town"
           ],
           "categoryId": 1
         },
@@ -424,7 +424,7 @@
             "ProfOak"
           ],
           "locations": [
-            "PalletTown"
+            "Pallet_Town"
           ],
           "categoryId": 2
         },
@@ -438,7 +438,7 @@
             "Red"
           ],
           "locations": [
-            "PalletTown"
+            "Pallet_Town"
           ],
           "categoryId": 3
         },
@@ -453,7 +453,7 @@
             "Blue"
           ],
           "locations": [
-            "PalletTown"
+            "Pallet_Town"
           ],
           "categoryId": 4
         },
