@@ -414,8 +414,8 @@
           "categoryId": 1
         },
         {
-          "date": "14",
-          "duration": "1",
+          "date": "0",
+          "duration": ".",
           "desc": "Visit Professor Oak",
           "category": "CallToAdventure",
           "image": "oakslab",
@@ -429,8 +429,8 @@
           "categoryId": 2
         },
         {
-          "date": "0",
-          "duration": "2w",
+          "date": ".",
+          "duration": ".",
           "desc": "Can't, got to stay in school",
           "category": "RefusalOfTheCall",
           "image": "",
@@ -443,8 +443,8 @@
           "categoryId": 3
         },
         {
-          "date": "1",
-          "duration": "1",
+          "date": ".",
+          "duration": ".",
           "desc": "Met Rival Blue",
           "category": "MeetingTheMentor",
           "image": "",
@@ -458,7 +458,7 @@
           "categoryId": 4
         },
         {
-          "date": "0",
+          "date": "1",
           "duration": "2w",
           "desc": "Starting off on my journey!",
           "category": "CrossingTheThreshold",

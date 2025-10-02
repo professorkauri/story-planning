@@ -130,14 +130,21 @@
     }
 
     // Duration → days: accepts "#w", "#", or "#d"
-    function parseDurationToDays(s) {
-      if (!s) return 0;
+    function parseDuration(s) {
+      if (isPartDayDur(s)) return { days: 1, isSlice: true }; // bundle chip; never spills
+      if (!s) return { days: 0, isSlice: false };
       const w = parseRelWeeks(s);
-      if (w != null) return w * 7;
+      if (w != null) return { days: w * 7, isSlice: false };
       const d = parseRelDays(s);
-      if (d != null) return d;
-      return 0;
+      if (d != null) return { days: d, isSlice: false };
+      return { days: 0, isSlice: false };
     }
+
+    // --- New helpers for Start | Duration tokens ---
+    function isZeroStart(s){ return String(s||'').trim()==='0'; }      // start next day after previous END
+    function isSameDayStart(s){ return String(s||'').trim()==='.'; }   // same day as current bundle
+    function isPartDayDur(s){ return String(s||'').trim()==='.'; }     // a slice; always clamps to 1 day
+
 
     function syncHeaderControlsFromSettings() {
       const themeBtn = document.getElementById('btn-theme');
@@ -429,17 +436,124 @@
     }
 
     function resolveTimelineDays(tl) {
-      let prevEnd = null;
-      const events = tl.events.map(ev => {
-        const startIdx = toStartDayIdx(ev.rawDate, prevEnd);
-        if (startIdx == null) return null;
-        const durationDays = Math.max(1, ev.durationDays | 0);
-        const endIdx = startIdx + durationDays; // exclusive
+      // State machine per timeline
+      let prevEnd = null;          // previous event's exclusive end dayIdx
+      let bundleDay = null;        // current bundle day (for "." starts)
+      const dayHasWhole = new Map();   // dayIdx -> true if a whole-day/multi-day start occupies the day
+      const byStartDayTemp = new Map(); // temp collection to detect and repair conflicts
+
+      // First pass: compute intended starts & durations (without final repairs)
+      const staged = [];
+      for (const ev of (tl.events || [])) {
+        const startRaw = (ev.rawDate || '').trim();
+        const durRaw   = (ev.rawDuration || '').trim();
+
+        // --- Resolve duration
+        let { days: durationDays, isSlice } = parseDuration(durRaw);
+
+        // --- Resolve start day (intended) ---
+        let startIdx = null;
+
+        if (isSpecificWeekDay(startRaw)) {
+          const [Y, W, D] = startRaw.split('-').map(Number);
+          const base = isoWeekToDayIdx(`${Y}-${String(W).padStart(2, '0')}`);
+          startIdx = base + (D - 1);
+          bundleDay = null; // absolute start closes bundles
+        } else if (isSpecificWeek(startRaw)) {
+          startIdx = isoWeekToDayIdx(startRaw);
+          bundleDay = null;
+        } else if (isZeroStart(startRaw)) {
+          // next day after previous END
+          startIdx = (prevEnd == null) ? 0 : (prevEnd);
+          bundleDay = null;
+        } else if (isSameDayStart(startRaw)) {
+          // same-day start: must anchor to an open bundle; otherwise fall forward to next day
+          if (bundleDay != null) {
+            startIdx = bundleDay;
+          } else {
+            startIdx = (prevEnd == null) ? 0 : prevEnd; // "no bundle starter" -> behave like 0
+            bundleDay = startIdx;
+          }
+        } else {
+          // Relative "#w" or "#d" from previous END
+          const relW = parseRelWeeks(startRaw);
+          const relD = parseRelDays(startRaw);
+          if (relW != null) {
+            startIdx = (prevEnd == null) ? relW * 7 : (prevEnd + relW * 7);
+            bundleDay = null;
+          } else if (relD != null) {
+            startIdx = (prevEnd == null) ? relD : (prevEnd + relD);
+            bundleDay = null;
+          } else {
+            // invalid: skip
+            continue;
+          }
+        }
+
+        // Coercions based on rules:
+        // - Same-day start with multi-day duration is invalid -> coerce to slice (1d)
+        if (isSameDayStart(startRaw) && durationDays > 1) {
+          isSlice = true;
+          durationDays = 1;
+        }
+
+        // - Any "slice" is exactly 1 day
+        if (isSlice) durationDays = 1;
+
+        if (isSlice) {
+          bundleDay = startIdx;
+        } else {
+          // Non-slices reset the anchor so a later ". | ." won’t stick to the past day.
+          bundleDay = null;
+        }
+
+        const endIdx = startIdx + Math.max(1, durationDays);
         prevEnd = endIdx;
-        return { ...ev, startIdx, durationDays };
-      }).filter(Boolean);
-      return { title: tl.title, imageName: tl.imageName || '', events };
+
+        // Stash for the second pass (conflict repair)
+        staged.push({
+          ...ev,
+          startIdx,
+          durationDays: Math.max(1, durationDays),
+          isSlice
+        });
+
+        // Track intended day usage
+        if (!isSlice) {
+          dayHasWhole.set(startIdx, true);
+        }
+        if (!byStartDayTemp.has(startIdx)) byStartDayTemp.set(startIdx, []);
+        byStartDayTemp.get(startIdx).push(staged[staged.length - 1]);
+      }
+
+      // Second pass: repair conflicts
+      // Rule: a day cannot mix whole-day starts and bundle slices.
+      for (const [d, list] of byStartDayTemp.entries()) {
+        const hasWhole = list.some(e => !e.isSlice);
+        const hasSlice = list.some(e => e.isSlice);
+        if (hasWhole && hasSlice) {
+          // Strict repair: move slices to the next day (as if "0 | .")
+          for (const e of list) {
+            if (e.isSlice) {
+              e.startIdx = d + 1;
+              // update prevEnd doesn't matter here; we only move intended start
+            }
+          }
+        }
+      }
+
+      // Third pass: regroup to re-open bundleDay anchors (visual order stays editor order)
+      const normalized = staged.map(e => ({ ...e }));
+
+      // Optional: ensure all slices sharing a day are consecutive in visual order (editor order already preserves it)
+
+      return {
+        title: tl.title,
+        imageName: tl.imageName || '',
+        events: normalized
+      };
     }
+
 
 
     /** ============ DAY-LEVEL HELPERS (canonical) ============ **/
@@ -698,8 +812,8 @@
         events: (tl.events || []).map(e => {
           const categoryId = toCatId(e.categoryId ?? e.category ?? '');
           return {
-            rawDate: e.date,
-            durationDays: parseDurationToDays(e.duration) || 0,
+            rawDate: e.date,              // may be YYYY-WW, YYYY-WW-D, "0", or "."
+            rawDuration: e.duration,      // may be "#d/#w/.", we'll parse later
             desc: e.desc,
             categoryId,
             imageName: e.image || '',
@@ -707,6 +821,7 @@
             locations: e.locations || []
           };
         })
+
       }));
 
       const resolved = timelines.map(resolveTimelineDays);
@@ -1500,6 +1615,26 @@
         }
       }
 
+      // --- Build bundles: timelineIndex -> Map(dayIdx -> array of slice events) ---
+      const bundlesByTl = timelines.map(() => new Map());
+      for (let r = 0; r < timelines.length; r++) {
+        const tl = timelines[r];
+        const map = bundlesByTl[r];
+        for (const ev of tl.events) {
+          if (ev.isSlice && ev.durationDays === 1) {
+            const d = ev.startIdx;
+            if (!map.has(d)) map.set(d, []);
+            map.get(d).push(ev);
+          }
+        }
+        // Keep deterministic ordering: editor order => left-to-right
+        for (const arr of map.values()) {
+          // If you ever add explicit "sequence", you can sort by it here
+          // arr.sort((a,b)=> (a.sequence??0)-(b.sequence??0));
+        }
+      }
+
+
       // ---- grid templates ----
       grid.style.gridTemplateRows = [
         'var(--week-header-row)', // week band
@@ -1653,45 +1788,19 @@
         });
       });
 
-      // ---- place events ----
+      // ---- place events (prev/next run detection; bundles wrap normal .event cards) ----
       for (let r = 0; r < timelines.length; r++) {
         const tl = timelines[r];
         const gridRow = 3 + r;
 
-        for (const ev of tl.events) {
-          const start = ev.startIdx;
-          const endExclusive = ev.startIdx + ev.durationDays;
-          const a = Math.max(Math.min(start, endExclusive), minIdx);
-          const b = Math.min(Math.max(start, endExclusive), maxIdx);
+        // map a day to the visible day column (respects collapsed days)
+        const colOfSlice = (ev) => {
+          if (!(ev && ev.isSlice && ev.durationDays === 1)) return null;
+          return dayColIndex.has(ev.startIdx) ? dayColIndex.get(ev.startIdx) : null;
+        };
 
-          // find first/last *visible* day column for this event
-          const firstVisible = (() => {
-            for (let d = a; d < b; d++) if (dayColIndex.has(d)) return d;
-            return null;
-          })();
-          const lastVisible = (() => {
-            for (let d = b - 1; d >= a; d--) if (dayColIndex.has(d)) return d;
-            return null;
-          })();
-          if (firstVisible == null || lastVisible == null) continue;
-
-          // span = visible day columns + seasonal columns encountered along the way
-          let spanDays = 0, extraSeasonal = 0;
-          for (let d = Math.min(start, endExclusive); d < Math.max(start, endExclusive); d++) {
-            if (dayColIndex.has(d)) spanDays++;
-
-            // Only count seasonal if it's NOT on the same day as the *start* of the event
-            if (d !== start) {
-              extraSeasonal += (seasonalByDay.get(d)?.length || 0);
-            }
-          }
-          const span = spanDays + extraSeasonal;
-
-          if (span <= 0) continue;
-
-          const colStart = dayColIndex.get(firstVisible);
-          const gridColStart = 2 + colStart;
-
+        // tiny factory for event DOM (same styling as your normal events)
+        const buildEventEl = (ev, inBundle, gridColStart, span) => {
           const el = document.createElement('div');
           el.className = 'event';
 
@@ -1701,7 +1810,7 @@
           const catColor= getCatColor(catId);
           const catText = getCatText(catId);
 
-          el.dataset.catId = String(catId || 0);
+          el.dataset.catId    = String(catId || 0);
           el.dataset.catEmoji = catEmoji || '';
           el.dataset.catTitle = catName || '';
           el.dataset.catColor = catColor || '';
@@ -1709,10 +1818,12 @@
           el.style.setProperty('--jtext',  catText  || 'black');
           el.style.setProperty('--jemoji', `"${catEmoji}"`);
 
-          el.style.gridRow = `${gridRow} / ${gridRow + 1}`;
-          el.style.gridColumn = `${gridColStart} / ${gridColStart + span}`;
+          if (!inBundle) {
+            el.style.gridRow    = `${gridRow} / ${gridRow + 1}`;
+            el.style.gridColumn = `${gridColStart} / ${gridColStart + span}`;
+          }
 
-          const { year, week, day } = idxToISODay(start);
+          const { year, week, day } = idxToISODay(ev.startIdx);
           const labelStart = `${year}-${String(week).padStart(2,'0')}-${day}`;
 
           const topline = document.createElement('div');
@@ -1737,43 +1848,128 @@
 
           const meta = document.createElement('div');
           meta.className = 'meta';
-          meta.textContent = `${labelStart} • ${ev.durationDays}d`;
+          meta.textContent = ev.isSlice ? `${labelStart} • slice` : `${labelStart} • ${ev.durationDays}d`;
           topline.appendChild(meta);
 
-          const charChips = document.createElement('div');
-          charChips.className = 'chips chips--characters';
-          for (const n of ev.characters || []) {
-            const a = document.createElement('a');
-            a.className = 'chip';
-            a.href = `characters/${encodeURIComponent(n)}.html`;
-            a.title = `Character: ${n}`;
-            const icon = makeSmartImg(CHAR_IMAGES_DIR, n, 'icon', n);
-            if (icon) a.appendChild(icon);
-            const label = document.createElement('span');
-            label.textContent = n;
-            a.appendChild(label);
-            charChips.appendChild(a);
+          // characters
+          if (ev.characters?.length) {
+            const charChips = document.createElement('div');
+            charChips.className = 'chips chips--characters';
+            for (const n of ev.characters) {
+              const a = document.createElement('a');
+              a.className = 'chip';
+              a.href = `characters/${encodeURIComponent(n)}.html`;
+              a.title = `Character: ${n}`;
+              const icon = makeSmartImg(CHAR_IMAGES_DIR, n, 'icon', n);
+              if (icon) a.appendChild(icon);
+              const label = document.createElement('span');
+              label.textContent = n;
+              a.appendChild(label);
+              charChips.appendChild(a);
+            }
+            topline.appendChild(charChips);
           }
-          if (charChips.children.length) topline.appendChild(charChips);
 
-          const locChips = document.createElement('div');
-          locChips.className = 'chips chips--locations';
-          for (const n of ev.locations || []) {
-            const a = document.createElement('a');
-            a.className = 'chip';
-            a.href = `locations/${encodeURIComponent(n)}.html`;
-            a.title = `Location: ${n}`;
-            const label = document.createElement('span');
-            label.textContent = n;
-            a.appendChild(label);
-            locChips.appendChild(a);
+          // locations
+          if (ev.locations?.length) {
+            const locChips = document.createElement('div');
+            locChips.className = 'chips chips--locations';
+            for (const n of ev.locations) {
+              const a = document.createElement('a');
+              a.className = 'chip';
+              a.href = `locations/${encodeURIComponent(n)}.html`;
+              a.title = `Location: ${n}`;
+              const label = document.createElement('span');
+              label.textContent = n;
+              a.appendChild(label);
+              locChips.appendChild(a);
+            }
+            topline.appendChild(locChips);
           }
-          if (locChips.children.length) topline.appendChild(locChips);
 
           sticky.appendChild(topline);
           el.appendChild(sticky);
-          grid.appendChild(el);
+          return el;
+        };
+
+        // open host state (implicit “close” by clearing this)
+        let openHost = null;
+        let openCol  = null;
+
+        for (let i = 0; i < tl.events.length; i++) {
+          const ev   = tl.events[i];
+          const prev = tl.events[i - 1];
+          const next = tl.events[i + 1];
+
+          const isSlice = !!(ev && ev.isSlice && ev.durationDays === 1);
+          const col     = isSlice ? colOfSlice(ev) : null;
+
+          // If event is a bundle (slice) but its day column is not visible (collapsed), skip it entirely
+          if (isSlice && col == null) {
+            // If we had an open host for another column, we leave it open until a non-slice or a different column closes it
+            continue;
+          }
+
+          // ---- bundle open/close logic (exactly your flow) ----
+          if (isSlice) {
+            const prevIsSameBundle = !!(prev && prev.isSlice && prev.durationDays === 1 && colOfSlice(prev) === col);
+            const nextIsSameBundle = !!(next && next.isSlice && next.durationDays === 1 && colOfSlice(next) === col);
+
+            // OPEN if previous is NOT a bundle in the same column
+            if (!prevIsSameBundle) {
+              const gridColStart = 2 + col;
+              openHost = document.createElement('div');
+              openHost.className = 'bundle-host';
+              openHost.style.gridRow = `${gridRow} / ${gridRow + 1}`;
+              openHost.style.gridColumn = `${gridColStart} / ${gridColStart + 1}`;
+              grid.appendChild(openHost);
+              openCol = col;
+            }
+
+            // Render the event inside the open host
+            if (openHost) {
+              openHost.appendChild(buildEventEl(ev, /*inBundle=*/true));
+            }
+
+            // CLOSE if next is NOT a bundle in the same column
+            if (!nextIsSameBundle) {
+              openHost = null;
+              openCol = null;
+            }
+
+            continue; // handled
+          }
+
+          // If we get here, it's a normal (non-slice) event:
+          // Ensure no host is considered open (next slice will re-open as needed)
+          openHost = null; openCol = null;
+
+          // --- normal spanning logic (unchanged) ---
+          const start = ev.startIdx;
+          const endExclusive = ev.startIdx + ev.durationDays;
+          const a = Math.max(Math.min(start, endExclusive), minIdx);
+          const b = Math.min(Math.max(start, endExclusive), maxIdx);
+
+          const firstVisible = (() => { for (let d = a; d < b; d++) if (dayColIndex.has(d)) return d; return null; })();
+          const lastVisible  = (() => { for (let d = b - 1; d >= a; d--) if (dayColIndex.has(d)) return d; return null; })();
+          if (firstVisible == null || lastVisible == null) continue;
+
+          let spanDays = 0, extraSeasonal = 0;
+          for (let d = Math.min(start, endExclusive); d < Math.max(start, endExclusive); d++) {
+            if (dayColIndex.has(d)) spanDays++;
+            if (d !== start) extraSeasonal += (seasonalByDay.get(d)?.length || 0);
+          }
+          const span = spanDays + extraSeasonal;
+          if (span <= 0) continue;
+
+          const colStart = dayColIndex.get(firstVisible);
+          const gridColStart = 2 + colStart;
+          grid.appendChild(buildEventEl(ev, /*inBundle=*/false, gridColStart, span));
         }
+
+        // row done — make sure state is cleared
+        openHost = null;
+        openCol = null;
       }
 
       // ---- meta + tracker ----

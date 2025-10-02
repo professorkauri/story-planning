@@ -418,6 +418,18 @@ header .err {
   text-align: left;
 }
 
+/* Bundle host owns the day cell when present */
+.bundle-host {
+  display:flex;
+  gap:8px;
+  position: relative;
+  margin: auto 15px;
+}
+.bundle-host .event {
+  margin-left:0;
+  margin-right:0;
+}
+
 
 /* =========================================================
    5) SEASONAL COMPONENTS
