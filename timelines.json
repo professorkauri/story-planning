@@ -2,8 +2,7 @@
   "settings": {
     "ui": {
       "title": "My Timeline",
-      "theme": "light",
-      "layout": "horizontal"
+      "theme": "light"
     },
     "categories": [
       {
@@ -99,7 +98,7 @@
       "events": [
         {
           "date": "2024-48",
-          "duration": "9",
+          "duration": "6",
           "desc": "Young scholar in city archives",
           "category": "OrdinaryWorld",
           "image": "",
@@ -112,7 +111,7 @@
           "categoryId": 1
         },
         {
-          "date": "0",
+          "date": "3",
           "duration": "1",
           "desc": "Discovery of forbidden manuscript",
           "category": "CallToAdventure",
@@ -402,7 +401,7 @@
       "events": [
         {
           "date": "2024-48-6",
-          "duration": "1w",
+          "duration": "2",
           "desc": "Move into new home",
           "category": "OrdinaryWorld",
           "image": "",
@@ -415,7 +414,7 @@
           "categoryId": 1
         },
         {
-          "date": "0",
+          "date": "14",
           "duration": "1",
           "desc": "Visit Professor Oak",
           "category": "CallToAdventure",
@@ -500,6 +499,12 @@
       "id": "spring",
       "name": "Start of Spring",
       "desc": "The birds and the bees."
+    },
+    {
+      "date": "03",
+      "id": "summer",
+      "name": "Summer Holiday",
+      "desc": ""
     },
     {
       "date": "49",

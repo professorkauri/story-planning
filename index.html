@@ -2,18 +2,18 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Vertical Timelines (events + character/location icons)</title>
+  <title>Timelines</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="styles/timelines.css">
 </head>
 <body>
   <header>
-    <h1>Vertical Timelines</h1>
+    <h1>Timelines</h1>
     <div class="meta" id="meta">Loading…</div>
     <div class="err" id="err"></div>
     <div class="actions">
       <button id="btn-theme" type="button">Light</button>
-      <button id="btn-layout" type="button">Vertical</button>
+      <button id="btn-collapse" type="button">All Days</button>
       <button id="toggle-editor" type="button">Edit</button>
       <button id="btn-import" class="ghost" type="button">Import</button>
       <button id="btn-download" type="button">Download</button>
@@ -40,13 +40,6 @@
 
     // ===== SIZING (edit these) =====
     const GRID_SIZING = {
-      vertical: {
-        namesColWidth:  '90px',
-        timelineColMin: 'auto',
-        timelineColMax: '200px',
-        weekRowMin:     'auto',
-        weekHeaderRow:  'auto',
-      },
       horizontal: {
         namesColWidth:  '160px',
         weekColWidth:   'auto',
@@ -66,9 +59,9 @@
     let settingsState = null;
 
     const DEFAULT_UI = {
-      title: 'Vertical Timelines',
+      title: 'Timelines',
       theme: 'light',
-      layout: 'vertical'
+      collapseEmptyDays: false,
     };
 
     const DEFAULT_SETTINGS = {
@@ -84,18 +77,17 @@
 
     function applyUIFromSettings() {
       const ui = (settingsState?.ui) || DEFAULT_UI;
+
       const h1 = document.querySelector('header h1');
       if (h1) h1.textContent = ui.title || DEFAULT_UI.title;
+
       document.body.classList.toggle('theme-dark', ui.theme === 'dark');
       document.body.classList.toggle('theme-light', ui.theme !== 'dark');
-      const viewportEl = document.getElementById('viewport');
-      if (viewportEl) {
-        viewportEl.classList.toggle('layout-horizontal', ui.layout === 'horizontal');
-        viewportEl.classList.toggle('layout-vertical', ui.layout !== 'horizontal');
-      }
-      applyGridSizing(ui.layout === 'horizontal' ? 'horizontal' : 'vertical');
+
+      applyGridSizing();  
       syncHeaderControlsFromSettings();
     }
+
 
     function getCatById(id) {
       return (settingsState?.categories || []).find(c => c.id === id) || null;
@@ -149,31 +141,27 @@
 
     function syncHeaderControlsFromSettings() {
       const themeBtn = document.getElementById('btn-theme');
-      const layoutBtn = document.getElementById('btn-layout');
+      const collapseBtn = document.getElementById('btn-collapse');
 
-      // Show the *current* mode as the button label (press to toggle)
+      // Theme
       const theme = settingsState?.ui?.theme === 'dark' ? 'dark' : 'light';
-      if (themeBtn) themeBtn.textContent = theme === 'dark' ? 'Dark' : 'Light';
+      if (themeBtn) {
+        themeBtn.textContent = theme === 'dark' ? 'Dark' : 'Light';
+        themeBtn.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
+      }
 
-      const layout = settingsState?.ui?.layout === 'horizontal' ? 'horizontal' : 'vertical';
-      if (layoutBtn) layoutBtn.textContent = layout === 'horizontal' ? 'Horizontal' : 'Vertical';
-
-      // (Optional) aria-pressed accessibility
-      if (themeBtn) themeBtn.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
-      if (layoutBtn) layoutBtn.setAttribute('aria-pressed', layout === 'horizontal' ? 'true' : 'false');
+      // Collapse days
+      const collapsed = !!settingsState?.ui?.collapseEmptyDays;
+      if (collapseBtn) {
+        collapseBtn.textContent = collapsed ? 'Collapsed' : 'All Days';
+        collapseBtn.setAttribute('aria-pressed', collapsed ? 'true' : 'false');
+      }
     }
 
     function toggleTheme() {
       if (!settingsState.ui) settingsState.ui = { ...DEFAULT_UI };
       settingsState.ui.theme = (settingsState.ui.theme === 'dark') ? 'light' : 'dark';
       applyAllFromSettings();            // applies classes + re-render
-      syncHeaderControlsFromSettings();  // refresh button labels
-    }
-
-    function toggleLayout() {
-      if (!settingsState.ui) settingsState.ui = { ...DEFAULT_UI };
-      settingsState.ui.layout = (settingsState.ui.layout === 'horizontal') ? 'vertical' : 'horizontal';
-      applyAllFromSettings();            // flips layout & re-renders
       syncHeaderControlsFromSettings();  // refresh button labels
     }
 
@@ -188,61 +176,15 @@
     function stripExt(name) { return name.replace(/\.[^.]+$/, ''); }
     function encSeg(s) { return encodeURIComponent(s).replace(/%2F/g, '/'); }
 
-    function isoWeekToDate(iso) {
-      const [yStr, wStr] = iso.split('-'); const Y = +yStr, W = +wStr;
-      const jan4 = new Date(Date.UTC(Y, 0, 4)); const d = jan4.getUTCDay() || 7;
-      const monW1 = new Date(jan4); monW1.setUTCDate(jan4.getUTCDate() - (d - 1));
-      const monW = new Date(monW1); monW.setUTCDate(monW1.getUTCDate() + (W - 1) * 7); monW.setUTCHours(0, 0, 0, 0);
-      return monW;
-    }
-    function isoWeekToIdx(iso) {
-      const d = isoWeekToDate(iso); const epochMon = new Date(Date.UTC(1970, 0, 5));
-      return Math.floor((d - epochMon) / (7 * 24 * 3600 * 1000));
-    }
-    function idxToISOWeek(idx) {
-      const epochMon = new Date(Date.UTC(1970, 0, 5));
-      const d = new Date(epochMon); d.setUTCDate(epochMon.getUTCDate() + idx * 7);
-      const t = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
-      const day = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + (4 - day));
-      const isoYear = t.getUTCFullYear();
-      const w1 = new Date(Date.UTC(isoYear, 0, 4)); const wd = w1.getUTCDay() || 7;
-      const w1Mon = new Date(w1); w1Mon.setUTCDate(w1.getUTCDate() - (wd - 1));
-      const diff = (d - w1Mon); const isoWeek = 1 + Math.floor(diff / (7 * 24 * 3600 * 1000));
-      return { year: isoYear, week: isoWeek };
-    }
-
-    function applyGridSizing(layout) {
+    function applyGridSizing() {
       const g = document.getElementById('grid');
       if (!g) return;
-      const sz = GRID_SIZING[layout] || GRID_SIZING.vertical;
+      const sz = GRID_SIZING.horizontal;
 
-      if (sz.namesColWidth) g.style.setProperty('--names-col-width', sz.namesColWidth);
-      if (sz.weekHeaderRow) g.style.setProperty('--week-header-row', sz.weekHeaderRow);
-
-      if (layout === 'vertical') {
-        g.style.setProperty('--timeline-col-min', sz.timelineColMin);
-        g.style.setProperty('--timeline-col-max', sz.timelineColMax);
-        g.style.setProperty('--week-row-min',     sz.weekRowMin);
-        g.style.removeProperty('--week-col-width');
-        g.style.removeProperty('--timeline-row-min');
-      } else {
-        g.style.setProperty('--week-col-width',   sz.weekColWidth);
-        g.style.setProperty('--timeline-row-min', sz.timelineRowMin);
-        g.style.removeProperty('--timeline-col-min');
-        g.style.removeProperty('--timeline-col-max');
-        g.style.removeProperty('--week-row-min');
-      }
-    }
-
-    function toColorInputValue(v) {
-      // Normalize, then coerce to #RRGGBB for <input type="color">
-      const s = normalizeHexColor(v);
-      if (!s) return '#000000';
-      let hex = s.slice(1);
-      if (hex.length === 3) hex = hex.split('').map(ch => ch + ch).join('');         // #RGB -> #RRGGBB
-      if (hex.length === 4) hex = hex.slice(0, 3).split('').map(ch => ch + ch).join(''); // #RGBA -> #RRGGBB (drop A)
-      if (hex.length === 8) hex = hex.slice(0, 6);                                   // #RRGGBBAA -> #RRGGBB (drop AA)
-      return '#' + hex.toLowerCase();
+      g.style.setProperty('--names-col-width', sz.namesColWidth);
+      g.style.setProperty('--week-header-row', sz.weekHeaderRow);
+      g.style.setProperty('--week-col-width', sz.weekColWidth);
+      g.style.setProperty('--timeline-row-min', sz.timelineRowMin);
     }
 
     // Convert any hex (3/4/6/8) to a valid <input type="color"> value (#RRGGBB)
@@ -287,6 +229,13 @@
       th.appendChild(title);
 
       return th;
+    }
+
+    function toggleCollapseEmptyDays() {
+      if (!settingsState.ui) settingsState.ui = { ...DEFAULT_UI };
+      settingsState.ui.collapseEmptyDays = !settingsState.ui.collapseEmptyDays;
+      applyAllFromSettings();     // re-renders with new filter
+      syncHeaderControlsFromSettings();
     }
 
 
@@ -493,46 +442,12 @@
     }
 
 
-    /** ===================== CORNER YEAR HELPERS ===================== **/
-    function setupCornerYearTracker(grid, corner) {
-      const scroller = grid.parentElement;
-      const weekLabels = Array.from(grid.querySelectorAll('.wlabel:not(.wlabel--seasonal)'));
-
-      function update() {
-        const topY = scroller.getBoundingClientRect().top + 1;
-        let best = null, bestDy = Infinity;
-        for (const wl of weekLabels) {
-          const r = wl.getBoundingClientRect();
-          const dy = Math.abs(r.top - topY);
-          const visible = r.bottom > topY && r.top < (topY + scroller.clientHeight);
-          if (visible && dy < bestDy) { best = wl; bestDy = dy; }
-        }
-        if (!best) {
-          let minPos = Infinity, chosen = null;
-          for (const wl of weekLabels) {
-            const pos = wl.getBoundingClientRect().top - topY;
-            if (pos >= 0 && pos < minPos) { minPos = pos; chosen = wl; }
-          }
-          best = chosen || weekLabels[weekLabels.length - 1] || null;
-        }
-        if (best) {
-          const idx = parseInt(best.dataset.weekIdx, 10);
-          const { year } = idxToISOWeek(idx);
-          corner.textContent = String(year);
-        }
-      }
-
-      scroller.addEventListener('scroll', update, { passive: true });
-      window.addEventListener('resize', update);
-      update();
-    }
-
-    /** ============ DAY-LEVEL HELPERS ============ **/
+    /** ============ DAY-LEVEL HELPERS (canonical) ============ **/
     const MS_PER_DAY = 24 * 3600 * 1000;
-    // Epoch Monday (same base as your week index code but at day granularity)
+    // Epoch Monday for ISO weeks
     const EPOCH_MON = new Date(Date.UTC(1970, 0, 5)); // Monday 1970-01-05
 
-    // Returns Monday of ISO week YYYY-WW (00:00 UTC)
+    // Monday (00:00 UTC) of ISO week "YYYY-WW"
     function isoWeekToDate(iso) {
       const [yStr, wStr] = String(iso).split('-');
       const Y = +yStr, W = +wStr;
@@ -546,32 +461,30 @@
       return monW;
     }
 
-    // Day index: integer days since EPOCH_MON
     function dateToDayIdx(d) {
       return Math.floor((d.getTime() - EPOCH_MON.getTime()) / MS_PER_DAY);
     }
     function dayIdxToDate(idx) {
       const d = new Date(EPOCH_MON);
       d.setUTCDate(EPOCH_MON.getUTCDate() + idx);
-      d.setUTCHours(0,0,0,0);
+      d.setUTCHours(0, 0, 0, 0);
       return d;
     }
 
-    // Convert "YYYY-WW" -> Monday dayIdx
+    // "YYYY-WW" -> Monday dayIdx
     function isoWeekToDayIdx(iso) {
       return dateToDayIdx(isoWeekToDate(iso));
     }
 
-    // Convert a dayIdx to ISO {year, week, day:1..7}
+    // dayIdx -> ISO { year, week, day: 1..7 }
     function idxToISODay(idx) {
       const d = dayIdxToDate(idx);
-      // Find ISO week/year by moving to Thursday of this week
-      const day = d.getUTCDay() || 7;
-      const th = new Date(d);
+      const day = d.getUTCDay() || 7;     // 1..7
+      const th  = new Date(d);            // Thursday of this week
       th.setUTCDate(d.getUTCDate() + (4 - day));
       const isoYear = th.getUTCFullYear();
       const w1 = new Date(Date.UTC(isoYear, 0, 4));
-      const wd = w1.getUTCDay() || 7;
+      const wd = (w1.getUTCDay() || 7);
       const w1Mon = new Date(w1);
       w1Mon.setUTCDate(w1.getUTCDate() - (wd - 1));
       const week = 1 + Math.floor((d - w1Mon) / MS_PER_DAY / 7);
@@ -579,62 +492,87 @@
     }
 
 
-    function setupCornerYearTrackerHorizontal(grid, corner) {
-      const scroller = grid.parentElement;
 
-      function getNamesColWidthPx() {
-        const v = getComputedStyle(grid).getPropertyValue('--names-col-width').trim();
+    function setupCornerYearTrackerHorizontal(grid, corner) {
+      if (!grid || !corner) return;
+      const scroller = grid.parentElement;
+      if (!scroller) return;
+
+      // ---- Ensure only ONE active set of listeners per scroller ----
+      // Abort any previous tracker listeners (from prior renders)
+      if (scroller._yearTracker) {
+        scroller._yearTracker.abort();
+      }
+      const controller = new AbortController();
+      scroller._yearTracker = controller;
+
+      const getNamesColWidthPx = () => {
+        const v = getComputedStyle(grid).getPropertyValue('--names-col-width') || '';
         const n = parseFloat(v);
         return Number.isFinite(n) ? n : 0;
-      }
+      };
 
-      function headerMidY() {
+      // Cache the last “good” header so brief gaps don’t blank the year
+      let lastHeader = null;
+
+      const headerMidY = () => {
         const any = grid.querySelector('.wlabel');
         if (!any) return 0;
         const r = any.getBoundingClientRect();
         return r.top + r.height / 2;
-      }
+      };
 
-      function update() {
-        const leftX = scroller.getBoundingClientRect().left;
-        const contentLeftX = leftX + getNamesColWidthPx() + 1;
-        const y = headerMidY();
-        if (!y) return;
-
-        let header = null;
-        const stack = (document.elementsFromPoint?.(contentLeftX, y) || []);
+      const pickHeaderAt = (x, y) => {
+        const stack = (document.elementsFromPoint?.(x, y) || []);
         for (const el of stack) {
-          if (el.classList && el.classList.contains('wlabel')) { header = el; break; }
+          if (el.classList?.contains('wlabel')) return el;
         }
-
-        if (!header) {
-          const all = Array.from(grid.querySelectorAll('.wlabel'));
-          for (const h of all) {
-            const r = h.getBoundingClientRect();
-            if (contentLeftX >= r.left && contentLeftX < r.right) { header = h; break; }
-          }
-          if (!header && all.length) {
-            let best = null, bestDx = Infinity;
-            for (const h of all) {
-              const dx = h.getBoundingClientRect().left - contentLeftX;
-              if (dx >= 0 && dx < bestDx) { best = h; bestDx = dx; }
-            }
-            header = best || all[all.length - 1];
-          }
+        const all = grid.querySelectorAll('.wlabel');
+        // Find any header whose rect contains x,y (covers small gaps)
+        for (const h of all) {
+          const r = h.getBoundingClientRect();
+          if (x >= r.left && x < r.right && y >= r.top && y < r.bottom) return h;
         }
+        // Fall back to last good header (prevents flashing)
+        return lastHeader || all[0] || null;
+      };
 
-        if (header) {
-          const idx = parseInt(header.dataset.weekIdx, 10);
-          if (Number.isFinite(idx)) {
-            const { year } = idxToISOWeek(idx);
-            corner.textContent = String(year);
-          }
+      const yearFromHeader = (h) => {
+        if (!h) return '';
+        if (h.dataset.year) return h.dataset.year; // fast path
+        if (h.dataset.dayIdx) {
+          const d = parseInt(h.dataset.dayIdx, 10);
+          if (Number.isFinite(d)) return String(idxToISODay(d).year);
         }
-      }
+        const prevDay = h.previousElementSibling?.closest?.('.wlabel[data-day-idx]') ||
+                        h.parentElement?.querySelector?.('.wlabel[data-day-idx]');
+        if (prevDay?.dataset.dayIdx) {
+          const d2 = parseInt(prevDay.dataset.dayIdx, 10);
+          if (Number.isFinite(d2)) return String(idxToISODay(d2).year);
+        }
+        return '';
+      };
 
-      scroller.addEventListener('scroll', update, { passive: true });
-      window.addEventListener('resize', update);
+      const update = () => {
+        const x = scroller.getBoundingClientRect().left + getNamesColWidthPx() + 1;
+        const y = headerMidY();
+        const header = y ? pickHeaderAt(x, y) : grid.querySelector('.wlabel');
+        if (header) lastHeader = header;
+        const yr = yearFromHeader(header);
+        // Only touch the DOM if the year actually changes
+        if (yr && corner.textContent !== yr) corner.textContent = yr;
+      };
+
+      // ----- Initialize once BEFORE listeners (prevents default flash) -----
       update();
+
+      // Keep in sync (with automatic cleanup on next re-render)
+      scroller.addEventListener('scroll', update, { passive: true, signal: controller.signal });
+      window.addEventListener('resize', update, { signal: controller.signal });
+
+      // Extra robustness for late layout/asset loads
+      requestAnimationFrame(update);
+      requestAnimationFrame(() => requestAnimationFrame(update));
     }
 
     function coerceCombinedJson(json) {
@@ -657,8 +595,7 @@
         const ui = srcSettings.ui || {};
         out.settings.ui = {
           title: String(ui.title || DEFAULT_UI.title),
-          theme: ui.theme === 'dark' ? 'dark' : 'light',
-          layout: ui.layout === 'horizontal' ? 'horizontal' : 'vertical'
+          theme: ui.theme === 'dark' ? 'dark' : 'light'
         };
 
         const cats = Array.isArray(srcSettings.categories) ? srcSettings.categories : DEFAULT_SETTINGS.categories;
@@ -761,8 +698,8 @@
         events: (tl.events || []).map(e => {
           const categoryId = toCatId(e.categoryId ?? e.category ?? '');
           return {
-            rawDate: e.date,                                    // now can be YYYY-WW, YYYY-WW-D, #w, #, #d
-            durationDays: parseDurationToDays(e.duration) || 0, // <-- CHANGED
+            rawDate: e.date,
+            durationDays: parseDurationToDays(e.duration) || 0,
             desc: e.desc,
             categoryId,
             imageName: e.image || '',
@@ -774,7 +711,7 @@
 
       const resolved = timelines.map(resolveTimelineDays);
 
-      // Map seasonal → day indices (associate with the Monday of each week)
+      // Map seasonal → day indices
       const seasonalMarkers = (editorState?.seasonal || []).map(s => {
         if (isSpecificWeek(s.date)) {
           return { type: 'static', dayIdx: isoWeekToDayIdx(s.date), id: s.id, name: s.name, desc: s.desc || '', imageName: s.id };
@@ -784,11 +721,7 @@
         return null;
       }).filter(Boolean);
 
-      if ((settingsState?.ui?.layout) === 'horizontal') {
-        await renderGridHorizontalDays(resolved, seasonalMarkers);
-      } else {
-        await renderGridVerticalDays(resolved, seasonalMarkers);
-      }
+      await renderGridHorizontalDays(resolved, seasonalMarkers);
     }
 
 
@@ -808,6 +741,7 @@
     /** ===== Sidebar ===== */
     function renderSidebar() {
       const host = document.getElementById('ed-sidebar');
+      if (!host) return;  // <--- add this guard
       host.innerHTML = '';
 
       // ===== SETTINGS =====
@@ -953,6 +887,7 @@
       ensureSelectedPane();
       renderHeaderActions();
       const host = document.getElementById('ed-main');
+      if (!host) return;  // <--- add this guard
       host.innerHTML = '';
 
       if (!selPane) {
@@ -1191,14 +1126,11 @@
           </div>
 
           <div class="ed-row" style="margin-top:12px;">
-            <label style="display:block; font-weight:600; margin-bottom:.25rem;">Layout</label>
-            <label style="margin-right:1rem;">
-              <input type="radio" name="ui-layout" value="vertical" ${(settingsState.ui?.layout === 'horizontal') ? '' : 'checked'}>
-              Vertical
-            </label>
+            <label style="display:block; font-weight:600; margin-bottom:.25rem;">Empty Days</label>
             <label>
-              <input type="radio" name="ui-layout" value="horizontal" ${(settingsState.ui?.layout === 'horizontal') ? 'checked' : ''}>
-              Horizontal
+              <input type="checkbox" id="ui-collapse"
+                ${(settingsState.ui?.collapseEmptyDays ? 'checked' : '')}>
+              Collapse empty days (hide days with no events)
             </label>
           </div>
         </div>
@@ -1220,12 +1152,11 @@
         });
       });
 
-      uiCard.querySelectorAll('input[name="ui-layout"]').forEach(r => {
-        r.addEventListener('change', (e) => {
-          if (!settingsState.ui) settingsState.ui = { ...DEFAULT_UI };
-          settingsState.ui.layout = e.target.value === 'horizontal' ? 'horizontal' : 'vertical';
-          applyAllFromSettings();
-        });
+      const iCollapse = uiCard.querySelector('#ui-collapse');
+      iCollapse.addEventListener('change', () => {
+        if (!settingsState.ui) settingsState.ui = { ...DEFAULT_UI };
+        settingsState.ui.collapseEmptyDays = !!iCollapse.checked;
+        applyAllFromSettings();
       });
 
       // === Categories
@@ -1285,7 +1216,7 @@
           const norm = normalizeHexColor(raw); // '' if invalid
           if (raw.trim() === '' || norm) {
             cat.color = norm; // '' clears color
-            swatch.style.background = norm || 'transparent';
+            textBtn.style.background = norm || 'transparent';
             textBtn.style.background = norm || 'transparent';
             if (norm) iColorPicker.value = toColorInputValue(norm);
             applyStateToRenderer();
@@ -1298,7 +1229,7 @@
           const norm = normalizeHexColor(val);         // stays #rrggbb with '#'
           cat.color = norm;
           iColorText.value = norm;
-          swatch.style.background = norm || 'transparent';
+          textBtn.style.background = norm || 'transparent';
           textBtn.style.background = norm || 'transparent';
           applyStateToRenderer();
         });
@@ -1504,13 +1435,14 @@
       const grid = $('grid');
       grid.innerHTML = '';
 
-      // Bounds from day indices
-      const bounds = timelines.flatMap(tl => tl.events.map(ev => [ev.startIdx, ev.startIdx + ev.durationDays]));
-      const minIdx = Math.min(...bounds.map(b => b[0]));
-      const maxIdx = Math.max(...bounds.map(b => b[1]));
+      // ---- bounds (defensive for empty data) ----
+      const eventBounds = timelines.flatMap(tl => tl.events.map(ev => [ev.startIdx, ev.startIdx + ev.durationDays]));
+      const hasAnyEvents = eventBounds.length > 0;
+      const minIdx = hasAnyEvents ? Math.min(...eventBounds.map(b => b[0])) : 0;
+      const maxIdx = hasAnyEvents ? Math.max(...eventBounds.map(b => b[1])) : 1; // exclusive
       const totalDays = Math.max(1, maxIdx - minIdx);
 
-      // Expand recurring seasonal to concrete day indices (Monday of week)
+      // ---- expand seasonal (map to Monday of week) ----
       const { year: minYear } = idxToISODay(minIdx);
       const { year: maxYear } = idxToISODay(maxIdx - 1);
       const expandedSeasonal = [];
@@ -1520,41 +1452,58 @@
           const ww = String(m.week).padStart(2, '0');
           for (let y = minYear; y <= maxYear; y++) {
             const dayIdx = isoWeekToDayIdx(`${y}-${ww}`);
-            if (dayIdx >= minIdx && dayIdx < maxIdx) expandedSeasonal.push({ ...m, type: 'static', dayIdx });
+            if (dayIdx >= minIdx && dayIdx < maxIdx) {
+              expandedSeasonal.push({ ...m, type: 'static', dayIdx });
+            }
           }
         }
       }
-
-      // seasonal mapped by dayIdx (insert before the "day column" of that day)
       const seasonalByDay = new Map();
       for (const m of expandedSeasonal) {
         if (!seasonalByDay.has(m.dayIdx)) seasonalByDay.set(m.dayIdx, []);
         seasonalByDay.get(m.dayIdx).push(m);
       }
 
-      // Build columns: for each visible day, optional seasonal cols then the day col
-      const columns = [];
-      const dayColIndex = new Map(); // dayIdx -> column index (of the "day" column, not its seasonals)
-      for (let d = minIdx; d < maxIdx; d++) {
-        const seas = seasonalByDay.get(d);
-        if (seas) {
-          for (const m of seas) columns.push({ type: 'seasonal', dayIdx: d, data: m });
-        }
-        dayColIndex.set(d, columns.length);
-        columns.push({ type: 'day', dayIdx: d });
-      }
-
-      // Active day counts (how many events touch that day)
+      // ---- active days from events ----
       const activeDayCounts = new Map();
       for (const tl of timelines) for (const ev of tl.events) {
-        const start = ev.startIdx, end = ev.startIdx + ev.durationDays;
-        for (let i = start; i < end; i++) activeDayCounts.set(i, (activeDayCounts.get(i) || 0) + 1);
+        const a = Math.min(ev.startIdx, ev.startIdx + ev.durationDays);
+        const b = Math.max(ev.startIdx, ev.startIdx + ev.durationDays);
+        for (let i = a; i < b; i++) activeDayCounts.set(i, (activeDayCounts.get(i) || 0) + 1);
+      }
+      const eventDaysSet = new Set([...activeDayCounts.keys()]);
+
+      // ---- collapse logic ----
+      const collapse = !!settingsState?.ui?.collapseEmptyDays;
+
+      // When collapsed: only “day columns” for days with events; seasonal columns always show where present.
+      // When NOT collapsed: create a day column for *every* day from [minIdx, maxIdx), plus seasonal columns where present.
+      const allDays = [];
+      for (let d = minIdx; d < maxIdx; d++) allDays.push(d);
+
+      const columns = [];
+      const dayColIndex = new Map(); // maps dayIdx -> column index for the "day" column
+      for (const d of allDays) {
+        // seasonal columns always (if present)
+        const seas = seasonalByDay.get(d);
+        if (seas && seas.length) {
+          for (const m of seas) columns.push({ type: 'seasonal', dayIdx: d, data: m });
+        }
+
+        // decide if we add a "day" column
+        const addDay =
+          collapse ? eventDaysSet.has(d) : true; // collapsed => only event days; expanded => all days
+
+        if (addDay) {
+          dayColIndex.set(d, columns.length);
+          columns.push({ type: 'day', dayIdx: d });
+        }
       }
 
-      // Grid template: 2 header rows (Weeks, Days), then one row per timeline
+      // ---- grid templates ----
       grid.style.gridTemplateRows = [
-        'var(--week-header-row)', // NEW week band
-        'var(--week-header-row)', // day header row (reusing the var)
+        'var(--week-header-row)', // week band
+        'var(--week-header-row)', // day headers
         ...timelines.map(() => 'minmax(var(--timeline-row-min), auto)')
       ].join(' ');
 
@@ -1563,15 +1512,15 @@
         ...columns.map(() => 'var(--week-col-width)')
       ].join(' ');
 
-      // Corner cell (top-left) shows dynamic ISO year while scrolling
+      // ---- corner (top-left) ----
       const corner = document.createElement('div');
       corner.className = 'corner';
-      corner.style.gridRow = '1 / 3';       // span both header rows
+      corner.style.gridRow = '1 / 3';
       corner.style.gridColumn = '1 / 2';
-      corner.textContent = '';              // tracker will fill year
+      corner.textContent = '';
       grid.appendChild(corner);
 
-      // Row 2: Day headers + Seasonal headers
+      // ---- row 2: day + seasonal headers ----
       columns.forEach((col, c) => {
         const gridCol = 2 + c;
         if (col.type === 'day') {
@@ -1579,10 +1528,8 @@
           hdr.className = 'wlabel';
           hdr.dataset.dayIdx = String(col.dayIdx);
 
-          // one destructure only
-          const { year, week, day } = idxToISODay(col.dayIdx);
-          const wIdx = isoWeekToIdx(`${year}-${String(week).padStart(2,'0')}`);
-          hdr.dataset.weekIdx = String(wIdx);
+          const { year, day } = idxToISODay(col.dayIdx);   // <- week no longer needed here
+          hdr.dataset.year = String(year);
 
           const dname = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][day - 1];
           const dt = dayIdxToDate(col.dayIdx);
@@ -1598,10 +1545,14 @@
           hdr.style.gridRow = '2 / 3';
           hdr.style.gridColumn = `${gridCol} / ${gridCol + 1}`;
           grid.appendChild(hdr);
-        } else {
+        }
+ else {
           const hdr = document.createElement('div');
           hdr.className = 'wlabel wlabel--seasonal';
           hdr.dataset.dayIdx = String(col.dayIdx);
+
+          const { year } = idxToISODay(col.dayIdx);
+          hdr.dataset.year = String(year);
 
           const inner = document.createElement('div');
           inner.className = 'wlabel__inner wlabel__inner--seasonal';
@@ -1629,54 +1580,55 @@
         }
       });
 
-      // Row 1: Week headers — span 7 days + any seasonals inside that span
-      // Iterate over each ISO week that intersects the visible range.
-      // Align at Monday dayIdx boundaries.
+      // ---- row 1: Week bands spanning the columns present for that week ----
       const firstMonday = isoWeekToDayIdx(`${idxToISODay(minIdx).year}-${String(idxToISODay(minIdx).week).padStart(2,'0')}`);
-      // We'll roll from the Monday at/just before minIdx
       let wkStart = firstMonday;
       while (wkStart < maxIdx) {
-        const wkEnd = wkStart + 7; // exclusive
-        // Find the first visible day column in this week
+        const wkEnd = wkStart + 7;
         const dayStart = Math.max(wkStart, minIdx);
-        const dayEnd = Math.min(wkEnd, maxIdx);
+        const dayEnd   = Math.min(wkEnd,   maxIdx);
 
-        // If the band is outside the viewport, skip
-        if (dayStart < dayEnd) {
-          let spanCols = 0;
-          let colStart = null;
-          for (let d = dayStart; d < dayEnd; d++) {
-            const seas = seasonalByDay.get(d)?.length || 0;
+        let spanCols = 0;
+        let colStart = null;
+
+        for (let d = dayStart; d < dayEnd; d++) {
+          const seas = seasonalByDay.get(d)?.length || 0;
+          const hasDayCol = dayColIndex.has(d); // respects collapse/expanded
+
+          if (seas || hasDayCol) {
             if (colStart == null) {
-              colStart = 2 + (seas
-                ? columns.findIndex((c) => c.type === 'seasonal' && c.dayIdx === d)
-                : dayColIndex.get(d));
+              // first column index for this block: first seasonal if any, else day col
+              if (seas) {
+                colStart = 2 + columns.findIndex(c => c.type === 'seasonal' && c.dayIdx === d);
+              } else {
+                colStart = 2 + dayColIndex.get(d);
+              }
             }
-            spanCols += seas + 1;
+            spanCols += seas + (hasDayCol ? 1 : 0);
           }
+        }
 
-          if (colStart != null && spanCols > 0) {
-            const { year, week } = idxToISODay(wkStart);   // <- single destructure
-            const wkHdr = document.createElement('div');
-            wkHdr.className = 'wlabel wlabel--weekband';
-            const inner = document.createElement('div');
-            inner.className = 'wlabel__inner wlabel__inner--weekband';
-            inner.textContent = `Week ${String(week).padStart(2, '0')}`;
-            wkHdr.appendChild(inner);
-            wkHdr.style.gridRow = '1 / 2';
-            wkHdr.style.gridColumn = `${colStart} / ${colStart + spanCols}`;
-            wkHdr.dataset.weekIdx = String(isoWeekToIdx(`${year}-${String(week).padStart(2,'0')}`));
-            grid.appendChild(wkHdr);
-          }
+        if (colStart != null && spanCols > 0) {
+          const { year, week } = idxToISODay(wkStart);
+          const wkHdr = document.createElement('div');
+          wkHdr.className = 'wlabel wlabel--weekband';
+          const inner = document.createElement('div');
+          inner.className = 'wlabel__inner wlabel__inner--weekband';
+          inner.textContent = `Week ${String(week).padStart(2, '0')}`;
+          wkHdr.appendChild(inner);
+          wkHdr.style.gridRow = '1 / 2';
+          wkHdr.style.gridColumn = `${colStart} / ${colStart + spanCols}`;
+          wkHdr.dataset.year = String(year);
+          grid.appendChild(wkHdr);
         }
 
         wkStart += 7;
       }
 
-      // Pre-compute [start,end) day ranges per timeline
+      // ---- precompute timeline ranges ----
       const tlRanges = computeTimelineRanges(timelines);
 
-      // Left names column
+      // ---- left names column + background cells ----
       timelines.forEach((tl, r) => {
         const gridRow = 3 + r;
         const name = buildTimelineHeaderEl({ title: tl.title, imageName: tl.imageName });
@@ -1684,59 +1636,62 @@
         name.style.gridColumn = '1 / 2';
         grid.appendChild(name);
 
-        // draw background cells for each column in this row
         columns.forEach((col, c) => {
           const bg = document.createElement('div');
           bg.className = 'cell' + (col.type === 'seasonal' ? ' cell--seasonal' : '');
           bg.style.gridRow = `${gridRow} / ${gridRow + 1}`;
           bg.style.gridColumn = `${2 + c} / ${3 + c}`;
 
-          // Mark outside for BOTH day and seasonal cells using the same rule
           const range = tlRanges[r];
           if (typeof col.dayIdx === 'number') {
             if (isOutsideBuffered(range, col.dayIdx, 1)) bg.classList.add('outside');
           } else {
-            // (Defensive fall-back; seasonal columns should carry dayIdx)
             bg.classList.add('outside');
           }
 
           grid.appendChild(bg);
         });
-
       });
 
-      // Helper to count seasonal columns between two day indices
-      function countSeasonalsBetween(startDayIdx, endDayIdxExclusive, { excludeStart = false } = {}) {
-        let total = 0;
-        const from = excludeStart ? startDayIdx + 1 : startDayIdx; // <- skip seasonals that sit before the start-day column
-        for (let idx = from; idx < endDayIdxExclusive; idx++) {
-          total += (seasonalByDay.get(idx)?.length || 0);
-        }
-        return total;
-      }
-
-
-      // Place events
+      // ---- place events ----
       for (let r = 0; r < timelines.length; r++) {
         const tl = timelines[r];
         const gridRow = 3 + r;
+
         for (const ev of tl.events) {
           const start = ev.startIdx;
           const endExclusive = ev.startIdx + ev.durationDays;
-
-          const visStart = Math.min(Math.max(start, minIdx), maxIdx - 1);
-          const visEndDay = Math.min(Math.max(endExclusive - 1, minIdx), maxIdx - 1);
-          if (!dayColIndex.has(visStart) || !dayColIndex.has(visEndDay)) continue;
-
-          const baseSpanDays = Math.abs(visEndDay - visStart) + 1;
           const a = Math.max(Math.min(start, endExclusive), minIdx);
           const b = Math.min(Math.max(start, endExclusive), maxIdx);
-          const extraSeasonal = (a + 1 <= b)
-            ? countSeasonalsBetween(a, b, { excludeStart: true })
-            : 0;
-          const span = baseSpanDays + extraSeasonal;
 
-          const colStart = dayColIndex.get(visStart);
+          // find first/last *visible* day column for this event
+          const firstVisible = (() => {
+            for (let d = a; d < b; d++) if (dayColIndex.has(d)) return d;
+            return null;
+          })();
+          const lastVisible = (() => {
+            for (let d = b - 1; d >= a; d--) if (dayColIndex.has(d)) return d;
+            return null;
+          })();
+          if (firstVisible == null || lastVisible == null) continue;
+
+          // span = visible day columns + seasonal columns encountered along the way
+          let spanDays = 0, extraSeasonal = 0;
+          for (let d = Math.min(start, endExclusive); d < Math.max(start, endExclusive); d++) {
+            if (dayColIndex.has(d)) spanDays++;
+
+            // Only count seasonal if it's NOT on the same day as the *start* of the event
+            if (d !== start) {
+              extraSeasonal += (seasonalByDay.get(d)?.length || 0);
+            }
+          }
+          const span = spanDays + extraSeasonal;
+
+          if (span <= 0) continue;
+
+          const colStart = dayColIndex.get(firstVisible);
+          const gridColStart = 2 + colStart;
+
           const el = document.createElement('div');
           el.className = 'event';
 
@@ -1754,7 +1709,6 @@
           el.style.setProperty('--jtext',  catText  || 'black');
           el.style.setProperty('--jemoji', `"${catEmoji}"`);
 
-          const gridColStart = 2 + colStart;
           el.style.gridRow = `${gridRow} / ${gridRow + 1}`;
           el.style.gridColumn = `${gridColStart} / ${gridColStart + span}`;
 
@@ -1767,10 +1721,7 @@
           const sticky = document.createElement('div');
           sticky.className = 'event-sticky';
           sticky.dataset.image = 'false';
-
-          prependEventMedia(sticky, ev, (has) => {
-            sticky.dataset.image = has ? 'true' : 'false';
-          });
+          prependEventMedia(sticky, ev, (has) => { sticky.dataset.image = has ? 'true' : 'false'; });
 
           if (catName) {
             const cat = document.createElement('div');
@@ -1789,7 +1740,6 @@
           meta.textContent = `${labelStart} • ${ev.durationDays}d`;
           topline.appendChild(meta);
 
-          // chips
           const charChips = document.createElement('div');
           charChips.className = 'chips chips--characters';
           for (const n of ev.characters || []) {
@@ -1826,330 +1776,11 @@
         }
       }
 
-      // Meta text
+      // ---- meta + tracker ----
       const firstL = (function(){const {year,week,day}=idxToISODay(minIdx); return `${year}-W${String(week).padStart(2,'0')}-${day}`})();
       const lastL  = (function(){const {year,week,day}=idxToISODay(maxIdx-1); return `${year}-W${String(week).padStart(2,'0')}-${day}`})();
       setText('meta', `Timelines: ${timelines.length} • Days: ${totalDays} • Range: ${firstL} → ${lastL}`);
       setupCornerYearTrackerHorizontal(grid, corner);
-    }
-
-    /** ===================== RENDER VERTICAL TIMELINES ===================== **/
-    async function renderGridVerticalDays(timelines, seasonalMarkers = []) {
-      const grid = $('grid');
-      grid.innerHTML = '';
-
-      const bounds = timelines.flatMap(tl => tl.events.map(ev => [ev.startIdx, ev.startIdx + ev.durationDays]));
-      const minIdx = Math.min(...bounds.map(b => b[0]));
-      const maxIdx = Math.max(...bounds.map(b => b[1]));
-      const totalDays = Math.max(1, maxIdx - minIdx);
-
-      const activeDayCounts = new Map();
-      for (const tl of timelines) for (const ev of tl.events) {
-        for (let i = ev.startIdx; i < ev.startIdx + ev.durationDays; i++) {
-          activeDayCounts.set(i, (activeDayCounts.get(i) || 0) + 1);
-        }
-      }
-
-      // Expand seasonal to day indices (Monday)
-      const { year: minYear } = idxToISODay(minIdx);
-      const { year: maxYear } = idxToISODay(maxIdx - 1);
-      const expandedSeasonal = [];
-      for (const m of seasonalMarkers) {
-        if (m.type === 'static') expandedSeasonal.push(m);
-        else if (m.type === 'recurring') {
-          const ww = String(m.week).padStart(2, '0');
-          for (let y = minYear; y <= maxYear; y++) {
-            const dayIdx = isoWeekToDayIdx(`${y}-${ww}`);
-            if (dayIdx >= minIdx && dayIdx < maxIdx) expandedSeasonal.push({ ...m, type: 'static', dayIdx });
-          }
-        }
-      }
-
-      // Build rows (top is newest): for each day descending, seasonal rows (if any) then the day row.
-      const seasonalByDay = new Map();
-      for (const m of expandedSeasonal) {
-        if (!seasonalByDay.has(m.dayIdx)) seasonalByDay.set(m.dayIdx, []);
-        seasonalByDay.get(m.dayIdx).push(m);
-      }
-
-      const rows = [];
-      const dayRowIndex = new Map();
-      for (let d = maxIdx - 1; d >= minIdx; d--) {
-        const seas = seasonalByDay.get(d);
-        if (seas) {
-          for (const m of seas) rows.push({ type: 'seasonal', dayIdx: d, data: m });
-        }
-        dayRowIndex.set(d, rows.length);
-        rows.push({ type: 'day', dayIdx: d });
-      }
-
-      // Two left header columns: Weeks band + Days/Seasonal labels
-      grid.style.gridTemplateColumns = [
-        'var(--names-col-width)', // week band
-        'var(--names-col-width)', // day labels
-        ...timelines.map(() => 'minmax(var(--timeline-col-min), var(--timeline-col-max))')
-      ].join(' ');
-
-      grid.style.gridTemplateRows = rows.map(() => 'minmax(var(--week-row-min), auto)').join(' ');
-
-      // Single top-left corner spanning both left header columns.
-      // Shows dynamic ISO year while scrolling.
-      const corner = document.createElement('div');
-      corner.className = 'corner';
-      corner.style.gridColumn = '1 / 3'; // span week band + day label columns
-      corner.style.gridRow = '1 / 2';
-      corner.textContent = '';           // tracker will fill year
-      grid.appendChild(corner);
-
-      // Column headers (timeline titles)
-      timelines.forEach((tl, cIdx) => {
-        const th = buildTimelineHeaderEl({ title: tl.title, imageName: tl.imageName });
-        th.style.gridColumn = `${3 + cIdx} / ${4 + cIdx}`;
-        th.style.gridRow = '1 / 2';
-        grid.appendChild(th);
-      });
-
-      // Pre-compute [start,end) day ranges per timeline
-      const tlRanges = computeTimelineRanges(timelines);
-
-      // Left day/seasonal header column (col 2)
-      rows.forEach((row, rIdx) => {
-        if (row.type === 'day') {
-          const wl = document.createElement('div'); // create first
-          wl.className = 'wlabel';
-          wl.dataset.dayIdx = String(row.dayIdx);
-
-          const { year, week, day } = idxToISODay(row.dayIdx);
-          const wIdx = isoWeekToIdx(`${year}-${String(week).padStart(2,'0')}`);
-          wl.dataset.weekIdx = String(wIdx);        // now safe
-
-          const dname = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][day - 1];
-          const dt = dayIdxToDate(row.dayIdx);
-          const dd = String(dt.getUTCDate()).padStart(2, '0');
-
-          const inner = document.createElement('div');
-          inner.className = 'wlabel__inner';
-          inner.textContent = `${dname} ${dd}`;
-          const cnt = activeDayCounts.get(row.dayIdx) || 0;
-          if (cnt > 0) { inner.classList.add('has-events'); inner.dataset.count = String(cnt); }
-
-          wl.appendChild(inner);
-          wl.style.gridColumn = '2 / 3';
-          wl.style.gridRow = `${2 + rIdx} / ${3 + rIdx}`;
-          grid.appendChild(wl);
-
-          // background cells for each timeline column in this row
-          timelines.forEach((_, cIdx) => {
-            const bg = document.createElement('div');
-            bg.className = 'cell';
-            bg.style.gridColumn = `${3 + cIdx} / ${4 + cIdx}`;
-            bg.style.gridRow = `${2 + rIdx} / ${3 + rIdx}`;
-
-            const range = tlRanges[cIdx];
-            const d = row.dayIdx;
-            if (isOutsideBuffered(range, d, 1)) bg.classList.add('outside');
-
-            grid.appendChild(bg);
-          });
-
-        } else {
-          // Seasonal row label (col 2)
-          const wl = document.createElement('div');
-          wl.className = 'wlabel wlabel--seasonal';
-
-          const inner = document.createElement('div');
-          inner.className = 'wlabel__inner wlabel__inner--seasonal';
-
-          const m = row.data;
-          const img = makeSmartImg(SEASONAL_IMAGES_DIR, m.imageName, 'seasonal-thumb', m.name);
-          if (img) inner.appendChild(img);
-
-          const nameEl = document.createElement('span');
-          nameEl.className = 'seasonal-name';
-          nameEl.textContent = m.name;
-          inner.appendChild(nameEl);
-
-          if (m.desc) {
-            const descEl = document.createElement('span');
-            descEl.className = 'seasonal-desc';
-            descEl.textContent = m.desc;
-            inner.appendChild(descEl);
-          }
-
-          wl.appendChild(inner);
-          wl.style.gridColumn = '2 / 3';
-          wl.style.gridRow = `${2 + rIdx} / ${3 + rIdx}`;
-          grid.appendChild(wl);
-
-          // background seasonal row stripes
-          timelines.forEach((_, cIdx) => {
-            const bg = document.createElement('div');
-            bg.className = 'cell cell--seasonal';
-            bg.style.gridColumn = `${3 + cIdx} / ${4 + cIdx}`;
-            bg.style.gridRow = `${2 + rIdx} / ${3 + rIdx}`;
-
-            const range = tlRanges[cIdx];
-            const d = row.dayIdx; // seasonal rows carry the day they belong to
-            if (isOutsideBuffered(range, d, 1)) bg.classList.add('outside');
-
-            grid.appendChild(bg);
-          });
-
-        }
-      });
-
-      // Left week band column (col 1): headers spanning 7 days + seasonal rows inside the week
-      // We iterate visible weeks (aligned to Mondays) and compute row spans across our rows structure.
-      const firstMonday = isoWeekToDayIdx(`${idxToISODay(minIdx).year}-${String(idxToISODay(minIdx).week).padStart(2,'0')}`);
-      let wkStart = firstMonday;
-      while (wkStart < maxIdx) {
-        const wkEnd = wkStart + 7; // exclusive
-        const dayStart = Math.max(wkStart, minIdx);
-        const dayEnd = Math.min(wkEnd, maxIdx);
-        if (dayStart < dayEnd) {
-          // find the topmost row index (remember rows are descending days with seasonals before each day)
-          let rowTop = null, spanRows = 0;
-          for (let d = dayStart; d < dayEnd; d++) {
-            const rDay = dayRowIndex.get(d);
-            if (rDay == null) continue;
-
-            // seasonal rows for this day come just before the day
-            const seas = seasonalByDay.get(d)?.length || 0;
-            const topForThisDay = rDay - seas; // first seasonal if any, else the day itself
-            if (rowTop == null || topForThisDay < rowTop) rowTop = topForThisDay;
-
-            // total rows consumed for this day block
-            spanRows += seas + 1;
-          }
-
-          if (rowTop != null && spanRows > 0) {
-            const { year, week } = idxToISODay(wkStart);  // single destructure
-            const wkHdr = document.createElement('div');
-            wkHdr.className = 'wlabel wlabel--weekband';
-            const inner = document.createElement('div');
-            inner.className = 'wlabel__inner wlabel__inner--weekband';
-            inner.textContent = `Week ${String(week).padStart(2, '0')}`;
-            wkHdr.appendChild(inner);
-
-            wkHdr.dataset.weekIdx = String(isoWeekToIdx(`${year}-${String(week).padStart(2,'0')}`));
-
-            const gridRowStart = 2 + rowTop;
-            wkHdr.style.gridColumn = '1 / 2';
-            wkHdr.style.gridRow = `${gridRowStart} / ${gridRowStart + spanRows}`;
-            grid.appendChild(wkHdr);
-          }
-        }
-        wkStart += 7;
-      }
-
-      // Place events
-      function countSeasonalsBetween(startDayIdx, endDayIdxExclusive) {
-        let total = 0;
-        for (let idx = startDayIdx; idx < endDayIdxExclusive; idx++) total += (seasonalByDay.get(idx)?.length || 0);
-        return total;
-      }
-
-      for (let cIdx = 0; cIdx < timelines.length; cIdx++) {
-        const tl = timelines[cIdx];
-        for (const ev of tl.events) {
-          const start = ev.startIdx;
-          const endExclusive = ev.startIdx + ev.durationDays;
-
-          const visStart = Math.min(Math.max(start, minIdx), maxIdx - 1);
-          const visEndDay = Math.min(Math.max(endExclusive - 1, minIdx), maxIdx - 1);
-          if (!dayRowIndex.has(visStart) || !dayRowIndex.has(visEndDay)) continue;
-
-          // top-most row for this event block (remember rows are descending)
-          // choose the row index of the later day (visually higher), add seasonal rows above it
-          const topDay = Math.max(visStart, visEndDay);
-          const baseSpanDays = Math.abs(visEndDay - visStart) + 1;
-          const extra = countSeasonalsBetween(Math.max(Math.min(start, endExclusive), minIdx), Math.min(Math.max(start, endExclusive), maxIdx));
-          const span = baseSpanDays + extra;
-
-          const rDayIndex = dayRowIndex.get(topDay);
-          const seasAbove = seasonalByDay.get(topDay)?.length || 0;
-          const topRow = rDayIndex - seasAbove;
-
-          const el = document.createElement('div');
-          el.className = 'event';
-
-          const catId   = toCatId(ev.categoryId);
-          const catName = getCatName(catId);
-          const catEmoji= getCatEmoji(catId);
-          const catColor= getCatColor(catId);
-          const catText = getCatText(catId);
-
-          el.dataset.catId = String(catId || 0);
-          el.dataset.catEmoji = catEmoji || '';
-          el.dataset.catTitle = catName || '';
-          el.dataset.catColor = catColor || '';
-          el.style.setProperty('--jcolor', catColor || 'transparent');
-          el.style.setProperty('--jtext',  catText  || 'black');
-          el.style.setProperty('--jemoji', `"${catEmoji}"`);
-
-          el.style.gridColumn = `${3 + cIdx} / ${4 + cIdx}`;
-          el.style.gridRow = `${2 + topRow} / ${2 + topRow + span}`;
-
-          const { year, week, day } = idxToISODay(start);
-          const labelStart = `${year}-${String(week).padStart(2, '0')}-${day}`;
-
-          const topline = document.createElement('div');
-          topline.className = 'topline';
-
-          const sticky = document.createElement('div');
-          sticky.className = 'event-sticky';
-          sticky.dataset.image = 'false';
-          prependEventMedia(sticky, ev, (has) => { sticky.dataset.image = has ? 'true' : 'false'; });
-
-          if (catName) {
-            const cat = document.createElement('div');
-            cat.className = 'cat';
-            cat.textContent = catName;
-            topline.appendChild(cat);
-          }
-
-          const title = document.createElement('div');
-          title.className = 'desc';
-          title.textContent = ev.desc || '(no description)';
-          topline.appendChild(title);
-
-          const meta = document.createElement('div');
-          meta.className = 'meta';
-          meta.textContent = `${labelStart} • ${ev.durationDays}d`;
-          topline.appendChild(meta);
-
-          // chips
-          const charChips = document.createElement('div');
-          charChips.className = 'chips chips--characters';
-          for (const n of ev.characters || []) {
-            const a = document.createElement('a'); a.className = 'chip';
-            a.href = `characters/${encodeURIComponent(n)}.html`; a.title = `Character: ${n}`;
-            const icon = makeSmartImg(CHAR_IMAGES_DIR, n, 'icon', n); if (icon) a.appendChild(icon);
-            const label = document.createElement('span'); label.textContent = n; a.appendChild(label);
-            charChips.appendChild(a);
-          }
-          if (charChips.children.length) topline.appendChild(charChips);
-
-          const locChips = document.createElement('div');
-          locChips.className = 'chips chips--locations';
-          for (const n of ev.locations || []) {
-            const a = document.createElement('a'); a.className = 'chip';
-            a.href = `locations/${encodeURIComponent(n)}.html`; a.title = `Location: ${n}`;
-            const label = document.createElement('span'); label.textContent = n; a.appendChild(label);
-            locChips.appendChild(a);
-          }
-          if (locChips.children.length) topline.appendChild(locChips);
-
-          sticky.appendChild(topline);
-          el.appendChild(sticky);
-          grid.appendChild(el);
-        }
-      }
-
-      const firstL = (function(){const {year,week,day}=idxToISODay(minIdx); return `${year}-W${String(week).padStart(2,'0')}-${day}`})();
-      const lastL  = (function(){const {year,week,day}=idxToISODay(maxIdx-1); return `${year}-W${String(week).padStart(2,'0')}-${day}`})();
-      setText('meta', `Timelines: ${timelines.length} • Days: ${totalDays} • Range: ${firstL} → ${lastL}`);
-      setupCornerYearTracker(grid, corner);
     }
 
     /** ===================== BOOT ===================== **/
@@ -2163,15 +1794,16 @@
         const btn = document.getElementById('toggle-editor');
         if (btn) btn.addEventListener('click', () => (editMode ? exitEditMode() : enterEditMode()));
 
+        const btnCollapse = document.getElementById('btn-collapse');
+        if (btnCollapse) btnCollapse.onclick = toggleCollapseEmptyDays;
+
         const btnImport = document.getElementById('btn-import');
         const btnDownload = document.getElementById('btn-download');
         if (btnImport) btnImport.onclick = onImportJSON;
         if (btnDownload) btnDownload.onclick = onDownloadJSON;
 
         const btnTheme = document.getElementById('btn-theme');
-        const btnLayout = document.getElementById('btn-layout');
         if (btnTheme) btnTheme.onclick = toggleTheme;
-        if (btnLayout) btnLayout.onclick = toggleLayout;
         // Initial label sync (in case applyUIFromSettings hasn’t run yet)
         syncHeaderControlsFromSettings();
 
