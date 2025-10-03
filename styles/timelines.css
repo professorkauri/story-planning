@@ -15,7 +15,7 @@
 ========================================================= */
 
 :root {
-  --thw: 80px; /* Timeline Header Width */
+  --thw: 100px; /* Timeline Header Width */
 }
 html,
 body {
@@ -57,12 +57,16 @@ body.theme-light {
 }
 
 
+
+
+
 /* =========================================================
    2) LAYOUT WRAPPERS
 ========================================================= */
 
 header {
   display: flex;
+  flex-direction: column;
   align-items: baseline;
   gap: 12px;
   padding: 14px 16px;
@@ -73,13 +77,103 @@ header h1 {
   margin: 0;
 }
 header .meta {
+  display:none;
   font-size: 12px;
   color: var(--muted);
 }
 header .err {
+  display:none;
   color: #ffb4b4;
   font-size: 12px;
 }
+
+.actions {
+  display:flex;
+  gap: 2em;
+}
+
+/* Buttons */
+button {
+  background: var(--g-bar);
+  color: var(--ink);
+  border: 1px solid var(--muted);
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  text-align: center;
+}
+button:hover {
+  filter: brightness(1.1);
+  background-color: var(--ink);
+  color:var(--background);
+}
+button.danger {
+  display:inline-block;
+  border-color: #9c5454;
+  background: #ffeaea;
+  color:#9c5454;
+  font-weight:bold;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  font-size:0.5em;
+}
+button.ghost {
+  background: transparent;
+  border-color: var(--muted);
+}
+button.ghost:hover {
+  background-color: var(--muted);
+  color:var(--background);
+}
+
+/* Selects */
+.ed-table select {
+  width: 100%;
+  background: var(--background);
+  color: var(--ink);
+  border: 1px solid var(--g-bar);
+  border-left:7px solid var(--jcolor);
+  border-radius: 6px;
+  padding: 6px;
+}
+.ed-table select option {
+  background: var(--g-panel);
+  color: var(--ink);
+}
+
+.seg {
+  position: relative;
+  background:var(--g-outline);
+  border-radius: 10px;
+  padding:3px;
+  outline:1px solid var(--g-bar);
+  margin-top:10px;
+}
+.seg:before {
+  content:attr(data-label);
+  display:block;
+  position:absolute;
+  bottom:100%;
+  margin-bottom:2px;
+  left:0;
+  font-size:8px;
+  text-transform: uppercase;
+  color:var(--muted);
+  white-space: nowrap;
+}
+.seg button {
+  background:transparent;
+  border:none;
+}
+.seg button:hover,
+.seg button[aria-pressed=true] {
+  background:var(--background);
+  outline:1px solid var(--muted);
+  color:var(--ink);
+  border:none;
+}
+
+
 .viewport {
   display: flex;
   position: relative;
@@ -95,6 +189,7 @@ header .err {
   gap: 6px;
   padding: 12px;
   grid-template-columns: var(--col-min);
+  min-width: max-content;
 }
 
 
@@ -172,34 +267,31 @@ header .err {
 
 /* ---- Column header (timeline name) ---- */
 .thead {
-  display:block;
+  display:flex;
+  flex-direction:column;
   position: sticky;
   top: 0;
   left:0;
   z-index: 4;
   background: var(--background);
   outline: 1px solid var(--g-bar);
-  padding: 28px 12px;
   font-weight: 600;
   letter-spacing: 0.2px;
   text-align: center;
   white-space: wrap;
   overflow: hidden;
   border-radius:5px;
-  min-height:30px;
 }
 .thead-thumb {
   display:block;
-  position:absolute;
+  position:relative;
   width:100%;
   height:100%;
-  top:0;
-  left:0;
-  border-radius: 0;
+  max-height:65px;
   object-fit: cover;
   object-position: center;
-  border: 1px solid var(--g-bar);
   z-index:1;
+  flex-grow:1;
 }
 .thead:before {
   display:block;
@@ -212,24 +304,22 @@ header .err {
   background: #485459;
   background: linear-gradient(180deg,rgba(72, 84, 89, 0) 33%, rgba(72, 84, 89, 1) 100%);
   z-index: 2;
-  mix-blend-mode: multiply;;
+  mix-blend-mode: multiply;
 }
 .thead-title {
   --sidepad: 5px;
   --sidespace: 0.5px;
-  display:block;
-  position:absolute;
-  left:var(--sidespace);
-  bottom:var(--sidespace);
-  width:calc(100% - var(--sidespace) - var(--sidespace) - var(--sidepad) - var(--sidepad));
+  display:flex;
+  justify-content: center;
+  align-items: center;
+  position:relative;
   font-size:6px;
   text-transform: uppercase;
   z-index:5 !important;
   background:var(--background);
   padding:3px var(--sidepad) 3px var(--sidepad);
-  border-radius:0 0 2px;
-  outline: 1px solid var(--g-bar);
   letter-spacing: 0.5px;
+  flex-grow:1;
 }
 
 /* ---- Timeline cells ---- */
@@ -239,6 +329,7 @@ header .err {
   border: 1px solid var(--g-outline);
   border-radius: 6px;
   overflow: visible;
+  min-width:100px;
 }
 .cell:before {
   content: "";
@@ -260,7 +351,7 @@ header .err {
   padding: 0;
   font-size: 12px;
   line-height: 1.25;
-  outline: 1px solid var(--jcolor);
+  border: 1px solid var(--jcolor);
   /* box-shadow: 0 2px 10px rgba(0,0,0,.5); */
   background: var(--background);
   display: flex;
@@ -269,7 +360,8 @@ header .err {
   min-width:250px;
   gap: 0px;
   height:fit-content;
-  margin:auto 15px;
+  margin:auto 10px;
+  flex-grow: 1;
 }
 .event .topline {
   display: flex;
@@ -381,6 +473,9 @@ header .err {
   left:var(--thw);
 }
 
+
+
+
 /* Bundle host owns the day cell when present */
 .bundle-host {
   display:flex;
@@ -388,6 +483,7 @@ header .err {
   gap:0px;
   position: relative;
   margin: auto 15px;
+  width: max-content;
 }
 .bundle-host .event {
   margin-left:0;
@@ -406,6 +502,268 @@ header .err {
   border-bottom-right-radius: 10px;
 }
 
+
+
+/* Host for week/year bin fragments */
+.bin-host { 
+  display:flex;
+  position: relative;
+  align-items: center;
+  gap:8px;
+}
+
+/* Constrain ALL frags (bars + chips) to their slot slice */
+.granularity--day .bin-host > .event.granularity-pref-year.bar-frag,
+.granularity--day .bin-host > .event.granularity-pref-year.chip-frag,
+.granularity--day .bin-host > .event.granularity-pref-week.bar-frag,
+.granularity--day .bin-host > .event.granularity-pref-week.chip-frag,
+.granularity--week .bin-host > .event.granularity-pref-year.bar-frag,
+.granularity--week .bin-host > .event.granularity-pref-year.chip-frag,
+.granularity--week .bin-host > .event.granularity-pref-day.bar-frag,
+.granularity--week .bin-host > .event.granularity-pref-day.chip-frag,
+.granularity--year .bin-host > .event.granularity-pref-week.bar-frag,
+.granularity--year .bin-host > .event.granularity-pref-week.chip-frag,
+.granularity--year .bin-host > .event.granularity-pref-day.bar-frag,
+.granularity--year .bin-host > .event.granularity-pref-day.chip-frag {
+  display:block;
+  min-width:initial;
+  position: relative;
+  box-sizing: border-box;            /* include padding/borders in width */
+  margin: 0;                         /* avoid margin expanding past slice */
+  width: calc(100% / var(--slots));
+  max-width: calc(100% / var(--slots)); /* belt & suspenders */
+}
+
+
+/* =========================================================
+   Granularity DAY
+========================================================= */
+.granularity--day .event.granularity-pref-year .thumb,
+.granularity--day .event.granularity-pref-year .meta,
+.granularity--day .event.granularity-pref-year .cat,
+.granularity--day .event.granularity-pref-week .thumb,
+.granularity--day .event.granularity-pref-week .meta {
+  display:none;
+}
+.granularity--day .event.granularity-pref-year {
+  background:var(--jcolor);
+  padding:0;
+  line-height:initial;
+}
+.granularity--day .event.granularity-pref-week .topline {
+  background-color:var(--g-panel);
+  padding:2px 7px;
+  margin-left:14px;
+  outline:1px solid var(--g-panel);
+}
+.granularity--day .event.granularity-pref-week .topline {
+  outline:none;
+}
+.granularity--day .event.granularity-pref-week .cat {
+  top:-10px;
+  border-radius: 3px 3px 0 0;
+  padding-bottom:0px;
+}
+.granularity--day .thead.granularity-pref-year:before,
+.granularity--day .thead.granularity-pref-year .thead-thumb,
+.granularity--day .thead.granularity-pref-week:before,
+.granularity--day .thead.granularity-pref-week .thead-thumb {
+  display:none;
+}
+.granularity--day .event.granularity-pref-year {
+  background-color:var(--jcolor);
+  position:initial;
+  outline:none;
+  padding:0px;
+  z-index: 1;
+}
+.granularity--day .event.granularity-pref-year .event-sticky {
+  content:" ";
+  height:5px;
+  border-radius: 3px;
+}
+.granularity--day .event.granularity-pref-year .event-sticky .topline {
+  display:block;
+  width:100%;
+  padding-left:17px;
+}
+.granularity--day .event.granularity-pref-year .event-sticky .desc {
+  font-size:0.7em;
+  font-weight:normal;
+  color:var(--muted);
+  letter-spacing: 0.5px;
+  margin-top:-2.5em;
+}
+
+/* =========================================================
+   Granularity WEEK
+========================================================= */
+.granularity--week .event.granularity-pref-year .thumb,
+.granularity--week .event.granularity-pref-year .meta,
+.granularity--week .event.granularity-pref-year .cat,
+.granularity--week .event.granularity-pref-day .thumb,
+.granularity--week .event.granularity-pref-day .meta {
+  display:none;
+}
+.granularity--week .event.granularity-pref-year {
+  background:var(--jcolor);
+  padding:0;
+  line-height:initial;
+}
+.granularity--week .event.granularity-pref-day .topline {
+  outline:none;
+}
+.granularity--week .event.granularity-pref-day .cat {
+  top:-10px;
+  border-radius: 3px 3px 0 0;
+  padding-bottom:0px;
+}
+.granularity--week .event.granularity-pref-week.bar-frag:not(.frag--start) {
+  width:109%;
+  margin-left:-9%;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-left:none;
+}
+.granularity--week .event.granularity-pref-week.bar-frag:not(.frag--start) .event-sticky {
+  opacity:0;
+}
+.granularity--week .thead.granularity-pref-year:before,
+.granularity--week .thead.granularity-pref-year .thead-thumb,
+.granularity--week .thead.granularity-pref-day:before,
+.granularity--week .thead.granularity-pref-day .thead-thumb,
+.granularity--week .event.granularity-pref-day .event-sticky .cat,
+.granularity--week .event.granularity-pref-day .event-sticky .meta,
+.granularity--week .event.granularity-pref-day .event-sticky .thumb,
+.granularity--week .event.granularity-pref-day .event-sticky .chips {
+  display:none;
+}
+.granularity--week .event.granularity-pref-day {
+  position:initial;
+  outline:none;
+  padding:0px;
+}
+.granularity--week .event.granularity-pref-day .event-sticky {
+  position:relative;
+  left:0;
+  background-color:var(--jcolor);
+  content:" ";
+  width:auto;
+  height:5px;
+  border-radius: 3px;
+}
+.granularity--week .event.granularity-pref-day .event-sticky .topline {
+  display:block;
+  width:100%;
+  padding:7px 0 0 0;
+}
+.granularity--week .event.granularity-pref-day .event-sticky .desc {
+  font-size:0.7em;
+  font-weight:normal;
+  color:var(--muted);
+  letter-spacing: 0.5px;
+}
+.granularity--week .event.granularity-pref-day.bar-frag:not(.frag--start) .event-sticky {
+  width:100%;
+  margin-left:-12px;
+}
+.granularity--week .event.granularity-pref-day.bar-frag:not(.frag--start) .event-sticky .desc {
+  display:none;
+}
+.granularity--week .event.granularity-pref-year {
+  background-color:var(--jcolor);
+  position:initial;
+  outline:none;
+  padding:0px;
+  z-index: 1;
+}
+.granularity--week .event.granularity-pref-year .event-sticky {
+  content:" ";
+  height:5px;
+  border-radius: 3px;
+}
+.granularity--week .event.granularity-pref-year .event-sticky .topline {
+  display:block;
+  width:100%;
+  padding-left:17px;
+}
+.granularity--week .event.granularity-pref-year .event-sticky .desc {
+  font-size:0.7em;
+  font-weight:normal;
+  color:var(--muted);
+  letter-spacing: 0.5px;
+  margin-top:-2.5em;
+}
+
+/* =========================================================
+   Granularity YEAR
+========================================================= */
+.granularity--year .event.granularity-pref-week .thumb,
+.granularity--year .event.granularity-pref-week .meta {
+  display:none;
+}
+.granularity--year .event.granularity-pref-week .topline {
+  background-color:var(--g-panel);
+  display:flex;
+  flex-direction: column;
+  align-items: stretch;
+  margin:0;
+  outline:none;
+  background:transparent;
+  padding:7px 15px 7px 7px;
+}
+.granularity--year .event.granularity-pref-week .cat {
+  display:block;
+  position:relative;
+  top:0;
+  left:0;
+  margin:0 0 5px 0;
+  box-sizing: border-box;
+}
+.granularity--year .event.granularity-pref-week .desc {
+  width:100%;
+  padding: 0;
+  box-sizing: border-box;
+  font-size:0.9em;
+}
+.granularity--year .thead.granularity-pref-week:before,
+.granularity--year .thead.granularity-pref-week .thead-thumb,
+.granularity--year .thead.granularity-pref-day:before,
+.granularity--year .thead.granularity-pref-day .thead-thumb,
+.granularity--year .event.granularity-pref-day .event-sticky .cat,
+.granularity--year .event.granularity-pref-day .event-sticky .meta,
+.granularity--year .event.granularity-pref-day .event-sticky .thumb,
+.granularity--year .event.granularity-pref-day .event-sticky .chips {
+  display:none;
+}
+.granularity--year .event.granularity-pref-day {
+  position:initial;
+  outline:none;
+  padding:0px;
+}
+.granularity--year .event.granularity-pref-week .event-sticky {
+  padding-right:0;
+}
+.granularity--year .event.granularity-pref-day .event-sticky {
+  position:relative;
+  left:0;
+  background-color:var(--jcolor);
+  content:" ";
+  width:auto;
+  height:5px;
+  border-radius: 3px;
+}
+.granularity--year .event.granularity-pref-day .event-sticky .topline {
+  display:block;
+  width:100%;
+  padding:7px 0 0 0;
+}
+.granularity--year .event.granularity-pref-day .event-sticky .desc {
+  font-size:0.7em;
+  font-weight:normal;
+  color:var(--muted);
+  letter-spacing: 0.5px;
+}
 
 /* =========================================================
    5) SEASONAL COMPONENTS
@@ -808,51 +1166,4 @@ input[type="text"] {
   padding:3px
 }
 
-/* Buttons */
-button {
-  background: var(--g-bar);
-  color: var(--ink);
-  border: 1px solid var(--muted);
-  border-radius: 8px;
-  padding: 6px 10px;
-  cursor: pointer;
-  text-align: center;
-}
-button:hover {
-  filter: brightness(1.1);
-  background-color: var(--ink);
-  color:var(--background);
-}
-button.danger {
-  display:inline-block;
-  border-color: #9c5454;
-  background: #ffeaea;
-  color:#9c5454;
-  font-weight:bold;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  font-size:0.5em;
-}
-button.ghost {
-  background: transparent;
-  border-color: var(--muted);
-}
-button.ghost:hover {
-  background-color: var(--muted);
-  color:var(--background);
-}
 
-/* Selects */
-.ed-table select {
-  width: 100%;
-  background: var(--background);
-  color: var(--ink);
-  border: 1px solid var(--g-bar);
-  border-left:7px solid var(--jcolor);
-  border-radius: 6px;
-  padding: 6px;
-}
-.ed-table select option {
-  background: var(--g-panel);
-  color: var(--ink);
-}

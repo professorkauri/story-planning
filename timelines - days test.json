@@ -1,0 +1,479 @@
+{
+  "settings": {
+    "ui": {
+      "title": "My Timeline",
+      "theme": "light",
+      "collapseEmptyDays": false,
+      "granularity": "day",
+      "showSeasonalInYear": false,
+      "maxChipsPerBin": 5
+    },
+    "categories": [
+      {
+        "id": 1,
+        "name": "Ordinary World",
+        "color": "#80acff",
+        "text": "white"
+      },
+      {
+        "id": 2,
+        "name": "Call To Adventure",
+        "color": "#80c0ff",
+        "text": "white"
+      },
+      {
+        "id": 3,
+        "name": "Refusal Of The Call",
+        "color": "#80f9ff",
+        "text": "black"
+      },
+      {
+        "id": 4,
+        "name": "Meeting The Mentor",
+        "color": "#80ffc8",
+        "text": "black"
+      },
+      {
+        "id": 5,
+        "name": "Crossing The Threshold",
+        "color": "#80ff93",
+        "text": "black"
+      },
+      {
+        "id": 6,
+        "name": "Tests, Allies & Enemies",
+        "color": "#f7ff80",
+        "text": "black"
+      },
+      {
+        "id": 7,
+        "name": "Approach To The Inmost Cave",
+        "color": "#ffca80",
+        "text": "black"
+      },
+      {
+        "id": 8,
+        "name": "The Ordeal",
+        "color": "#ff8080",
+        "text": "white"
+      },
+      {
+        "id": 9,
+        "name": "Reward",
+        "color": "#ff809c",
+        "text": "white"
+      },
+      {
+        "id": 10,
+        "name": "The Road Back",
+        "color": "#ff80e1",
+        "text": "white"
+      },
+      {
+        "id": 11,
+        "name": "Resurrection",
+        "color": "#8f80ff",
+        "text": "white"
+      },
+      {
+        "id": 12,
+        "name": "The Return",
+        "color": "#80acff",
+        "text": "white"
+      }
+    ]
+  },
+  "timelines": [
+    {
+      "id": "02_Frodo",
+      "title": "Harry Potter and the Goblet of Fire",
+      "events": [
+        {
+          "date": "2024-48",
+          "duration": "6",
+          "desc": "Young scholar in city archives",
+          "category": "OrdinaryWorld",
+          "image": "harry",
+          "characters": [
+            "Harry"
+          ],
+          "categoryId": 1,
+          "location": "Under the Stairs"
+        },
+        {
+          "date": "3",
+          "duration": "1",
+          "desc": "Discovery of forbidden manuscript",
+          "category": "CallToAdventure",
+          "image": "ring",
+          "characters": [],
+          "categoryId": 2,
+          "location": ""
+        },
+        {
+          "date": "0",
+          "duration": "1",
+          "desc": "Fears punishment for knowledge",
+          "category": "RefusalOfTheCall",
+          "image": "",
+          "characters": [],
+          "categoryId": 3,
+          "location": ""
+        },
+        {
+          "date": "3d",
+          "duration": "2w",
+          "desc": "Eccentric professor offers help",
+          "category": "MeetingTheMentor",
+          "image": "hogwarts",
+          "characters": [
+            "Snape"
+          ],
+          "categoryId": 4,
+          "location": "Hogwarts"
+        },
+        {
+          "date": "1w",
+          "duration": "12",
+          "desc": "Journey to ancient ruins",
+          "category": "CrossingTheThreshold",
+          "image": "",
+          "characters": [],
+          "categoryId": 5,
+          "location": ""
+        },
+        {
+          "date": "0",
+          "duration": "1",
+          "desc": "Rival scholars and puzzles",
+          "category": "TestsAlliesEnemies",
+          "image": "",
+          "characters": [],
+          "categoryId": 6,
+          "location": ""
+        },
+        {
+          "date": "0",
+          "duration": "2",
+          "desc": "Descends into hidden catacombs",
+          "category": "ApproachToTheInmostCave",
+          "image": "",
+          "characters": [],
+          "categoryId": 7,
+          "location": ""
+        },
+        {
+          "date": "0",
+          "duration": "1",
+          "desc": "Confrontation with cursed guardian",
+          "category": "TheOrdeal",
+          "image": "",
+          "characters": [
+            "Ron"
+          ],
+          "categoryId": 8,
+          "location": ""
+        },
+        {
+          "date": "0",
+          "duration": "1",
+          "desc": "Gains secret of eternal flame",
+          "category": "Reward",
+          "image": "",
+          "characters": [
+            "Harry"
+          ],
+          "categoryId": 9,
+          "location": ""
+        },
+        {
+          "date": "0",
+          "duration": "1",
+          "desc": "Chased by collapsing ruins",
+          "category": "TheRoadBack",
+          "image": "",
+          "characters": [],
+          "categoryId": 10,
+          "location": ""
+        },
+        {
+          "date": "1",
+          "duration": "1",
+          "desc": "Uses knowledge to save companions",
+          "category": "Resurrection",
+          "image": "wand",
+          "characters": [],
+          "categoryId": 11,
+          "location": ""
+        },
+        {
+          "date": "1w",
+          "duration": "2w",
+          "desc": "Teaches wisdom to new generation",
+          "category": "TheReturn",
+          "image": "",
+          "characters": [],
+          "categoryId": 12,
+          "location": "Hogwarts"
+        }
+      ],
+      "image": "harrypotter",
+      "preferredGranularity": "day"
+    },
+    {
+      "id": "01_Harry",
+      "title": "Lord of the Rings",
+      "events": [
+        {
+          "date": "2024-50-3",
+          "duration": "4w",
+          "desc": "Living a quiet village life (Yay!)",
+          "category": "OrdinaryWorld",
+          "image": "frodo",
+          "characters": [
+            "Frodo"
+          ],
+          "categoryId": 1,
+          "location": "Hobbiton"
+        },
+        {
+          "date": "0",
+          "duration": "1",
+          "desc": "Mysterious stranger arrives",
+          "category": "CallToAdventure",
+          "image": "",
+          "characters": [],
+          "categoryId": 2,
+          "location": "Bag End"
+        },
+        {
+          "date": "1",
+          "duration": "4",
+          "desc": "Doubts and fear",
+          "category": "RefusalOfTheCall",
+          "image": "",
+          "characters": [],
+          "categoryId": 3,
+          "location": "Hobbiton"
+        },
+        {
+          "date": "0",
+          "duration": "1",
+          "desc": "Wise elder offers guidance",
+          "category": "MeetingTheMentor",
+          "image": "",
+          "characters": [
+            "Gandalf"
+          ],
+          "categoryId": 4,
+          "location": ""
+        },
+        {
+          "date": "0",
+          "duration": "3w",
+          "desc": "Leaves village to unknown lands",
+          "category": "CrossingTheThreshold",
+          "image": "",
+          "characters": [],
+          "categoryId": 5,
+          "location": ""
+        },
+        {
+          "date": "0",
+          "duration": "2w",
+          "desc": "Faces trials and gains companions",
+          "category": "TestsAlliesEnemies",
+          "image": "",
+          "characters": [],
+          "categoryId": 6,
+          "location": ""
+        },
+        {
+          "date": "0",
+          "duration": "4",
+          "desc": "Enters dark forest",
+          "category": "ApproachToTheInmostCave",
+          "image": "",
+          "characters": [
+            "Frodo"
+          ],
+          "categoryId": 7,
+          "location": ""
+        },
+        {
+          "date": "1",
+          "duration": "1",
+          "desc": "Battles the shadow beast",
+          "category": "TheOrdeal",
+          "image": "",
+          "characters": [
+            "Gandalf"
+          ],
+          "categoryId": 8,
+          "location": ""
+        },
+        {
+          "date": "0",
+          "duration": "1",
+          "desc": "Gains the sacred relic",
+          "category": "Reward",
+          "image": "",
+          "characters": [],
+          "categoryId": 9,
+          "location": ""
+        },
+        {
+          "date": "0",
+          "duration": "3",
+          "desc": "Pursued by enemies",
+          "category": "TheRoadBack",
+          "image": "sam",
+          "characters": [],
+          "categoryId": 10,
+          "location": ""
+        },
+        {
+          "date": "0",
+          "duration": "1",
+          "desc": "Final test of character",
+          "category": "Resurrection",
+          "image": "mordor",
+          "characters": [
+            "Sam"
+          ],
+          "categoryId": 11,
+          "location": "Mordor"
+        },
+        {
+          "date": "1w",
+          "duration": "3w",
+          "desc": "Brings knowledge to village",
+          "category": "TheReturn",
+          "image": "hobbiton",
+          "characters": [
+            "Frodo",
+            "Sam"
+          ],
+          "categoryId": 12,
+          "location": "Hobbiton"
+        }
+      ],
+      "image": "lordoftherings",
+      "preferredGranularity": "day"
+    },
+    {
+      "id": "tl_1759107743249",
+      "title": "Pokemon Red",
+      "events": [
+        {
+          "date": "2024-48-6",
+          "duration": "2",
+          "desc": "Move into new home",
+          "category": "OrdinaryWorld",
+          "image": "Pallet_Town",
+          "characters": [
+            "Red"
+          ],
+          "categoryId": 1,
+          "location": "Pallet Town"
+        },
+        {
+          "date": "0",
+          "duration": ".",
+          "desc": "Visit Professor Oak",
+          "category": "CallToAdventure",
+          "image": "oakslab",
+          "characters": [
+            "Red",
+            "Professor Oak"
+          ],
+          "categoryId": 2,
+          "location": "Oak's Lab"
+        },
+        {
+          "date": ".",
+          "duration": ".",
+          "desc": "Can't, got to stay in school",
+          "category": "RefusalOfTheCall",
+          "image": "",
+          "characters": [
+            "Red"
+          ],
+          "categoryId": 3,
+          "location": "Pallet Town"
+        },
+        {
+          "date": ".",
+          "duration": ".",
+          "desc": "Met Rival Blue",
+          "category": "MeetingTheMentor",
+          "image": "red",
+          "characters": [
+            "Red",
+            "Blue"
+          ],
+          "categoryId": 4,
+          "location": "Pallet Town"
+        },
+        {
+          "date": "1",
+          "duration": "2w",
+          "desc": "Starting off on my journey!",
+          "category": "CrossingTheThreshold",
+          "image": "",
+          "characters": [
+            "Red"
+          ],
+          "categoryId": 5,
+          "location": "Route 1"
+        }
+      ],
+      "image": "red",
+      "preferredGranularity": "day"
+    }
+  ],
+  "seasonal": [
+    {
+      "date": "01",
+      "id": "newyear",
+      "name": "New Year",
+      "desc": ""
+    },
+    {
+      "date": "09",
+      "id": "autumn",
+      "name": "Start of Autumn",
+      "desc": "Bring on the falling leaves!"
+    },
+    {
+      "date": "22",
+      "id": "winter",
+      "name": "Start of Winter",
+      "desc": "Let it snow..."
+    },
+    {
+      "date": "36",
+      "id": "spring",
+      "name": "Start of Spring",
+      "desc": "The birds and the bees."
+    },
+    {
+      "date": "03",
+      "id": "summer",
+      "name": "Summer Holiday",
+      "desc": ""
+    },
+    {
+      "date": "49",
+      "id": "summer",
+      "name": "Start of Summer",
+      "desc": "Let's hit the beach!"
+    },
+    {
+      "date": "2025-42",
+      "id": "event",
+      "name": "Static Festival",
+      "desc": "One-off Festival"
+    }
+  ]
+}

@@ -12,16 +12,22 @@
     <div class="meta" id="meta">Loading…</div>
     <div class="err" id="err"></div>
     <div class="actions">
-      <div class="seg" id="granularity">
+      <div class="seg" id="granularity" data-label="Timeline View">
         <button id="btn-gran-day"  type="button" aria-pressed="true">Day</button>
         <button id="btn-gran-week" type="button" aria-pressed="false">Week</button>
         <button id="btn-gran-year" type="button" aria-pressed="false">Year</button>
       </div>
+      <div class="seg" data-label="Light/Dark Mode">
       <button id="btn-theme" type="button">Light</button>
+      </div>
+      <div class="seg" data-label="Collapse Empty Days">
       <button id="btn-collapse" type="button">All Days</button>
-      <button id="toggle-editor" type="button">Edit</button>
-      <button id="btn-import" class="ghost" type="button">Import</button>
-      <button id="btn-download" type="button">Download</button>
+      </div>
+      <div class="seg" data-label="Manage Settings">
+        <button id="toggle-editor" type="button">Edit</button>
+        <button id="btn-import" class="ghost" type="button">Import</button>
+        <button id="btn-download" type="button">Download</button>
+      </div>
     </div>
   </header>
 
@@ -41,9 +47,9 @@
     // ===== SIZING (edit these) =====
     const GRID_SIZING = {
       horizontal: {
-        namesColWidth:  '160px',
-        weekColWidth:   'auto',
-        timelineRowMin: '120px',
+        namesColWidth:  '110px',
+        weekColWidth:   'minmax(var(--col-min, 140px), max-content)',
+        timelineRowMin: '40px',
         weekHeaderRow:  'auto',
       }
     };
@@ -181,6 +187,70 @@
       setPressed(gWeek, g === 'week');
       setPressed(gYear, g === 'year');
     }
+
+    function keyPrev(a) {
+      if (a.t === 'd') return { t: 'd', dayIdx: a.dayIdx - 1 };
+      if (a.t === 'w') {
+        const prevIdx = keySampleDayIdx(a) - 7; // Monday of previous week
+        return keyOf(prevIdx, 'week');
+      }
+      if (a.t === 'y') return { t: 'y', year: a.year - 1 };
+      return a;
+    }
+
+    function eventTouchesBin(ev, binKey, g) {
+      if (!binKey) return false;
+      const a = keyOf(ev.startIdx, g);
+      const b = keyOf(ev.startIdx + ev.durationDays - 1, g);
+      return keyCmp(a, binKey) <= 0 && keyCmp(binKey, b) <= 0;
+    }
+
+    function fragPosition(ev, binKey, g) {
+      const inCurr = eventTouchesBin(ev, binKey, g);
+      if (!inCurr) return null; // shouldn't happen
+      const inPrev = eventTouchesBin(ev, keyPrev(binKey), g);
+      const inNext = eventTouchesBin(ev, keyNext(binKey), g);
+      if (!inPrev && !inNext) return 'single';
+      if (!inPrev &&  inNext) return 'start';
+      if ( inPrev && !inNext) return 'end';
+      return 'middle';
+    }
+
+
+    // Assign vertical lanes to overlapping BAR events for the current granularity.
+    // Returns a Map(ev -> lane) and total lane count.
+    function assignBarLanes(bars, granularity) {
+      // Represent each bar by its inclusive bin interval [a..b] at this granularity
+      const items = bars.map(ev => {
+        const a = keyOf(ev.startIdx, granularity);
+        const b = keyOf(ev.startIdx + ev.durationDays - 1, granularity);
+        return { ev, a, b };
+      });
+
+      // Sort: earlier start first; ties -> longer first (helps pack tightly)
+      items.sort((x, y) => {
+        const c = keyCmp(x.a, y.a);
+        if (c) return c;
+        const d = keyCmp(y.b, x.b);
+        return d;
+      });
+
+      const lastEndPerLane = [];       // array of "b" keys (end) per lane
+      const laneOfEv = new Map();
+
+      for (const it of items) {
+        let lane = 0;
+        // Find first lane whose last end key is strictly before this start key
+        while (lane < lastEndPerLane.length && keyCmp(it.a, lastEndPerLane[lane]) <= 0) {
+          lane++;
+        }
+        lastEndPerLane[lane] = it.b;
+        laneOfEv.set(it.ev, lane);
+      }
+
+      return { laneOfEv, lanesCount: lastEndPerLane.length || 1 };
+    }
+
 
     function toggleTheme() {
       if (!settingsState.ui) settingsState.ui = { ...DEFAULT_UI };
@@ -1278,13 +1348,24 @@
         seasonalByDay.get(m.dayIdx).push(m);
       }
 
-      // Active days for day view (for collapse)
+      // Active days for day view (for collapse) — ignore Year-pref timelines
       const activeDayCounts = new Map();
-      for (const tl of timelines) for (const ev of tl.events) {
-        const a = Math.min(ev.startIdx, ev.startIdx + ev.durationDays);
-        const b = Math.max(ev.startIdx, ev.startIdx + ev.durationDays);
-        for (let i = a; i < b; i++) activeDayCounts.set(i, (activeDayCounts.get(i) || 0) + 1);
+      if (g === 'day') {
+        for (const tl of timelines) {
+          const pref = (tl.preferredGranularity || '').toLowerCase();
+          if (pref === 'year') continue; // 🔑 ignore Year timelines in Day view collapse
+
+          for (const ev of tl.events) {
+            const a = Math.min(ev.startIdx, ev.startIdx + ev.durationDays);
+            const b = Math.max(ev.startIdx, ev.startIdx + ev.durationDays);
+            for (let i = a; i < b; i++) {
+              activeDayCounts.set(i, (activeDayCounts.get(i) || 0) + 1);
+            }
+          }
+        }
       }
+
+
 
       // Build bin keys across range
       const firstKey = keyOf(minIdx, g);
@@ -1305,6 +1386,9 @@
         }
         // For week/year: check any event overlaps this bin
         for (const tl of timelines) {
+          const pref = (tl.preferredGranularity || '').toLowerCase();
+          if (g === 'week' && pref === 'year') continue; // 🔑 ignore Year timelines in Week view collapse
+
           for (const ev of tl.events) {
             const aKey = keyOf(ev.startIdx, g);
             const bKey = keyOf(ev.startIdx + ev.durationDays - 1, g);
@@ -1314,21 +1398,37 @@
         return false;
       }
 
+
+      // Build bin keys across range ... (unchanged above)
+
       for (const k of keyList) {
-        // Day view inserts seasonal columns before the day column (as before)
         if (g === 'day') {
           const d = k.dayIdx;
+
+          // collapse = only keep days that have activity
+          const addDay = collapse ? activeDayCounts.has(d) : true;
+          if (!addDay) continue;
+
+          // Only insert seasonal columns if the day is being shown
           const seas = seasonalByDay.get(d);
           if (showSeasonal && seas && seas.length) {
-            for (const m of seas) columns.push({ type: 'seasonal', key: { t:'d', dayIdx: d }, data: m });
+            for (const m of seas) {
+              columns.push({ type: 'seasonal', key: { t:'d', dayIdx: d }, data: m });
+            }
           }
-          const addDay = collapse ? activeDayCounts.has(d) : true;
-          if (addDay) { colIndexByKey.set(JSON.stringify(k), columns.length); columns.push({ type: 'bin', key: k }); }
+
+          // Now the actual day column
+          colIndexByKey.set(JSON.stringify(k), columns.length);
+          columns.push({ type: 'bin', key: k });
         } else {
           const addBin = collapse ? binHasAnyEvent(k) : true;
-          if (addBin) { colIndexByKey.set(JSON.stringify(k), columns.length); columns.push({ type: 'bin', key: k }); }
+          if (addBin) {
+            colIndexByKey.set(JSON.stringify(k), columns.length);
+            columns.push({ type: 'bin', key: k });
+          }
         }
       }
+
 
       // Grid templates
       grid.style.gridTemplateRows = [
@@ -1445,88 +1545,252 @@
       // Build map of chips per row/bin
       const chipsByRowBin = timelines.map(() => new Map()); // row -> Map(JSON(key) -> [ev])
 
-      // Placement
+      // ---- Collect chips into their bin for each row ----
       for (let r = 0; r < timelines.length; r++) {
         const tl = timelines[r];
-        const gridRow = 3 + r;
+        const binMap = chipsByRowBin[r];
 
-        // First, collect chips
         for (const ev of tl.events) {
           if (!isChip(ev)) continue;
-          const k = keyOf(ev.startIdx, g);
-          const keyStr = JSON.stringify(k);
-          if (!chipsByRowBin[r].has(keyStr)) chipsByRowBin[r].set(keyStr, []);
-          chipsByRowBin[r].get(keyStr).push(ev);
+
+          // Drop the chip into the bin that contains its start
+          const binKey = (g === 'day') ? { t: 'd', dayIdx: ev.startIdx } : keyOf(ev.startIdx, g);
+          const keyStr = JSON.stringify(binKey);
+
+          // If this bin wasn’t rendered due to collapse (very unlikely), skip gracefully
+          if (!columns.some(col => col.type === 'bin' && JSON.stringify(col.key) === keyStr)) continue;
+
+          if (!binMap.has(keyStr)) binMap.set(keyStr, []);
+          binMap.get(keyStr).push(ev);
         }
+      }
 
-        // Bars placement
-        for (const ev of tl.events) {
-          if (isChip(ev)) continue; // handled in bundle
+      // ---------- PLACEMENT ----------
+      if (g === 'day') {
+        // === ORIGINAL DAY PATH (unchanged) ===
 
-          const startIdx = ev.startIdx;
-          const endExclusive = ev.startIdx + ev.durationDays;
-          const aKey = keyOf(startIdx, g);
-          const bKey = keyOf(endExclusive - 1, g);
+        for (let r = 0; r < timelines.length; r++) {
+          const tl = timelines[r];
+          const gridRow = 3 + r;
 
-          // find first/last visible key present in columns
-          let firstVis = null, lastVis = null;
-          for (const col of columns) {
-            if (col.type !== 'bin') continue;
-            if (keyCmp(col.key, aKey) < 0) continue;
-            if (keyCmp(col.key, bKey) > 0) break;
-            if (!firstVis) firstVis = col.key; lastVis = col.key;
+          // Bars placement (day view uses real spanning)
+          const bars = tl.events.filter(ev => !isChip(ev));
+          const { laneOfEv, lanesCount } = assignBarLanes(bars, g); // harmless in day
+
+          for (const ev of tl.events) {
+            if (isChip(ev)) continue;
+
+            const startIdx = ev.startIdx;
+            const endExclusive = ev.startIdx + ev.durationDays;
+            const aKey = keyOf(startIdx, g);
+            const bKey = keyOf(endExclusive - 1, g);
+
+            // find first/last visible day columns
+            let firstVis = null, lastVis = null;
+            for (const col of columns) {
+              if (col.type !== 'bin') continue;
+              if (keyCmp(col.key, aKey) < 0) continue;
+              if (keyCmp(col.key, bKey) > 0) break;
+              if (!firstVis) firstVis = col.key; lastVis = col.key;
+            }
+            if (!firstVis || !lastVis) continue;
+
+            // span = number of visible day columns between firstVis..lastVis inclusive
+            let span = 0; let colStartIdx = -1;
+            for (let c = 0; c < columns.length; c++) {
+              const col = columns[c];
+              if (col.type !== 'bin') continue;
+              if (keyCmp(col.key, firstVis) >= 0 && keyCmp(col.key, lastVis) <= 0) {
+                if (colStartIdx === -1) colStartIdx = c;
+                span++;
+              }
+            }
+            if (span <= 0 || colStartIdx < 0) continue;
+            const gridColStart = 2 + colStartIdx;
+
+            const el = buildEventEl(ev, /*inBundle=*/false, gridRow, gridColStart, span, tl.preferredGranularity);
+            const lane = laneOfEv.get(ev) || 0;
+            el.style.setProperty('--lane', lane);
+            el.style.setProperty('--lanes', lanesCount);
+            grid.appendChild(el);
           }
-          if (!firstVis || !lastVis) continue;
 
-          // span length = count of visible bin columns between firstVis..lastVis inclusive
-          let span = 0; let colStartIdx = -1;
+          // Chip bundles per day-bin (your existing bundle UI)
           for (let c = 0; c < columns.length; c++) {
             const col = columns[c];
             if (col.type !== 'bin') continue;
-            if (keyCmp(col.key, firstVis) >= 0 && keyCmp(col.key, lastVis) <= 0) {
-              if (colStartIdx === -1) colStartIdx = c;
-              span++;
+            const keyStr = JSON.stringify(col.key);
+            const list = chipsByRowBin[r].get(keyStr);
+            if (!list || list.length === 0) continue;
+
+            list.sort((a,b)=> a.startIdx - b.startIdx);
+
+            const host = document.createElement('div');
+            host.className = `bundle-host bundle-host--${g}`;
+            host.style.gridRow = `${gridRow} / ${gridRow + 1}`;
+            host.style.gridColumn = `${2 + c} / ${3 + c}`;
+
+            const cap = settingsState?.ui?.maxChipsPerBin ?? 5;
+            const toShow = list.slice(0, cap);
+            const remain = list.length - toShow.length;
+
+            for (const ev of toShow) host.appendChild(buildEventEl(ev, /*inBundle=*/true, null, null, null, tl.preferredGranularity));
+            if (remain > 0) {
+              const more = document.createElement('div');
+              more.className = 'event event--micro event--more';
+              const inner = document.createElement('div'); inner.className = 'event-sticky';
+              const title = document.createElement('div'); title.className = 'desc'; title.textContent = `+${remain} more`;
+              inner.appendChild(title); more.appendChild(inner); host.appendChild(more);
             }
+            grid.appendChild(host);
           }
-          if (span <= 0 || colStartIdx < 0) continue;
-          const gridColStart = 2 + colStartIdx;
-
-          grid.appendChild(buildEventEl(ev, /*inBundle=*/false, gridRow, gridColStart, span));
         }
+      } else {
+        // === NEW SEGMENTED BIN PATH FOR WEEK/YEAR ===
 
-        // Chips bundle placement (per bin)
-        for (let c = 0; c < columns.length; c++) {
-          const col = columns[c];
-          if (col.type !== 'bin') continue;
-          const keyStr = JSON.stringify(col.key);
-          const list = chipsByRowBin[r].get(keyStr);
-          if (!list || list.length === 0) continue;
+        for (let r = 0; r < timelines.length; r++) {
+          const tl = timelines[r];
+          const gridRow = 3 + r;
 
-          // sort chips by startIdx then original order
-          list.sort((a,b)=> a.startIdx - b.startIdx);
+          // SPECIAL-CASE: In Week view, show year-pref timelines as spanning bars (not segmented)
+          if (g === 'week' && (tl.preferredGranularity === 'year')) {
+            // 1) Bars: span across visible week columns
+            const bars = tl.events.filter(ev => !isChip(ev));
+            const { laneOfEv, lanesCount } = assignBarLanes(bars, g);
 
-          const host = document.createElement('div');
-          host.className = `bundle-host bundle-host--${g}`;
-          host.style.gridRow = `${gridRow} / ${gridRow + 1}`;
-          host.style.gridColumn = `${2 + c} / ${3 + c}`;
+            for (const ev of bars) {
+              const aKey = keyOf(ev.startIdx, g);
+              const bKey = keyOf(ev.startIdx + ev.durationDays - 1, g);
 
-          const cap = settingsState?.ui?.maxChipsPerBin ?? 5;
-          const toShow = list.slice(0, cap);
-          const remain = list.length - toShow.length;
+              let firstVis = null, lastVis = null;
+              let span = 0, colStartIdx = -1;
+              for (let c = 0; c < columns.length; c++) {
+                const col = columns[c];
+                if (col.type !== 'bin') continue;
+                if (keyCmp(col.key, aKey) < 0) continue;
+                if (keyCmp(col.key, bKey) > 0) break;
+                if (!firstVis) firstVis = col.key;
+                lastVis = col.key;
+                if (colStartIdx === -1) colStartIdx = c;
+                span++;
+              }
+              if (span > 0 && colStartIdx >= 0) {
+                const gridColStart = 2 + colStartIdx;
+                const el = buildEventEl(ev, /*inBundle=*/false, gridRow, gridColStart, span, tl.preferredGranularity);
+                const lane = laneOfEv.get(ev) || 0;
+                el.style.setProperty('--lane', lane);
+                el.style.setProperty('--lanes', lanesCount);
+                grid.appendChild(el);
+              }
+            }
 
-          for (const ev of toShow) {
-            host.appendChild(buildEventEl(ev, /*inBundle=*/true));
+            // 2) Chips: bundle in each week bin (use the existing chipsByRowBin map)
+            for (let c = 0; c < columns.length; c++) {
+              const col = columns[c];
+              if (col.type !== 'bin') continue;
+              const keyStr = JSON.stringify(col.key);
+              const list = chipsByRowBin[r].get(keyStr);
+              if (!list || !list.length) continue;
+
+              list.sort((a,b)=> a.startIdx - b.startIdx);
+              const host = document.createElement('div');
+              host.className = `bundle-host bundle-host--${g}`;
+              host.style.gridRow = `${gridRow} / ${gridRow + 1}`;
+              host.style.gridColumn = `${2 + c} / ${3 + c}`;
+
+              const cap = settingsState?.ui?.maxChipsPerBin ?? 5;
+              const toShow = list.slice(0, cap);
+              const remain = list.length - toShow.length;
+              for (const ev of toShow) {
+                host.appendChild(buildEventEl(ev, /*inBundle=*/true, null, null, null, tl.preferredGranularity));
+              }
+              if (remain > 0) {
+                const more = document.createElement('div');
+                more.className = 'event event--micro event--more';
+                const inner = document.createElement('div'); inner.className = 'event-sticky';
+                const title = document.createElement('div'); title.className = 'desc'; title.textContent = `+${remain} more`;
+                inner.appendChild(title); more.appendChild(inner); host.appendChild(more);
+              }
+              grid.appendChild(host);
+            }
+            continue; // skip segmented path for this row
           }
-          if (remain > 0) {
-            const more = document.createElement('div');
-            more.className = 'event event--micro event--more';
-            const inner = document.createElement('div'); inner.className = 'event-sticky';
-            const title = document.createElement('div'); title.className = 'desc'; title.textContent = `+${remain} more`;
-            inner.appendChild(title); more.appendChild(inner); host.appendChild(more);
+
+          // Track slot continuity across bins for bars
+          let prevSlots = new Map(); // ev -> slot index
+
+          for (let c = 0; c < columns.length; c++) {
+            const col = columns[c];
+            if (col.type !== 'bin') continue;
+
+            // Build current bin’s items list
+            const items = [];
+            for (const ev of tl.events) {
+              if (isChip(ev)) {
+                // chip belongs only to its start bin
+                const k = keyOf(ev.startIdx, g);
+                if (keyEq(k, col.key)) items.push({ ev, kind: 'chip' });
+              } else {
+                const a = keyOf(ev.startIdx, g);
+                const b = keyOf(ev.startIdx + ev.durationDays - 1, g);
+                if (keyCmp(a, col.key) <= 0 && keyCmp(col.key, b) <= 0) {
+                  items.push({ ev, kind: 'bar' });
+                }
+              }
+            }
+            if (!items.length) { prevSlots = new Map(); continue; }
+
+            // Stable slotting: keep same slot from previous bin when possible
+            const slots = new Map();  // ev -> slot
+            const used = [];
+
+            for (const it of items) {
+              const prev = prevSlots.get(it.ev);
+              if (prev != null && !used[prev]) { slots.set(it.ev, prev); used[prev] = true; }
+            }
+            let sIdx = 0;
+            for (const it of items) {
+              if (slots.has(it.ev)) continue;
+              while (used[sIdx]) sIdx++;
+              slots.set(it.ev, sIdx); used[sIdx] = true;
+            }
+            const slotsCount = used.length || 1;
+
+            // Host for this bin
+            const host = document.createElement('div');
+            host.className = `bin-host bin-host--${g}`;
+            host.style.gridRow = `${gridRow} / ${gridRow + 1}`;
+            host.style.gridColumn = `${2 + c} / ${3 + c}`;
+            host.style.setProperty('--slots', slotsCount);
+            grid.appendChild(host);
+
+            // Render fragments in their slots
+            for (const it of items) {
+              const el = buildEventEl(it.ev, /*inBundle=*/true, null, null, null, tl.preferredGranularity);
+              el.classList.add(it.kind === 'bar' ? 'bar-frag' : 'chip-frag');
+              const pref = tl.preferredGranularity || '';
+              if (pref) el.classList.add(`granularity-pref-${pref}`);
+              el.style.setProperty('--slot', slots.get(it.ev) || 0);
+
+              if (it.kind === 'bar') {
+                const pos = fragPosition(it.ev, col.key, g); // 'single' | 'start' | 'middle' | 'end'
+                if (pos) el.classList.add(`frag--${pos}`);
+                // (optional) quick debug:
+                // el.dataset.pos = pos;
+              }
+
+              host.appendChild(el);
+            }
+
+
+            // Carry forward only bars (chips end in this bin)
+            const nextPrev = new Map();
+            for (const it of items) if (it.kind === 'bar') nextPrev.set(it.ev, slots.get(it.ev));
+            prevSlots = nextPrev;
           }
-          grid.appendChild(host);
         }
       }
+
 
       // Meta + year tracker
       const firstL = (function(){const {year,week,day}=idxToISODay(minIdx); return `${year}-W${String(week).padStart(2,'0')}-${day}`})();
@@ -1535,9 +1799,10 @@
       setupCornerYearTrackerHorizontal(grid, corner);
     }
 
-    function buildEventEl(ev, inBundle, gridRow, gridColStart, span) {
+    function buildEventEl(ev, inBundle, gridRow, gridColStart, span, prefGran) {
       const el = document.createElement('div');
       el.className = 'event';
+      if (prefGran) el.classList.add(`granularity-pref-${prefGran}`);
 
       const catId   = toCatId(ev.categoryId);
       const catName = getCatName(catId);
