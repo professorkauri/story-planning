@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <title>Pokemon Research</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        :root {
+            --bg: #0f1220;
+            --panel: #171a2b;
+            --panel-2: #1f2440;
+            --accent: #5bd6ff;
+            --muted: #9aa0b4;
+            --text: #e6e9f2;
+            --danger: #ff6b6b;
+            --ok: #54e38e;
+            --border: #2a3158;
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+            --radius: 14px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            color: var(--text);
+            font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+            background: linear-gradient(180deg, #0b0e1a, #0f1220 30%, #0f1220);
+            min-height: 100dvh;
+        }
+
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: rgba(15, 18, 32, 0.85);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid var(--border);
+            padding: 10px 16px;
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .brand {
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            font-size: 18px;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .search-box input[type="text"] {
+            width: clamp(220px, 40vw, 520px);
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--panel);
+            color: var(--text);
+            outline: none;
+        }
+
+        .btn {
+            border: 1px solid var(--border);
+            background: var(--panel-2);
+            color: var(--text);
+            padding: 10px 12px;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            filter: brightness(1.08);
+        }
+
+        .btn.primary {
+            border-color: #3e7ea6;
+            background: #1b2a44;
+            color: #d5ecff;
+        }
+
+        .btn.accent {
+            background: #1a2e3d;
+            border-color: #2a536b;
+            color: var(--accent);
+        }
+
+        main {
+            padding: 24px 16px 64px;
+        }
+
+        .placeholder {
+            border: 1px dashed var(--border);
+            border-radius: var(--radius);
+            padding: 40px;
+            background: rgba(23, 26, 43, 0.6);
+            text-align: center;
+            color: var(--muted);
+        }
+
+        .overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            display: none;
+            background: rgba(5, 6, 10, 0.6);
+            backdrop-filter: blur(2px);
+            align-items: center;
+            justify-content: center;
+            padding: clamp(8px, 2vw, 24px);
+        }
+
+        .overlay.open {
+            display: flex;
+        }
+
+        .admin-window {
+            width: min(1100px, 96vw);
+            height: min(86dvh, 860px);
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            display: grid;
+            grid-template-rows: auto 1fr;
+            overflow: hidden;
+        }
+
+        .admin-header {
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: 8px;
+            align-items: center;
+            padding: 12px;
+            background: #121528;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .admin-title {
+            font-weight: 700;
+        }
+
+        .segmented {
+            display: inline-flex;
+            background: var(--panel-2);
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            padding: 4px;
+            gap: 4px;
+        }
+
+        .segmented .seg {
+            padding: 8px 12px;
+            border-radius: 999px;
+            cursor: pointer;
+            color: var(--muted);
+        }
+
+        .segmented .seg.active {
+            color: var(--text);
+            background: #1f2648;
+            border: 1px solid #2a3158;
+        }
+
+        .admin-body {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 0;
+            min-height: 0;
+        }
+
+        .left-col {
+            border-right: 1px solid var(--border);
+            background: #121528;
+            display: grid;
+            grid-template-rows: auto auto 1fr;
+            min-height: 0;
+        }
+
+        .left-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .left-search {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .left-search input {
+            width: 100%;
+            padding: 9px 10px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--panel);
+            color: var(--text);
+            outline: none;
+        }
+
+        .list {
+            overflow: auto;
+        }
+
+        .list-item {
+            padding: 10px 12px;
+            border-bottom: 1px solid rgba(42, 49, 88, 0.6);
+            cursor: pointer;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .list-item:hover {
+            background: rgba(42, 49, 88, 0.22);
+        }
+
+        .list-item.active {
+            background: rgba(90, 214, 255, 0.12);
+        }
+
+        .right-col {
+            min-width: 0;
+            display: grid;
+            grid-template-rows: auto 1fr;
+            min-height: 0;
+        }
+
+        .right-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+            background: #141935;
+        }
+
+        .right-body {
+            padding: 16px;
+            overflow: auto;
+            display: grid;
+            gap: 16px;
+        }
+
+        .field-grid {
+            display: grid;
+            gap: 12px;
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .field {
+            display: grid;
+            gap: 6px;
+        }
+
+        .field label {
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .field input[type="text"],
+        .field input[type="date"],
+        .field input[type="number"],
+        .field input[type="color"],
+        .field select,
+        .field textarea {
+            background: var(--panel-2);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 12px;
+            outline: none;
+            width: 100%;
+        }
+
+        .field textarea {
+            min-height: 90px;
+            resize: vertical;
+        }
+
+        .row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .img-preview {
+            width: 140px;
+            height: 140px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: #10142a center/contain no-repeat;
+        }
+
+        .subsection {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: #121528;
+            padding: 12px;
+        }
+
+        .subsection h4 {
+            margin: 0 0 10px;
+            font-size: 15px;
+        }
+
+        .pokedex-grid {
+            display: grid;
+            gap: 12px;
+        }
+
+        .pokedex-card {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: #171a2b;
+            padding: 12px;
+            display: grid;
+            gap: 10px;
+        }
+
+        .muted {
+            color: var(--muted);
+        }
+
+        .note {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .pill {
+            font-size: 12px;
+            color: #cbe8ff;
+            background: #112638;
+            border: 1px solid #274b66;
+            border-radius: 999px;
+            padding: 4px 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="brand">Pokemon Research</div>
+        <div class="search-box">
+            <input type="text" placeholder="Search Pokémon, categories & entries (coming soon)" disabled />
+            <button class="btn" disabled>Search</button>
+        </div>
+        <div style="text-align:right">
+            <button id="openAdmin" class="btn accent">Admin</button>
+        </div>
+    </header>
+
+    <main>
+        <div class="placeholder">
+            <p><strong>Welcome!</strong> Use the Admin to manage Pokémon, Games, and Pokédex entries.</p>
+            <p>This starter auto-loads <code>data.json</code> from the same folder.</p>
+        </div>
+    </main>
+
+    <!-- Admin Overlay -->
+    <div class="overlay" id="overlay">
+        <div class="admin-window" role="dialog" aria-modal="true" aria-label="Pokemon Data Admin">
+            <div class="admin-header">
+                <div class="admin-title">Pokemon Data Admin</div>
+                <div class="segmented" id="viewTabs" role="tablist" aria-label="View Switcher">
+                    <div class="seg active" role="tab" aria-selected="true" data-view="pokemon">Pokemon</div>
+                    <div class="seg" role="tab" aria-selected="false" data-view="games">Games</div>
+                </div>
+                <div class="toolbar">
+                    <span class="pill" id="datasetSummary">0 Pokémon • 0 Games</span>
+                    <input id="importInput" type="file" accept="application/json" style="display:none;" />
+                    <button id="importBtn" class="btn" title="Import data.json">Import JSON</button>
+                    <button id="downloadBtn" class="btn primary" title="Download all data as JSON">Download
+                        JSON</button>
+                    <button id="closeAdmin" class="btn">Close</button>
+                </div>
+            </div>
+
+            <div class="admin-body">
+                <div class="left-col">
+                    <div class="left-header">
+                        <div id="leftTitle">Pokemon</div>
+                        <div class="row">
+                            <button id="sortBtn" class="btn" title="Toggle sort mode">A–Z</button>
+                            <button id="addBtn" class="btn" title="Add new">+</button>
+                        </div>
+                    </div>
+                    <div class="left-search">
+                        <input id="leftSearch" type="text" placeholder="Search…" />
+                    </div>
+                    <div id="leftList" class="list" role="listbox" aria-label="Items list"></div>
+                </div>
+
+                <div class="right-col">
+                    <div class="right-header">
+                        <div id="rightTitle" class="muted">No item selected</div>
+                        <div class="toolbar">
+                            <button id="deleteBtn" class="btn" title="Delete selected"
+                                style="display:none;">Delete</button>
+                        </div>
+                    </div>
+                    <div class="right-body" id="rightBody">
+                        <div class="muted">Select or add an item to edit its details.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* =======================
+           Data Model & Utilities
+           ======================= */
+
+        const TYPE_OPTIONS = [
+            "", "Normal", "Fire", "Water", "Electric", "Grass", "Ice", "Fighting", "Poison",
+            "Ground", "Flying", "Psychic", "Bug", "Rock", "Ghost", "Dragon", "Dark", "Steel", "Fairy"
+        ];
+
+        const DEFAULT_DATA = {
+            games: [],
+            pokemon: []
+        };
+
+        let pokemonSortMode = "AZ"; // "AZ" or "09"
+        let gameSortMode = "DATE";  // "DATE" or "AZ"
+
+        let DATA = structuredClone(DEFAULT_DATA);
+        let activeView = "pokemon";
+        let selectedId = null;
+        let leftFilter = "";
+
+        /** Load data.json from same folder; tolerate NaN by sanitising before parse */
+        async function loadInitialData() {
+            try {
+                const res = await fetch("./data.json?cb=" + Date.now(), { cache: "no-store" });
+                if (!res.ok) throw new Error("HTTP " + res.status);
+                let raw = await res.text();
+
+                // Try parse; if it fails, sanitise and try again
+                let json;
+                try {
+                    json = JSON.parse(raw);
+                } catch {
+                    raw = fixJsonText(raw);
+                    json = JSON.parse(raw);
+                }
+
+                // Accept either an array (pokemon list) or { pokemon, games }
+                if (Array.isArray(json)) {
+                    DATA = normalizeData({ pokemon: json, games: [] });
+                } else {
+                    DATA = normalizeData(json);
+                }
+            } catch (e) {
+                console.warn("Could not auto-load data.json. Use Import JSON if opening via file://", e);
+            }
+            updateDatasetSummary();
+        }
+
+
+        /** Replace invalid JSON tokens (like NaN) and normalise root shape */
+        function fixJsonText(text) {
+            // Convert any occurrences of `: NaN` to `: null`
+            // (works even with spaces: ":    NaN")
+            text = text.replace(/:\s*NaN\b/g, ": null");
+
+            // Optionally, strip trailing all-null objects (common artifact from CSV→JSON)
+            // (safe guard: removes objects where all values are null)
+            try {
+                const tmp = JSON.parse(text);
+                if (Array.isArray(tmp)) {
+                    const cleaned = tmp.filter(obj => {
+                        if (obj && typeof obj === "object") {
+                            return Object.values(obj).some(v => v !== null && v !== "" && v !== undefined);
+                        }
+                        return true;
+                    });
+                    return JSON.stringify(cleaned);
+                }
+            } catch (_) {
+                // ignore; we'll return the text as-is and let the loader try again
+            }
+            return text;
+        }
+
+
+        /** Normalise incoming JSON structure (trims values, fixes sloppy keys) */
+        function normalizeData(json) {
+            const t = (v) => String(v ?? "").trim();
+
+            const out = { games: [], pokemon: [] };
+
+            if (Array.isArray(json.games)) {
+                out.games = json.games.map(g => ({
+                    id: t(g.id ?? crypto.randomUUID()),
+                    title: t(g.title),
+                    releaseDate: t(g.releaseDate),
+                    console: t(g.console),
+                    colorHex: t(g.colorHex || "#888888"),
+                    imageSlug: t(g.imageSlug) // used only for Games
+                }));
+            }
+
+            if (Array.isArray(json.pokemon)) {
+                out.pokemon = json.pokemon.map(p => ({
+                    id: t(p.id ?? p.ID ?? crypto.randomUUID()),
+                    name: t(p.name ?? p.Name ?? p[" Name"]),
+                    form: t(p.form ?? p.Form ?? p[" Form"]),
+                    species: t(p.species ?? p.Species ?? p[" Species"]),
+                    evolution: t(p.evolution ?? p.Evolution),
+                    type1: t(p.type1 ?? p.Type1 ?? p[" Type1"]),
+                    type2: t(p.type2 ?? p.Type2 ?? p[" Type2"]),
+                    hp: numberOrNull((p.hp ?? p.HP)),
+                    attack: numberOrNull((p.attack ?? p.Attack)),
+                    defense: numberOrNull((p.defense ?? p.Defense)),
+                    spAtk: numberOrNull((p.spAtk ?? p["Sp Atk"] ?? p[" Sp Atk"])),
+                    spDef: numberOrNull((p.spDef ?? p["Sp Def"] ?? p[" Sp Def"])),
+                    speed: numberOrNull((p.speed ?? p.Speed)),
+                    pokedex: (typeof p.pokedex === "object" && p.pokedex !== null) ? p.pokedex : {}
+                }));
+            }
+
+            return out;
+        }
+
+        function numberOrNull(v) {
+            const n = Number(v);
+            return isNaN(n) ? null : n;
+        }
+
+        /** Download current DATA as data.json */
+        function downloadJSON() {
+            const blob = new Blob([JSON.stringify(DATA, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url; a.download = "data.json";
+            document.body.appendChild(a); a.click(); a.remove();
+            URL.revokeObjectURL(url);
+        }
+
+        function byReleaseDateAsc(a, b) {
+            const da = Date.parse(a.releaseDate || "1970-01-01");
+            const db = Date.parse(b.releaseDate || "1970-01-01");
+            return (isNaN(da) ? 0 : da) - (isNaN(db) ? 0 : db);
+        }
+        function safeHtml(str) {
+            return String(str ?? "").replace(/[&<>"']/g, s => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[s]));
+        }
+        function updateDatasetSummary() {
+            document.getElementById("datasetSummary").textContent =
+                `${DATA.pokemon.length} Pokémon • ${DATA.games.length} Games`;
+        }
+
+        /** Preload image to check existence. Cache-bust to force refresh as user types. */
+        function setPreviewIfExists(url, el) {
+            if (!url) { el.style.backgroundImage = "none"; return; }
+            const testUrl = url + (url.includes("?") ? "&" : "?") + "cb=" + Date.now();
+            const img = new Image();
+            img.onload = () => { el.style.backgroundImage = `url("${testUrl}")`; };
+            img.onerror = () => { el.style.backgroundImage = "none"; };
+            img.src = testUrl;
+        }
+
+        /** From Pokémon ID, build filename. Numeric IDs are zero-padded to 4. */
+        function pkmnImageNameFromId(id) {
+            const s = String(id ?? "").trim();
+            if (/^\d+$/.test(s)) return s.padStart(4, "0");
+            return s; // fallback for non-numeric IDs
+        }
+
+        /* =======================
+           UI Wiring
+           ======================= */
+
+        const overlay = document.getElementById("overlay");
+        const openAdmin = document.getElementById("openAdmin");
+        const closeAdmin = document.getElementById("closeAdmin");
+        const viewTabs = document.getElementById("viewTabs");
+        const leftTitle = document.getElementById("leftTitle");
+        const rightTitle = document.getElementById("rightTitle");
+        const leftList = document.getElementById("leftList");
+        const leftSearch = document.getElementById("leftSearch");
+        const addBtn = document.getElementById("addBtn");
+        const deleteBtn = document.getElementById("deleteBtn");
+        const rightBody = document.getElementById("rightBody");
+        const downloadBtn = document.getElementById("downloadBtn");
+        const importBtn = document.getElementById("importBtn");
+        const importInput = document.getElementById("importInput");
+        const sortBtn = document.getElementById("sortBtn");
+
+        sortBtn.addEventListener("click", () => {
+            if (activeView === "pokemon") {
+                pokemonSortMode = (pokemonSortMode === "AZ") ? "09" : "AZ";
+                sortBtn.textContent = (pokemonSortMode === "AZ") ? "A–Z" : "0–9";
+            } else {
+                gameSortMode = (gameSortMode === "AZ") ? "DATE" : "AZ";
+                sortBtn.textContent = (gameSortMode === "AZ") ? "A–Z" : "Date";
+            }
+            renderLeftList();
+        });
+
+
+        openAdmin.addEventListener("click", () => {
+            overlay.classList.add("open");
+            renderView();
+        });
+        closeAdmin.addEventListener("click", () => {
+            overlay.classList.remove("open");
+        });
+
+        downloadBtn.addEventListener("click", downloadJSON);
+
+        // Import JSON file
+        importBtn.addEventListener("click", () => importInput.click());
+        importInput.addEventListener("change", async () => {
+            const file = importInput.files?.[0];
+            if (!file) return;
+            try {
+                let text = await file.text();
+
+                // First attempt parse
+                let json;
+                try {
+                    json = JSON.parse(text);
+                } catch {
+                    // Sanitise and retry
+                    text = fixJsonText(text);
+                    json = JSON.parse(text);
+                }
+
+                // Accept array or object
+                if (Array.isArray(json)) {
+                    DATA = normalizeData({ pokemon: json, games: [] });
+                } else {
+                    DATA = normalizeData(json);
+                }
+
+                selectedId = null;
+                updateDatasetSummary();
+                renderView();
+            } catch (e) {
+                alert("Failed to import JSON: " + (e?.message || e));
+            } finally {
+                importInput.value = "";
+            }
+        });
+
+
+
+        viewTabs.addEventListener("click", (e) => {
+            const seg = e.target.closest(".seg");
+            if (!seg) return;
+            for (const child of viewTabs.querySelectorAll(".seg")) {
+                child.classList.remove("active");
+                child.setAttribute("aria-selected", "false");
+            }
+            seg.classList.add("active");
+            seg.setAttribute("aria-selected", "true");
+            activeView = seg.dataset.view;
+            sortBtn.textContent = activeView === "pokemon"
+                ? (pokemonSortMode === "AZ" ? "A–Z" : "0–9")
+                : (gameSortMode === "AZ" ? "A–Z" : "Date");
+
+            selectedId = null;
+            leftFilter = "";
+            leftSearch.value = "";
+            renderView();
+        });
+
+        leftSearch.addEventListener("input", () => {
+            leftFilter = leftSearch.value.trim().toLowerCase();
+            renderLeftList();
+        });
+
+        addBtn.addEventListener("click", () => {
+            if (activeView === "pokemon") {
+                const p = {
+                    id: "", name: "", form: "", species: "", evolution: "",
+                    type1: "", type2: "",
+                    hp: null, attack: null, defense: null, spAtk: null, spDef: null, speed: null,
+                    pokedex: {}
+                };
+                // Insert and select the new, editable Pokémon
+                p._tempId = crypto.randomUUID(); // internal selection key before we have a real ID
+                DATA.pokemon.push(p);
+                selectedId = p._tempId;
+            } else {
+                const g = {
+                    id: crypto.randomUUID(),
+                    title: "New Game", releaseDate: "", console: "",
+                    colorHex: "#888888", imageSlug: ""
+                };
+                DATA.games.push(g);
+                selectedId = g.id;
+            }
+            renderView();
+            updateDatasetSummary();
+        });
+
+        deleteBtn.addEventListener("click", () => {
+            if (!confirm("Delete this item? This cannot be undone.")) return;
+            if (activeView === "pokemon") {
+                const idx = DATA.pokemon.findIndex(p => (p.id || p._tempId) === selectedId);
+                if (idx >= 0) DATA.pokemon.splice(idx, 1);
+            } else {
+                const idx = DATA.games.findIndex(g => g.id === selectedId);
+                if (idx >= 0) DATA.games.splice(idx, 1);
+            }
+            selectedId = null;
+            renderView();
+            updateDatasetSummary();
+        });
+
+        /* =======================
+           Rendering
+           ======================= */
+
+        function renderView() {
+            leftTitle.textContent = activeView === "pokemon" ? "Pokemon" : "Games";
+            rightTitle.textContent = "No item selected";
+            deleteBtn.style.display = selectedId ? "inline-block" : "none";
+            renderLeftList();
+            renderRightBody();
+        }
+
+        function renderLeftList() {
+            leftList.innerHTML = "";
+
+            let source;
+            if (activeView === "pokemon") {
+                source = DATA.pokemon.slice();
+
+                if (pokemonSortMode === "AZ") {
+                    source.sort((a, b) =>
+                        (a.name || "").localeCompare(b.name || "", undefined, { sensitivity: "base" })
+                    );
+                } else {
+                    // 0–9 mode: numeric prefix + suffix grouping
+                    const parseId = (raw) => {
+                        const id = (raw || "").toString().trim();
+                        const m = id.match(/^(\d+)(.*)$/);
+                        if (m) return { num: parseInt(m[1], 10), suffix: m[2] || "" };
+                        return { num: Number.POSITIVE_INFINITY, suffix: id };
+                    };
+                    source.sort((a, b) => {
+                        const A = parseId(a.id);
+                        const B = parseId(b.id);
+                        if (A.num !== B.num) return A.num - B.num;
+                        if (A.suffix === B.suffix) return 0;
+                        if (A.suffix === "") return -1;
+                        if (B.suffix === "") return 1;
+                        return A.suffix.localeCompare(B.suffix, undefined, { sensitivity: "base" });
+                    });
+                }
+            } else {
+                source = DATA.games.slice();
+
+                if (gameSortMode === "AZ") {
+                    source.sort((a, b) =>
+                        (a.title || "").localeCompare(b.title || "", undefined, { sensitivity: "base" })
+                    );
+                } else {
+                    source.sort(byReleaseDateAsc);
+                }
+            }
+
+            const filtered = source.filter(item => {
+                const key = activeView === "pokemon"
+                    ? `${item.name} ${item.id} ${item.species}`.toLowerCase()
+                    : `${item.title} ${item.console} ${item.releaseDate}`.toLowerCase();
+                return key.includes(leftFilter);
+            });
+
+            for (const item of filtered) {
+                const itemId = activeView === "pokemon" ? (item.id || item._tempId) : item.id;
+                const div = document.createElement("div");
+                div.className = "list-item" + (itemId === selectedId ? " active" : "");
+                div.setAttribute("role", "option");
+                const left = document.createElement("div");
+                left.innerHTML = activeView === "pokemon"
+                    ? `<strong>${safeHtml(item.name || "(new Pokémon)")}</strong>`
+                    : `<strong>${safeHtml(item.title || "(untitled)")}</strong>`;
+                const right = document.createElement("div");
+                right.className = "muted";
+                right.textContent = activeView === "pokemon" ? (item.id || "") : (item.releaseDate || "");
+                div.appendChild(left); div.appendChild(right);
+                div.addEventListener("click", () => {
+                    selectedId = itemId;
+                    renderView();
+                });
+                leftList.appendChild(div);
+            }
+        }
+
+        function renderRightBody() {
+            rightBody.innerHTML = "";
+            deleteBtn.style.display = selectedId ? "inline-block" : "none";
+
+            if (!selectedId) {
+                rightTitle.textContent = "No item selected";
+                rightBody.innerHTML = `<div class="muted">Select or add an item to edit its details.</div>`;
+                return;
+            }
+
+            if (activeView === "pokemon") {
+                const p = DATA.pokemon.find(x => (x.id || x._tempId) === selectedId);
+                if (!p) return;
+                rightTitle.textContent = p.name || "(new Pokémon)";
+
+                const wrap = document.createElement("div");
+                wrap.className = "field-grid";
+
+                // Preview FIRST — uses the ID for images/pkmn/ID.png
+                const prevBox = document.createElement("div");
+                prevBox.className = "field";
+                const prevLabel = document.createElement("label");
+                prevLabel.textContent = "Image Preview (from images/pkmn/ID.png — case sensitive)";
+                const prev = document.createElement("div");
+                prev.className = "img-preview";
+                prevBox.appendChild(prevLabel);
+                prevBox.appendChild(prev);
+                wrap.appendChild(prevBox);
+
+                function updatePkmnPreview() {
+                    const id = (p.id || "").trim();
+                    const url = id ? `images/pkmn/${encodeURIComponent(id)}.png` : "";
+                    setPreviewIfExists(url, prev);
+                }
+
+                // ID (editing ID instantly updates preview)
+                wrap.appendChild(makeField("ID", "text", p.id ?? "", (val) => {
+                    p.id = val;
+                    renderLeftList();
+                    updatePkmnPreview();
+                }).container);
+
+                // Name
+                wrap.appendChild(makeField("Name", "text", p.name ?? "", (val) => {
+                    p.name = val;
+                    rightTitle.textContent = p.name || "(new Pokémon)";
+                    renderLeftList();
+                }).container);
+
+                // Form
+                wrap.appendChild(makeField("Form", "text", p.form ?? "", (val) => { p.form = val; }).container);
+
+                // Species
+                wrap.appendChild(makeField("Species", "text", p.species ?? "", (val) => { p.species = val; }).container);
+
+                // Evolution
+                wrap.appendChild(makeField("Evolution", "text", p.evolution ?? "", (val) => { p.evolution = val; }).container);
+
+                // Types
+                wrap.appendChild(
+                    makeField("Type 1", "select", p.type1 ?? "", (val) => { p.type1 = val; }, { options: TYPE_OPTIONS }).container
+                );
+                wrap.appendChild(
+                    makeField("Type 2", "select", p.type2 ?? "", (val) => { p.type2 = val; }, { options: TYPE_OPTIONS }).container
+                );
+
+                // Stats
+                wrap.appendChild(makeField("HP", "number", (p.hp ?? ""), (val) => { p.hp = numOrNullFromInput(val); }).container);
+                wrap.appendChild(makeField("Attack", "number", (p.attack ?? ""), (val) => { p.attack = numOrNullFromInput(val); }).container);
+                wrap.appendChild(makeField("Defense", "number", (p.defense ?? ""), (val) => { p.defense = numOrNullFromInput(val); }).container);
+                wrap.appendChild(makeField("Sp Atk", "number", (p.spAtk ?? ""), (val) => { p.spAtk = numOrNullFromInput(val); }).container);
+                wrap.appendChild(makeField("Sp Def", "number", (p.spDef ?? ""), (val) => { p.spDef = numOrNullFromInput(val); }).container);
+                wrap.appendChild(makeField("Speed", "number", (p.speed ?? ""), (val) => { p.speed = numOrNullFromInput(val); }).container);
+
+                rightBody.appendChild(wrap);
+
+                // Pokédex section (mirrors Games)
+                const pdx = document.createElement("div");
+                pdx.className = "subsection";
+                pdx.innerHTML = `<h4>Pokédex Entries (linked to Games)</h4>
+    <div class="note">This list mirrors your Games. Add a Game to see a new set of inputs here.</div>`;
+
+                const grid = document.createElement("div");
+                grid.className = "pokedex-grid";
+                const sortedGames = DATA.games.slice().sort(byReleaseDateAsc);
+
+                if (sortedGames.length === 0) {
+                    const empty = document.createElement("div");
+                    empty.className = "muted";
+                    empty.textContent = "No games defined yet.";
+                    grid.appendChild(empty);
+                } else {
+                    for (const g of sortedGames) {
+                        const card = document.createElement("div");
+                        card.className = "pokedex-card";
+
+                        const title = document.createElement("div");
+                        title.innerHTML = `<strong>${safeHtml(g.title || "(untitled)")}</strong> <span class="muted">• ${safeHtml(g.releaseDate || "—")} • ${safeHtml(g.console || "—")}</span>`;
+                        card.appendChild(title);
+
+                        const fwrap = document.createElement("div");
+                        fwrap.className = "field-grid";
+
+                        const pd = (p.pokedex[g.id] ||= { regionalDexNumber: "", entry: "" });
+
+                        fwrap.appendChild(makeField("Regional Dex Number", "text", pd.regionalDexNumber, (val) => { pd.regionalDexNumber = val; }).container);
+                        fwrap.appendChild(makeField("Pokédex Entry", "textarea", pd.entry, (val) => { pd.entry = val; }).container);
+
+                        card.appendChild(fwrap);
+                        grid.appendChild(card);
+                    }
+                }
+
+                pdx.appendChild(grid);
+                rightBody.appendChild(pdx);
+
+                // initial preview paint
+                updatePkmnPreview();
+
+            } else {
+                // ===== Games view =====
+                const g = DATA.games.find(x => x.id === selectedId);
+                if (!g) return;
+                rightTitle.textContent = g.title || "(untitled game)";
+
+                const wrap = document.createElement("div");
+                wrap.className = "field-grid";
+
+                wrap.appendChild(makeField("Title", "text", g.title, (val) => {
+                    g.title = val; rightTitle.textContent = g.title || "(untitled game)"; renderLeftList();
+                }).container);
+
+                wrap.appendChild(makeField("Release Date", "date", g.releaseDate, (val) => {
+                    g.releaseDate = val; renderLeftList();
+                }).container);
+
+                const consoleField = makeField("Console", "select", g.console, (val) => {
+                    g.console = val; renderLeftList();
+                }, {
+                    options: [
+                        "", "Game Boy", "Game Boy Color", "Game Boy Advance",
+                        "Nintendo DS", "Nintendo 3DS",
+                        "Nintendo Switch", "Mobile",
+                        "Nintendo 64", "GameCube", "Wii", "Wii U", "Other"
+                    ]
+                });
+                wrap.appendChild(consoleField.container);
+
+                // Color (picker + text) with reactive picker background
+                const colorWrap = document.createElement("div");
+                colorWrap.className = "field";
+                const colorLabel = document.createElement("label"); colorLabel.textContent = "Theme Colour";
+                const row = document.createElement("div"); row.className = "row";
+                const picker = document.createElement("input"); picker.type = "color"; picker.value = g.colorHex || "#888888";
+                const text = document.createElement("input"); text.type = "text"; text.value = g.colorHex || "#888888"; text.placeholder = "#RRGGBB";
+                function paintPickerBg() { picker.style.backgroundColor = picker.value; }
+                paintPickerBg();
+                row.appendChild(picker); row.appendChild(text);
+                colorWrap.appendChild(colorLabel); colorWrap.appendChild(row);
+                wrap.appendChild(colorWrap);
+
+                function syncColorFromPicker() { g.colorHex = picker.value; text.value = picker.value; paintPickerBg(); }
+                function syncColorFromText() {
+                    let v = text.value.trim();
+                    if (!/^#?[0-9a-fA-F]{6}$/.test(v)) return;
+                    if (!v.startsWith("#")) v = "#" + v;
+                    picker.value = v; g.colorHex = v; paintPickerBg();
+                }
+                picker.addEventListener("input", syncColorFromPicker);
+                text.addEventListener("input", syncColorFromText);
+
+                // Game image slug + live preview (/images/games/SLUG.png)
+                const slugField = makeField("Image Slug (file name without .png)", "text", g.imageSlug ?? "", (val) => {
+                    g.imageSlug = val; updateGamePreview();
+                });
+                wrap.appendChild(slugField.container);
+
+                const prevBox = document.createElement("div");
+                prevBox.className = "field";
+                const prevLabel = document.createElement("label");
+                prevLabel.textContent = "Image Preview (case sensitive from /images/games/SLUG.png)";
+                const prev = document.createElement("div");
+                prev.className = "img-preview";
+                prevBox.appendChild(prevLabel);
+                prevBox.appendChild(prev);
+                wrap.appendChild(prevBox);
+
+                function updateGamePreview() {
+                    const slug = (g.imageSlug || "").trim();
+                    const url = slug ? `images/games/${encodeURIComponent(slug)}.png` : "";
+                    setPreviewIfExists(url, prev);
+                }
+                updateGamePreview();
+
+                rightBody.appendChild(wrap);
+            }
+        }
+
+
+        /* =======================
+           Field Builder
+           ======================= */
+
+        function makeField(label, type, value, onChange, opts = {}) {
+            const container = document.createElement("div");
+            container.className = "field";
+            const lab = document.createElement("label");
+            lab.textContent = label;
+            container.appendChild(lab);
+
+            let input;
+
+            if (type === "textarea") {
+                input = document.createElement("textarea");
+                input.value = value ?? "";
+                input.addEventListener("input", () => onChange(input.value));
+            } else if (type === "select") {
+                input = document.createElement("select");
+                const options = (opts.options || []);
+                for (const opt of options) {
+                    const o = document.createElement("option");
+                    o.value = opt; o.textContent = opt || "—";
+                    if (String(opt) === String(value)) o.selected = true;
+                    input.appendChild(o);
+                }
+                input.addEventListener("change", () => onChange(input.value));
+            } else {
+                input = document.createElement("input");
+                input.type = type;
+                input.value = (value ?? "");
+                input.addEventListener(type === "date" ? "change" : "input", () => onChange(input.value));
+            }
+
+            container.appendChild(input);
+            return { container, input, labelEl: lab };
+        }
+
+
+        function numOrNullFromInput(val) {
+            const n = Number(val);
+            return isNaN(n) ? null : n;
+        }
+
+        /* =======================
+           Init
+           ======================= */
+
+        loadInitialData();
+    </script>
+</body>
+
+</html>

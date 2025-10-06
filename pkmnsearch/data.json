@@ -1,0 +1,1331 @@
+{
+  "games": [
+    {
+      "id": "red",
+      "title": "Pokémon Red",
+      "releaseDate": "1996-02-27",
+      "console": "Game Boy",
+      "colorHex": "#C0392B",
+      "imageSlug": "red"
+    },
+    {
+      "id": "green",
+      "title": "Pokémon Green",
+      "releaseDate": "1996-02-27",
+      "console": "Game Boy",
+      "colorHex": "#27AE60",
+      "imageSlug": "green"
+    },
+    {
+      "id": "blue",
+      "title": "Pokémon Blue",
+      "releaseDate": "1996-10-15",
+      "console": "Game Boy",
+      "colorHex": "#2980B9",
+      "imageSlug": "blue"
+    },
+    {
+      "id": "yellow",
+      "title": "Pokémon Yellow",
+      "releaseDate": "1998-09-12",
+      "console": "Game Boy",
+      "colorHex": "#F1C40F",
+      "imageSlug": "yellow"
+    },
+    {
+      "id": "gold",
+      "title": "Pokémon Gold",
+      "releaseDate": "1999-11-21",
+      "console": "Game Boy Color",
+      "colorHex": "#D4AF37",
+      "imageSlug": "gold"
+    },
+    {
+      "id": "silver",
+      "title": "Pokémon Silver",
+      "releaseDate": "1999-11-21",
+      "console": "Game Boy Color",
+      "colorHex": "#BDC3C7",
+      "imageSlug": "silver"
+    },
+    {
+      "id": "crystal",
+      "title": "Pokémon Crystal",
+      "releaseDate": "2000-12-14",
+      "console": "Game Boy Color",
+      "colorHex": "#3498DB",
+      "imageSlug": "crystal"
+    },
+    {
+      "id": "ruby",
+      "title": "Pokémon Ruby",
+      "releaseDate": "2002-11-21",
+      "console": "Game Boy Advance",
+      "colorHex": "#B03A2E",
+      "imageSlug": "ruby"
+    },
+    {
+      "id": "sapphire",
+      "title": "Pokémon Sapphire",
+      "releaseDate": "2002-11-21",
+      "console": "Game Boy Advance",
+      "colorHex": "#21618C",
+      "imageSlug": "sapphire"
+    },
+    {
+      "id": "emerald",
+      "title": "Pokémon Emerald",
+      "releaseDate": "2004-09-16",
+      "console": "Game Boy Advance",
+      "colorHex": "#1E8449",
+      "imageSlug": "emerald"
+    },
+    {
+      "id": "firered",
+      "title": "Pokémon FireRed",
+      "releaseDate": "2004-01-29",
+      "console": "Game Boy Advance",
+      "colorHex": "#E74C3C",
+      "imageSlug": "firered"
+    },
+    {
+      "id": "leafgreen",
+      "title": "Pokémon LeafGreen",
+      "releaseDate": "2004-01-29",
+      "console": "Game Boy Advance",
+      "colorHex": "#2ECC71",
+      "imageSlug": "leafgreen"
+    },
+    {
+      "id": "diamond",
+      "title": "Pokémon Diamond",
+      "releaseDate": "2006-09-28",
+      "console": "Nintendo DS",
+      "colorHex": "#5DADE2",
+      "imageSlug": "diamond"
+    },
+    {
+      "id": "pearl",
+      "title": "Pokémon Pearl",
+      "releaseDate": "2006-09-28",
+      "console": "Nintendo DS",
+      "colorHex": "#F5B7B1",
+      "imageSlug": "pearl"
+    },
+    {
+      "id": "platinum",
+      "title": "Pokémon Platinum",
+      "releaseDate": "2008-09-13",
+      "console": "Nintendo DS",
+      "colorHex": "#7F8C8D",
+      "imageSlug": "platinum"
+    },
+    {
+      "id": "heartgold",
+      "title": "Pokémon HeartGold",
+      "releaseDate": "2009-09-12",
+      "console": "Nintendo DS",
+      "colorHex": "#D4AC0D",
+      "imageSlug": "heartgold"
+    },
+    {
+      "id": "soulsilver",
+      "title": "Pokémon SoulSilver",
+      "releaseDate": "2009-09-12",
+      "console": "Nintendo DS",
+      "colorHex": "#AEB6BF",
+      "imageSlug": "soulsilver"
+    },
+    {
+      "id": "black",
+      "title": "Pokémon Black",
+      "releaseDate": "2010-09-18",
+      "console": "Nintendo DS",
+      "colorHex": "#2C3E50",
+      "imageSlug": "black"
+    },
+    {
+      "id": "white",
+      "title": "Pokémon White",
+      "releaseDate": "2010-09-18",
+      "console": "Nintendo DS",
+      "colorHex": "#ECF0F1",
+      "imageSlug": "white"
+    },
+    {
+      "id": "black2",
+      "title": "Pokémon Black 2",
+      "releaseDate": "2012-06-23",
+      "console": "Nintendo DS",
+      "colorHex": "#273746",
+      "imageSlug": "black2"
+    },
+    {
+      "id": "white2",
+      "title": "Pokémon White 2",
+      "releaseDate": "2012-06-23",
+      "console": "Nintendo DS",
+      "colorHex": "#F8F9F9",
+      "imageSlug": "white2"
+    },
+    {
+      "id": "x",
+      "title": "Pokémon X",
+      "releaseDate": "2013-10-12",
+      "console": "Nintendo 3DS",
+      "colorHex": "#2874A6",
+      "imageSlug": "x"
+    },
+    {
+      "id": "y",
+      "title": "Pokémon Y",
+      "releaseDate": "2013-10-12",
+      "console": "Nintendo 3DS",
+      "colorHex": "#C0392B",
+      "imageSlug": "y"
+    },
+    {
+      "id": "oras_or",
+      "title": "Pokémon Omega Ruby",
+      "releaseDate": "2014-11-21",
+      "console": "Nintendo 3DS",
+      "colorHex": "#A93226",
+      "imageSlug": "omega-ruby"
+    },
+    {
+      "id": "oras_as",
+      "title": "Pokémon Alpha Sapphire",
+      "releaseDate": "2014-11-21",
+      "console": "Nintendo 3DS",
+      "colorHex": "#1B4F72",
+      "imageSlug": "alpha-sapphire"
+    },
+    {
+      "id": "sun",
+      "title": "Pokémon Sun",
+      "releaseDate": "2016-11-18",
+      "console": "Nintendo 3DS",
+      "colorHex": "#F39C12",
+      "imageSlug": "sun"
+    },
+    {
+      "id": "moon",
+      "title": "Pokémon Moon",
+      "releaseDate": "2016-11-18",
+      "console": "Nintendo 3DS",
+      "colorHex": "#5B2C6F",
+      "imageSlug": "moon"
+    },
+    {
+      "id": "ultrasun",
+      "title": "Pokémon Ultra Sun",
+      "releaseDate": "2017-11-17",
+      "console": "Nintendo 3DS",
+      "colorHex": "#E67E22",
+      "imageSlug": "ultra-sun"
+    },
+    {
+      "id": "ultramoon",
+      "title": "Pokémon Ultra Moon",
+      "releaseDate": "2017-11-17",
+      "console": "Nintendo 3DS",
+      "colorHex": "#6C3483",
+      "imageSlug": "ultra-moon"
+    },
+    {
+      "id": "letsgo_p",
+      "title": "Pokémon: Let's Go, Pikachu!",
+      "releaseDate": "2018-11-16",
+      "console": "Nintendo Switch",
+      "colorHex": "#F4D03F",
+      "imageSlug": "lets-go-pikachu"
+    },
+    {
+      "id": "letsgo_e",
+      "title": "Pokémon: Let's Go, Eevee!",
+      "releaseDate": "2018-11-16",
+      "console": "Nintendo Switch",
+      "colorHex": "#F5CBA7",
+      "imageSlug": "lets-go-eevee"
+    },
+    {
+      "id": "sword",
+      "title": "Pokémon Sword",
+      "releaseDate": "2019-11-15",
+      "console": "Nintendo Switch",
+      "colorHex": "#3498DB",
+      "imageSlug": "sword"
+    },
+    {
+      "id": "shield",
+      "title": "Pokémon Shield",
+      "releaseDate": "2019-11-15",
+      "console": "Nintendo Switch",
+      "colorHex": "#E74C3C",
+      "imageSlug": "shield"
+    },
+    {
+      "id": "bdsp_bd",
+      "title": "Pokémon Brilliant Diamond",
+      "releaseDate": "2021-11-19",
+      "console": "Nintendo Switch",
+      "colorHex": "#85C1E9",
+      "imageSlug": "brilliant-diamond"
+    },
+    {
+      "id": "bdsp_sp",
+      "title": "Pokémon Shining Pearl",
+      "releaseDate": "2021-11-19",
+      "console": "Nintendo Switch",
+      "colorHex": "#FADBD8",
+      "imageSlug": "shining-pearl"
+    },
+    {
+      "id": "scarlet",
+      "title": "Pokémon Scarlet",
+      "releaseDate": "2022-11-18",
+      "console": "Nintendo Switch",
+      "colorHex": "#E74C3C",
+      "imageSlug": "scarlet"
+    },
+    {
+      "id": "violet",
+      "title": "Pokémon Violet",
+      "releaseDate": "2022-11-18",
+      "console": "Nintendo Switch",
+      "colorHex": "#8E44AD",
+      "imageSlug": "violet"
+    }
+  ],
+  "pokemon": [
+    {
+      "id": "1",
+      "name": "Bulbasaur",
+      "form": "",
+      "species": "Bulbasaur",
+      "evolution": "",
+      "type1": "Grass",
+      "type2": "Poison",
+      "hp": 45,
+      "attack": 49,
+      "defense": 49,
+      "spAtk": 65,
+      "spDef": 65,
+      "speed": 45,
+      "pokedex": {
+        "red": {
+          "regionalDexNumber": "",
+          "entry": "A strange seed was planted on its back at birth. The plant sprouts and grows with this Pokémon."
+        },
+        "green": {
+          "regionalDexNumber": "",
+          "entry": ""
+        },
+        "blue": {
+          "regionalDexNumber": "",
+          "entry": "A strange seed was planted on its back at birth. The plant sprouts and grows with this Pokémon."
+        },
+        "yellow": {
+          "regionalDexNumber": "",
+          "entry": "It can go for days without eating a single morsel. In the bulb on its back, it stores energy."
+        },
+        "gold": {
+          "regionalDexNumber": "",
+          "entry": "The seed on its back is filled with nutrients. The seed grows steadily larger as its body grows."
+        },
+        "silver": {
+          "regionalDexNumber": "",
+          "entry": "It carries a seed on its back right from birth. As it grows older, the seed also grows larger."
+        },
+        "crystal": {
+          "regionalDexNumber": "",
+          "entry": "While it is young, it uses the nutrients that are stored in the seeds on its back in order to grow."
+        },
+        "ruby": {
+          "regionalDexNumber": "",
+          "entry": "Bulbasaur can be seen napping in bright sunlight. There is a seed on its back. By soaking up the sun's rays, the seed grows progressively larger."
+        },
+        "sapphire": {
+          "regionalDexNumber": "",
+          "entry": "Bulbasaur can be seen napping in bright sunlight. There is a seed on its back. By soaking up the sun's rays, the seed grows progressively larger."
+        },
+        "firered": {
+          "regionalDexNumber": "",
+          "entry": "There is a plant seed on its back right from the day this Pokémon is born. The seed slowly grows larger."
+        },
+        "leafgreen": {
+          "regionalDexNumber": "",
+          "entry": "A strange seed was planted on its back at birth. The plant sprouts and grows with this Pokémon."
+        },
+        "emerald": {
+          "regionalDexNumber": "",
+          "entry": "Bulbasaur can be seen napping in bright sunlight. There is a seed on its back. By soaking up the sun's rays, the seed grows progressively larger."
+        },
+        "diamond": {
+          "regionalDexNumber": "",
+          "entry": "For some time after its birth, it grows by gaining nourishment from the seed on its back."
+        },
+        "pearl": {
+          "regionalDexNumber": "",
+          "entry": "For some time after its birth, it grows by gaining nourishment from the seed on its back."
+        },
+        "platinum": {
+          "regionalDexNumber": "",
+          "entry": "For some time after its birth, it grows by gaining nourishment from the seed on its back."
+        },
+        "heartgold": {
+          "regionalDexNumber": "",
+          "entry": "The seed on its back is filled with nutrients. The seed grows steadily larger as its body grows."
+        },
+        "soulsilver": {
+          "regionalDexNumber": "",
+          "entry": "It carries a seed on its back right from birth. As it grows older, the seed also grows larger."
+        },
+        "black": {
+          "regionalDexNumber": "",
+          "entry": "For some time after its birth, it grows by gaining nourishment from the seed on its back."
+        },
+        "white": {
+          "regionalDexNumber": "",
+          "entry": "For some time after its birth, it grows by gaining nourishment from the seed on its back."
+        },
+        "black2": {
+          "regionalDexNumber": "",
+          "entry": "For some time after its birth, it grows by gaining nourishment from the seed on its back."
+        },
+        "white2": {
+          "regionalDexNumber": "",
+          "entry": "For some time after its birth, it grows by gaining nourishment from the seed on its back."
+        },
+        "x": {
+          "regionalDexNumber": "",
+          "entry": "A strange seed was planted on its back at birth. The plant sprouts and grows with this Pokémon."
+        },
+        "y": {
+          "regionalDexNumber": "",
+          "entry": "For some time after its birth, it grows by gaining nourishment from the seed on its back."
+        },
+        "oras_or": {
+          "regionalDexNumber": "",
+          "entry": "Bulbasaur can be seen napping in bright sunlight. There is a seed on its back. By soaking up the sun's rays, the seed grows progressively larger."
+        },
+        "oras_as": {
+          "regionalDexNumber": "",
+          "entry": "Bulbasaur can be seen napping in bright sunlight. There is a seed on its back. By soaking up the sun's rays, the seed grows progressively larger."
+        },
+        "sun": {
+          "regionalDexNumber": "",
+          "entry": ""
+        },
+        "moon": {
+          "regionalDexNumber": "",
+          "entry": ""
+        },
+        "ultrasun": {
+          "regionalDexNumber": "",
+          "entry": ""
+        },
+        "ultramoon": {
+          "regionalDexNumber": "",
+          "entry": ""
+        },
+        "letsgo_p": {
+          "regionalDexNumber": "",
+          "entry": "It can go for days without eating a single morsel. In the bulb on its back, it stores energy."
+        },
+        "letsgo_e": {
+          "regionalDexNumber": "",
+          "entry": "It can go for days without eating a single morsel. In the bulb on its back, it stores energy."
+        },
+        "sword": {
+          "regionalDexNumber": "",
+          "entry": "There is a plant seed on its back right from the day this Pokémon is born. The seed slowly grows larger."
+        },
+        "shield": {
+          "regionalDexNumber": "",
+          "entry": "While it is young, it uses the nutrients that are stored in the seed on its back in order to grow."
+        },
+        "bdsp_bd": {
+          "regionalDexNumber": "",
+          "entry": "For some time after its birth, it grows by taking nourishment from the seed on its back."
+        },
+        "bdsp_sp": {
+          "regionalDexNumber": "",
+          "entry": "For some time after its birth, it grows by taking nourishment from the seed on its back."
+        },
+        "scarlet": {
+          "regionalDexNumber": "",
+          "entry": "For some time after its birth, it uses the nutrients that are packed into the seed on its back in order to grow."
+        },
+        "violet": {
+          "regionalDexNumber": "",
+          "entry": "It carries a seed on its back right from birth. As its body grows larger, the seed does too."
+        }
+      }
+    },
+    {
+      "id": "2",
+      "name": "Ivysaur",
+      "form": "",
+      "species": "Bulbasaur",
+      "evolution": "1 (lvl 16)",
+      "type1": "Grass",
+      "type2": "Poison",
+      "hp": 60,
+      "attack": 62,
+      "defense": 63,
+      "spAtk": 80,
+      "spDef": 80,
+      "speed": 60,
+      "pokedex": {}
+    },
+    {
+      "id": "3",
+      "name": "Venusaur",
+      "form": "",
+      "species": "Bulbasaur",
+      "evolution": "2 (lvl 32)",
+      "type1": "Grass",
+      "type2": "Poison",
+      "hp": 80,
+      "attack": 82,
+      "defense": 83,
+      "spAtk": 100,
+      "spDef": 100,
+      "speed": 80,
+      "pokedex": {}
+    },
+    {
+      "id": "3M",
+      "name": "Venusaur",
+      "form": "Mega Evolution",
+      "species": "Bulbasaur",
+      "evolution": "3 (Venusaurite)",
+      "type1": "Grass",
+      "type2": "Poison",
+      "hp": 80,
+      "attack": 100,
+      "defense": 123,
+      "spAtk": 122,
+      "spDef": 120,
+      "speed": 80,
+      "pokedex": {}
+    },
+    {
+      "id": "3GM",
+      "name": "Venusaur",
+      "form": "Gigantamax",
+      "species": "Bulbasaur",
+      "evolution": "3 (Gigantamax)",
+      "type1": "Grass",
+      "type2": "Poison",
+      "hp": 80,
+      "attack": 82,
+      "defense": 83,
+      "spAtk": 100,
+      "spDef": 100,
+      "speed": 80,
+      "pokedex": {}
+    },
+    {
+      "id": "4",
+      "name": "Charmander",
+      "form": "",
+      "species": "Charmander",
+      "evolution": "",
+      "type1": "Fire",
+      "type2": "",
+      "hp": 39,
+      "attack": 52,
+      "defense": 43,
+      "spAtk": 60,
+      "spDef": 50,
+      "speed": 65,
+      "pokedex": {}
+    },
+    {
+      "id": "5",
+      "name": "Charmeleon",
+      "form": "",
+      "species": "Charmander",
+      "evolution": "4 (lvl 16)",
+      "type1": "Fire",
+      "type2": "",
+      "hp": 58,
+      "attack": 64,
+      "defense": 58,
+      "spAtk": 80,
+      "spDef": 65,
+      "speed": 80,
+      "pokedex": {}
+    },
+    {
+      "id": "6",
+      "name": "Charizard",
+      "form": "",
+      "species": "Charmander",
+      "evolution": "5 (lvl 36)",
+      "type1": "Fire",
+      "type2": "Flying",
+      "hp": 78,
+      "attack": 84,
+      "defense": 78,
+      "spAtk": 109,
+      "spDef": 85,
+      "speed": 100,
+      "pokedex": {}
+    },
+    {
+      "id": "6MX",
+      "name": "Charizard",
+      "form": "Mega Evolution X",
+      "species": "Charmander",
+      "evolution": "6 (Charizardite X)",
+      "type1": "Fire",
+      "type2": "Dragon",
+      "hp": 78,
+      "attack": 130,
+      "defense": 111,
+      "spAtk": 130,
+      "spDef": 85,
+      "speed": 100,
+      "pokedex": {}
+    },
+    {
+      "id": "6MY",
+      "name": "Charizard",
+      "form": "Mega Evolution Y",
+      "species": "Charmander",
+      "evolution": "6 (Charizardite Y)",
+      "type1": "Fire",
+      "type2": "Flying",
+      "hp": 78,
+      "attack": 104,
+      "defense": 78,
+      "spAtk": 159,
+      "spDef": 115,
+      "speed": 100,
+      "pokedex": {}
+    },
+    {
+      "id": "6GM",
+      "name": "Charizard",
+      "form": "Gigantamax",
+      "species": "Charmander",
+      "evolution": "6 (Gigantamax)",
+      "type1": "Fire",
+      "type2": "Flying",
+      "hp": 78,
+      "attack": 84,
+      "defense": 78,
+      "spAtk": 109,
+      "spDef": 85,
+      "speed": 100,
+      "pokedex": {}
+    },
+    {
+      "id": "7",
+      "name": "Squirtle",
+      "form": "",
+      "species": "Squirtle",
+      "evolution": "",
+      "type1": "Water",
+      "type2": "",
+      "hp": 44,
+      "attack": 48,
+      "defense": 65,
+      "spAtk": 50,
+      "spDef": 64,
+      "speed": 43,
+      "pokedex": {}
+    },
+    {
+      "id": "8",
+      "name": "Wartortle",
+      "form": "",
+      "species": "Squirtle",
+      "evolution": "7 (lvl 16)",
+      "type1": "Water",
+      "type2": "",
+      "hp": 59,
+      "attack": 63,
+      "defense": 80,
+      "spAtk": 65,
+      "spDef": 80,
+      "speed": 58,
+      "pokedex": {}
+    },
+    {
+      "id": "9",
+      "name": "Blastoise",
+      "form": "",
+      "species": "Squirtle",
+      "evolution": "8 (lvl 36)",
+      "type1": "Water",
+      "type2": "",
+      "hp": 79,
+      "attack": 83,
+      "defense": 100,
+      "spAtk": 85,
+      "spDef": 105,
+      "speed": 78,
+      "pokedex": {}
+    },
+    {
+      "id": "9M",
+      "name": "Blastoise",
+      "form": "Mega Evolution",
+      "species": "Squirtle",
+      "evolution": "9 (Blastoisinite)",
+      "type1": "Water",
+      "type2": "",
+      "hp": 79,
+      "attack": 103,
+      "defense": 120,
+      "spAtk": 135,
+      "spDef": 115,
+      "speed": 78,
+      "pokedex": {}
+    },
+    {
+      "id": "9GM",
+      "name": "Blastoise",
+      "form": "Gigantamax",
+      "species": "Squirtle",
+      "evolution": "9 (Gigantamax)",
+      "type1": "Water",
+      "type2": "",
+      "hp": 79,
+      "attack": 83,
+      "defense": 100,
+      "spAtk": 85,
+      "spDef": 105,
+      "speed": 78,
+      "pokedex": {}
+    },
+    {
+      "id": "10",
+      "name": "Caterpie",
+      "form": "",
+      "species": "Caterpie",
+      "evolution": "",
+      "type1": "Bug",
+      "type2": "",
+      "hp": 45,
+      "attack": 30,
+      "defense": 35,
+      "spAtk": 20,
+      "spDef": 20,
+      "speed": 45,
+      "pokedex": {}
+    },
+    {
+      "id": "11",
+      "name": "Metapod",
+      "form": "",
+      "species": "Caterpie",
+      "evolution": "10 (lvl 7)",
+      "type1": "Bug",
+      "type2": "",
+      "hp": 50,
+      "attack": 20,
+      "defense": 55,
+      "spAtk": 25,
+      "spDef": 25,
+      "speed": 30,
+      "pokedex": {}
+    },
+    {
+      "id": "12",
+      "name": "Butterfree",
+      "form": "",
+      "species": "Caterpie",
+      "evolution": "11 (lvl 10)",
+      "type1": "Bug",
+      "type2": "Flying",
+      "hp": 60,
+      "attack": 45,
+      "defense": 50,
+      "spAtk": 90,
+      "spDef": 80,
+      "speed": 70,
+      "pokedex": {}
+    },
+    {
+      "id": "12GM",
+      "name": "Butterfree",
+      "form": "Gigantamax",
+      "species": "Caterpie",
+      "evolution": "12 (Gigantamax)",
+      "type1": "Bug",
+      "type2": "Flying",
+      "hp": 60,
+      "attack": 45,
+      "defense": 50,
+      "spAtk": 90,
+      "spDef": 80,
+      "speed": 70,
+      "pokedex": {}
+    },
+    {
+      "id": "13",
+      "name": "Weedle",
+      "form": "",
+      "species": "Weedle",
+      "evolution": "",
+      "type1": "Bug",
+      "type2": "Poison",
+      "hp": 40,
+      "attack": 35,
+      "defense": 30,
+      "spAtk": 20,
+      "spDef": 20,
+      "speed": 50,
+      "pokedex": {}
+    },
+    {
+      "id": "14",
+      "name": "Kakuna",
+      "form": "",
+      "species": "Weedle",
+      "evolution": "13 (lvl 7)",
+      "type1": "Bug",
+      "type2": "Poison",
+      "hp": 45,
+      "attack": 25,
+      "defense": 50,
+      "spAtk": 25,
+      "spDef": 25,
+      "speed": 35,
+      "pokedex": {}
+    },
+    {
+      "id": "15",
+      "name": "Beedrill",
+      "form": "",
+      "species": "Weedle",
+      "evolution": "14 (lvl 10)",
+      "type1": "Bug",
+      "type2": "Poison",
+      "hp": 65,
+      "attack": 90,
+      "defense": 40,
+      "spAtk": 45,
+      "spDef": 80,
+      "speed": 75,
+      "pokedex": {}
+    },
+    {
+      "id": "15M",
+      "name": "Beedrill",
+      "form": "Mega Evolution",
+      "species": "Weedle",
+      "evolution": "15 (Beedrillite)",
+      "type1": "Bug",
+      "type2": "Poison",
+      "hp": 65,
+      "attack": 150,
+      "defense": 40,
+      "spAtk": 15,
+      "spDef": 80,
+      "speed": 145,
+      "pokedex": {}
+    },
+    {
+      "id": "16",
+      "name": "Pidgey",
+      "form": "",
+      "species": "Pidgey",
+      "evolution": "",
+      "type1": "Normal",
+      "type2": "Flying",
+      "hp": 40,
+      "attack": 45,
+      "defense": 40,
+      "spAtk": 35,
+      "spDef": 35,
+      "speed": 56,
+      "pokedex": {}
+    },
+    {
+      "id": "17",
+      "name": "Pidgeotto",
+      "form": "",
+      "species": "Pidgey",
+      "evolution": "16 (lvl 18)",
+      "type1": "Normal",
+      "type2": "Flying",
+      "hp": 63,
+      "attack": 60,
+      "defense": 55,
+      "spAtk": 50,
+      "spDef": 50,
+      "speed": 71,
+      "pokedex": {}
+    },
+    {
+      "id": "18",
+      "name": "Pidgeot",
+      "form": "",
+      "species": "Pidgey",
+      "evolution": "17 (lvl 36)",
+      "type1": "Normal",
+      "type2": "Flying",
+      "hp": 83,
+      "attack": 80,
+      "defense": 75,
+      "spAtk": 70,
+      "spDef": 70,
+      "speed": 101,
+      "pokedex": {}
+    },
+    {
+      "id": "18M",
+      "name": "Pidgeot",
+      "form": "Mega Evolution",
+      "species": "Pidgey",
+      "evolution": "18 (Pidgeotite)",
+      "type1": "Normal",
+      "type2": "Flying",
+      "hp": 83,
+      "attack": 80,
+      "defense": 80,
+      "spAtk": 135,
+      "spDef": 80,
+      "speed": 121,
+      "pokedex": {}
+    },
+    {
+      "id": "19",
+      "name": "Rattata",
+      "form": "",
+      "species": "Rattata",
+      "evolution": "",
+      "type1": "Normal",
+      "type2": "",
+      "hp": 30,
+      "attack": 56,
+      "defense": 35,
+      "spAtk": 25,
+      "spDef": 35,
+      "speed": 72,
+      "pokedex": {}
+    },
+    {
+      "id": "19A",
+      "name": "Rattata",
+      "form": "Alolan Form",
+      "species": "Rattata",
+      "evolution": "",
+      "type1": "Dark",
+      "type2": "Normal",
+      "hp": 30,
+      "attack": 56,
+      "defense": 35,
+      "spAtk": 25,
+      "spDef": 35,
+      "speed": 72,
+      "pokedex": {}
+    },
+    {
+      "id": "20",
+      "name": "Raticate",
+      "form": "",
+      "species": "Rattata",
+      "evolution": "19 (Lv. 20)",
+      "type1": "Normal",
+      "type2": "",
+      "hp": 55,
+      "attack": 81,
+      "defense": 60,
+      "spAtk": 50,
+      "spDef": 70,
+      "speed": 97,
+      "pokedex": {}
+    },
+    {
+      "id": "20A",
+      "name": "Raticate",
+      "form": "Alolan Form",
+      "species": "Rattata",
+      "evolution": "19A (Lv. 20 @ night in Alola)",
+      "type1": "Dark",
+      "type2": "Normal",
+      "hp": 75,
+      "attack": 71,
+      "defense": 70,
+      "spAtk": 40,
+      "spDef": 80,
+      "speed": 77,
+      "pokedex": {}
+    },
+    {
+      "id": "21",
+      "name": "Spearow",
+      "form": "",
+      "species": "Spearow",
+      "evolution": "",
+      "type1": "Normal",
+      "type2": "Flying",
+      "hp": 40,
+      "attack": 60,
+      "defense": 30,
+      "spAtk": 31,
+      "spDef": 31,
+      "speed": 70,
+      "pokedex": {}
+    },
+    {
+      "id": "22",
+      "name": "Fearow",
+      "form": "",
+      "species": "Spearow",
+      "evolution": "21 (lvl 20)",
+      "type1": "Normal",
+      "type2": "Flying",
+      "hp": 65,
+      "attack": 90,
+      "defense": 65,
+      "spAtk": 61,
+      "spDef": 61,
+      "speed": 100,
+      "pokedex": {}
+    },
+    {
+      "id": "23",
+      "name": "Ekans",
+      "form": "",
+      "species": "Ekans",
+      "evolution": "",
+      "type1": "Poison",
+      "type2": "",
+      "hp": 35,
+      "attack": 60,
+      "defense": 44,
+      "spAtk": 40,
+      "spDef": 54,
+      "speed": 55,
+      "pokedex": {}
+    },
+    {
+      "id": "24",
+      "name": "Arbok",
+      "form": "",
+      "species": "Ekans",
+      "evolution": "23 (lvl 22)",
+      "type1": "Poison",
+      "type2": "",
+      "hp": 60,
+      "attack": 85,
+      "defense": 69,
+      "spAtk": 65,
+      "spDef": 79,
+      "speed": 80,
+      "pokedex": {}
+    },
+    {
+      "id": "25",
+      "name": "Pikachu",
+      "form": "",
+      "species": "Pichu",
+      "evolution": "172 (High friendship)",
+      "type1": "Electric",
+      "type2": "",
+      "hp": 35,
+      "attack": 55,
+      "defense": 40,
+      "spAtk": 50,
+      "spDef": 50,
+      "speed": 90,
+      "pokedex": {}
+    },
+    {
+      "id": "26",
+      "name": "Raichu",
+      "form": "",
+      "species": "Pichu",
+      "evolution": "25 (Thunderstone)",
+      "type1": "Electric",
+      "type2": "",
+      "hp": 60,
+      "attack": 90,
+      "defense": 55,
+      "spAtk": 90,
+      "spDef": 80,
+      "speed": 110,
+      "pokedex": {}
+    },
+    {
+      "id": "26A",
+      "name": "Raichu",
+      "form": "Alolan Form",
+      "species": "Pichu",
+      "evolution": "25 (Alola + Thunderstone)",
+      "type1": "Electric",
+      "type2": "Psychic",
+      "hp": 60,
+      "attack": 90,
+      "defense": 55,
+      "spAtk": 90,
+      "spDef": 80,
+      "speed": 110,
+      "pokedex": {}
+    },
+    {
+      "id": "26MX",
+      "name": "Raichu",
+      "form": "Mega Evolution X",
+      "species": "Pichu",
+      "evolution": "26 (Raichuite X)",
+      "type1": "Electric",
+      "type2": "",
+      "hp": 60,
+      "attack": 100,
+      "defense": 80,
+      "spAtk": 120,
+      "spDef": 90,
+      "speed": 110,
+      "pokedex": {}
+    },
+    {
+      "id": "26MY",
+      "name": "Raichu",
+      "form": "Mega Evolution Y",
+      "species": "Pichu",
+      "evolution": "26 (Raichuite Y)",
+      "type1": "Electric",
+      "type2": "",
+      "hp": 60,
+      "attack": 90,
+      "defense": 55,
+      "spAtk": 130,
+      "spDef": 80,
+      "speed": 110,
+      "pokedex": {}
+    },
+    {
+      "id": "27",
+      "name": "Sandshrew",
+      "form": "",
+      "species": "Sandshrew",
+      "evolution": "",
+      "type1": "Ground",
+      "type2": "",
+      "hp": 50,
+      "attack": 75,
+      "defense": 85,
+      "spAtk": 20,
+      "spDef": 30,
+      "speed": 40,
+      "pokedex": {}
+    },
+    {
+      "id": "27A",
+      "name": "Sandshrew",
+      "form": "Alolan Form",
+      "species": "Sandshrew",
+      "evolution": "",
+      "type1": "Ice",
+      "type2": "Steel",
+      "hp": 50,
+      "attack": 75,
+      "defense": 90,
+      "spAtk": 10,
+      "spDef": 35,
+      "speed": 40,
+      "pokedex": {}
+    },
+    {
+      "id": "28",
+      "name": "Sandslash",
+      "form": "",
+      "species": "Sandshrew",
+      "evolution": "27 (lvl 22)",
+      "type1": "Ground",
+      "type2": "",
+      "hp": 75,
+      "attack": 100,
+      "defense": 110,
+      "spAtk": 45,
+      "spDef": 55,
+      "speed": 65,
+      "pokedex": {}
+    },
+    {
+      "id": "28A",
+      "name": "Sandslash",
+      "form": "Alolan Form",
+      "species": "Sandshrew",
+      "evolution": "27A (Ice Stone)",
+      "type1": "Ice",
+      "type2": "Steel",
+      "hp": 75,
+      "attack": 100,
+      "defense": 120,
+      "spAtk": 25,
+      "spDef": 65,
+      "speed": 65,
+      "pokedex": {}
+    },
+    {
+      "id": "29",
+      "name": "Nidoran♀",
+      "form": "",
+      "species": "Nidoran♀",
+      "evolution": "",
+      "type1": "Poison",
+      "type2": "",
+      "hp": 55,
+      "attack": 47,
+      "defense": 52,
+      "spAtk": 40,
+      "spDef": 40,
+      "speed": 41,
+      "pokedex": {}
+    },
+    {
+      "id": "30",
+      "name": "Nidorina",
+      "form": "",
+      "species": "Nidoran♀",
+      "evolution": "29 (lvl 16)",
+      "type1": "Poison",
+      "type2": "",
+      "hp": 70,
+      "attack": 62,
+      "defense": 67,
+      "spAtk": 55,
+      "spDef": 55,
+      "speed": 56,
+      "pokedex": {}
+    },
+    {
+      "id": "31",
+      "name": "Nidoqueen",
+      "form": "",
+      "species": "Nidoran♀",
+      "evolution": "30 (Moon Stone)",
+      "type1": "Poison",
+      "type2": "Ground",
+      "hp": 90,
+      "attack": 92,
+      "defense": 87,
+      "spAtk": 75,
+      "spDef": 85,
+      "speed": 76,
+      "pokedex": {}
+    },
+    {
+      "id": "32",
+      "name": "Nidoran♂",
+      "form": "",
+      "species": "Nidoran♂",
+      "evolution": "",
+      "type1": "Poison",
+      "type2": "",
+      "hp": 46,
+      "attack": 57,
+      "defense": 40,
+      "spAtk": 40,
+      "spDef": 40,
+      "speed": 50,
+      "pokedex": {}
+    },
+    {
+      "id": "33",
+      "name": "Nidorino",
+      "form": "",
+      "species": "Nidoran♂",
+      "evolution": "32 (lvl 16)",
+      "type1": "Poison",
+      "type2": "",
+      "hp": 61,
+      "attack": 72,
+      "defense": 57,
+      "spAtk": 55,
+      "spDef": 55,
+      "speed": 65,
+      "pokedex": {}
+    },
+    {
+      "id": "34",
+      "name": "Nidoking",
+      "form": "",
+      "species": "Nidoran♂",
+      "evolution": "33 (Moon stone)",
+      "type1": "Poison",
+      "type2": "Ground",
+      "hp": 81,
+      "attack": 102,
+      "defense": 77,
+      "spAtk": 85,
+      "spDef": 75,
+      "speed": 85,
+      "pokedex": {}
+    },
+    {
+      "id": "35",
+      "name": "Clefairy",
+      "form": "",
+      "species": "Cleffa",
+      "evolution": "173 (High friendship)",
+      "type1": "Fairy",
+      "type2": "",
+      "hp": 70,
+      "attack": 45,
+      "defense": 48,
+      "spAtk": 60,
+      "spDef": 65,
+      "speed": 35,
+      "pokedex": {}
+    },
+    {
+      "id": "36",
+      "name": "Clefable",
+      "form": "",
+      "species": "Cleffa",
+      "evolution": "35 (Moon Stone)",
+      "type1": "Fairy",
+      "type2": "",
+      "hp": 95,
+      "attack": 70,
+      "defense": 73,
+      "spAtk": 95,
+      "spDef": 90,
+      "speed": 60,
+      "pokedex": {}
+    },
+    {
+      "id": "172",
+      "name": "Pichu",
+      "form": "",
+      "species": "Pichu",
+      "evolution": "",
+      "type1": "Electric",
+      "type2": "",
+      "hp": 20,
+      "attack": 40,
+      "defense": 15,
+      "spAtk": 35,
+      "spDef": 35,
+      "speed": 60,
+      "pokedex": {}
+    },
+    {
+      "id": "173",
+      "name": "Cleffa",
+      "form": "",
+      "species": "Cleffa",
+      "evolution": "",
+      "type1": "Fairy",
+      "type2": "",
+      "hp": 50,
+      "attack": 25,
+      "defense": 28,
+      "spAtk": 45,
+      "spDef": 55,
+      "speed": 15,
+      "pokedex": {}
+    }
+  ]
+}
