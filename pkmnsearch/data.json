@@ -301,6 +301,7 @@
     {
       "id": "1",
       "name": "Bulbasaur",
+      "category": "Seed Pokemon",
       "form": "",
       "species": "Bulbasaur",
       "evolution": "",
@@ -466,6 +467,7 @@
     {
       "id": "2",
       "name": "Ivysaur",
+      "category": "",
       "form": "",
       "species": "Bulbasaur",
       "evolution": "1 (lvl 16)",
@@ -482,6 +484,7 @@
     {
       "id": "3",
       "name": "Venusaur",
+      "category": "",
       "form": "",
       "species": "Bulbasaur",
       "evolution": "2 (lvl 32)",
@@ -498,6 +501,7 @@
     {
       "id": "3M",
       "name": "Venusaur",
+      "category": "",
       "form": "Mega Evolution",
       "species": "Bulbasaur",
       "evolution": "3 (Venusaurite)",
@@ -514,6 +518,7 @@
     {
       "id": "3GM",
       "name": "Venusaur",
+      "category": "",
       "form": "Gigantamax",
       "species": "Bulbasaur",
       "evolution": "3 (Gigantamax)",
@@ -530,6 +535,7 @@
     {
       "id": "4",
       "name": "Charmander",
+      "category": "",
       "form": "",
       "species": "Charmander",
       "evolution": "",
@@ -546,6 +552,7 @@
     {
       "id": "5",
       "name": "Charmeleon",
+      "category": "",
       "form": "",
       "species": "Charmander",
       "evolution": "4 (lvl 16)",
@@ -562,6 +569,7 @@
     {
       "id": "6",
       "name": "Charizard",
+      "category": "",
       "form": "",
       "species": "Charmander",
       "evolution": "5 (lvl 36)",
@@ -578,6 +586,7 @@
     {
       "id": "6MX",
       "name": "Charizard",
+      "category": "",
       "form": "Mega Evolution X",
       "species": "Charmander",
       "evolution": "6 (Charizardite X)",
@@ -594,6 +603,7 @@
     {
       "id": "6MY",
       "name": "Charizard",
+      "category": "",
       "form": "Mega Evolution Y",
       "species": "Charmander",
       "evolution": "6 (Charizardite Y)",
@@ -610,6 +620,7 @@
     {
       "id": "6GM",
       "name": "Charizard",
+      "category": "",
       "form": "Gigantamax",
       "species": "Charmander",
       "evolution": "6 (Gigantamax)",
@@ -626,6 +637,7 @@
     {
       "id": "7",
       "name": "Squirtle",
+      "category": "",
       "form": "",
       "species": "Squirtle",
       "evolution": "",
@@ -642,6 +654,7 @@
     {
       "id": "8",
       "name": "Wartortle",
+      "category": "",
       "form": "",
       "species": "Squirtle",
       "evolution": "7 (lvl 16)",
@@ -658,6 +671,7 @@
     {
       "id": "9",
       "name": "Blastoise",
+      "category": "",
       "form": "",
       "species": "Squirtle",
       "evolution": "8 (lvl 36)",
@@ -674,6 +688,7 @@
     {
       "id": "9M",
       "name": "Blastoise",
+      "category": "",
       "form": "Mega Evolution",
       "species": "Squirtle",
       "evolution": "9 (Blastoisinite)",
@@ -690,6 +705,7 @@
     {
       "id": "9GM",
       "name": "Blastoise",
+      "category": "",
       "form": "Gigantamax",
       "species": "Squirtle",
       "evolution": "9 (Gigantamax)",
@@ -706,6 +722,7 @@
     {
       "id": "10",
       "name": "Caterpie",
+      "category": "",
       "form": "",
       "species": "Caterpie",
       "evolution": "",
@@ -722,6 +739,7 @@
     {
       "id": "11",
       "name": "Metapod",
+      "category": "",
       "form": "",
       "species": "Caterpie",
       "evolution": "10 (lvl 7)",
@@ -738,6 +756,7 @@
     {
       "id": "12",
       "name": "Butterfree",
+      "category": "",
       "form": "",
       "species": "Caterpie",
       "evolution": "11 (lvl 10)",
@@ -754,6 +773,7 @@
     {
       "id": "12GM",
       "name": "Butterfree",
+      "category": "",
       "form": "Gigantamax",
       "species": "Caterpie",
       "evolution": "12 (Gigantamax)",
@@ -770,6 +790,7 @@
     {
       "id": "13",
       "name": "Weedle",
+      "category": "",
       "form": "",
       "species": "Weedle",
       "evolution": "",
@@ -786,6 +807,7 @@
     {
       "id": "14",
       "name": "Kakuna",
+      "category": "",
       "form": "",
       "species": "Weedle",
       "evolution": "13 (lvl 7)",
@@ -802,6 +824,7 @@
     {
       "id": "15",
       "name": "Beedrill",
+      "category": "",
       "form": "",
       "species": "Weedle",
       "evolution": "14 (lvl 10)",
@@ -818,6 +841,7 @@
     {
       "id": "15M",
       "name": "Beedrill",
+      "category": "",
       "form": "Mega Evolution",
       "species": "Weedle",
       "evolution": "15 (Beedrillite)",
@@ -834,6 +858,7 @@
     {
       "id": "16",
       "name": "Pidgey",
+      "category": "",
       "form": "",
       "species": "Pidgey",
       "evolution": "",
@@ -850,6 +875,7 @@
     {
       "id": "17",
       "name": "Pidgeotto",
+      "category": "",
       "form": "",
       "species": "Pidgey",
       "evolution": "16 (lvl 18)",
@@ -866,6 +892,7 @@
     {
       "id": "18",
       "name": "Pidgeot",
+      "category": "",
       "form": "",
       "species": "Pidgey",
       "evolution": "17 (lvl 36)",
@@ -882,6 +909,7 @@
     {
       "id": "18M",
       "name": "Pidgeot",
+      "category": "",
       "form": "Mega Evolution",
       "species": "Pidgey",
       "evolution": "18 (Pidgeotite)",
@@ -898,6 +926,7 @@
     {
       "id": "19",
       "name": "Rattata",
+      "category": "",
       "form": "",
       "species": "Rattata",
       "evolution": "",
@@ -914,6 +943,7 @@
     {
       "id": "19A",
       "name": "Rattata",
+      "category": "",
       "form": "Alolan Form",
       "species": "Rattata",
       "evolution": "",
@@ -930,6 +960,7 @@
     {
       "id": "20",
       "name": "Raticate",
+      "category": "",
       "form": "",
       "species": "Rattata",
       "evolution": "19 (Lv. 20)",
@@ -946,6 +977,7 @@
     {
       "id": "20A",
       "name": "Raticate",
+      "category": "",
       "form": "Alolan Form",
       "species": "Rattata",
       "evolution": "19A (Lv. 20 @ night in Alola)",
@@ -962,6 +994,7 @@
     {
       "id": "21",
       "name": "Spearow",
+      "category": "",
       "form": "",
       "species": "Spearow",
       "evolution": "",
@@ -978,6 +1011,7 @@
     {
       "id": "22",
       "name": "Fearow",
+      "category": "",
       "form": "",
       "species": "Spearow",
       "evolution": "21 (lvl 20)",
@@ -994,6 +1028,7 @@
     {
       "id": "23",
       "name": "Ekans",
+      "category": "",
       "form": "",
       "species": "Ekans",
       "evolution": "",
@@ -1010,6 +1045,7 @@
     {
       "id": "24",
       "name": "Arbok",
+      "category": "",
       "form": "",
       "species": "Ekans",
       "evolution": "23 (lvl 22)",
@@ -1026,6 +1062,7 @@
     {
       "id": "25",
       "name": "Pikachu",
+      "category": "",
       "form": "",
       "species": "Pichu",
       "evolution": "172 (High friendship)",
@@ -1042,6 +1079,7 @@
     {
       "id": "26",
       "name": "Raichu",
+      "category": "",
       "form": "",
       "species": "Pichu",
       "evolution": "25 (Thunderstone)",
@@ -1058,6 +1096,7 @@
     {
       "id": "26A",
       "name": "Raichu",
+      "category": "",
       "form": "Alolan Form",
       "species": "Pichu",
       "evolution": "25 (Alola + Thunderstone)",
@@ -1074,6 +1113,7 @@
     {
       "id": "26MX",
       "name": "Raichu",
+      "category": "",
       "form": "Mega Evolution X",
       "species": "Pichu",
       "evolution": "26 (Raichuite X)",
@@ -1090,6 +1130,7 @@
     {
       "id": "26MY",
       "name": "Raichu",
+      "category": "",
       "form": "Mega Evolution Y",
       "species": "Pichu",
       "evolution": "26 (Raichuite Y)",
@@ -1106,6 +1147,7 @@
     {
       "id": "27",
       "name": "Sandshrew",
+      "category": "",
       "form": "",
       "species": "Sandshrew",
       "evolution": "",
@@ -1122,6 +1164,7 @@
     {
       "id": "27A",
       "name": "Sandshrew",
+      "category": "",
       "form": "Alolan Form",
       "species": "Sandshrew",
       "evolution": "",
@@ -1138,6 +1181,7 @@
     {
       "id": "28",
       "name": "Sandslash",
+      "category": "",
       "form": "",
       "species": "Sandshrew",
       "evolution": "27 (lvl 22)",
@@ -1154,6 +1198,7 @@
     {
       "id": "28A",
       "name": "Sandslash",
+      "category": "",
       "form": "Alolan Form",
       "species": "Sandshrew",
       "evolution": "27A (Ice Stone)",
@@ -1170,6 +1215,7 @@
     {
       "id": "29",
       "name": "Nidoran♀",
+      "category": "",
       "form": "",
       "species": "Nidoran♀",
       "evolution": "",
@@ -1186,6 +1232,7 @@
     {
       "id": "30",
       "name": "Nidorina",
+      "category": "",
       "form": "",
       "species": "Nidoran♀",
       "evolution": "29 (lvl 16)",
@@ -1202,6 +1249,7 @@
     {
       "id": "31",
       "name": "Nidoqueen",
+      "category": "",
       "form": "",
       "species": "Nidoran♀",
       "evolution": "30 (Moon Stone)",
@@ -1218,6 +1266,7 @@
     {
       "id": "32",
       "name": "Nidoran♂",
+      "category": "",
       "form": "",
       "species": "Nidoran♂",
       "evolution": "",
@@ -1234,6 +1283,7 @@
     {
       "id": "33",
       "name": "Nidorino",
+      "category": "",
       "form": "",
       "species": "Nidoran♂",
       "evolution": "32 (lvl 16)",
@@ -1250,6 +1300,7 @@
     {
       "id": "34",
       "name": "Nidoking",
+      "category": "",
       "form": "",
       "species": "Nidoran♂",
       "evolution": "33 (Moon stone)",
@@ -1266,6 +1317,7 @@
     {
       "id": "35",
       "name": "Clefairy",
+      "category": "",
       "form": "",
       "species": "Cleffa",
       "evolution": "173 (High friendship)",
@@ -1282,6 +1334,7 @@
     {
       "id": "36",
       "name": "Clefable",
+      "category": "",
       "form": "",
       "species": "Cleffa",
       "evolution": "35 (Moon Stone)",
@@ -1298,6 +1351,7 @@
     {
       "id": "172",
       "name": "Pichu",
+      "category": "",
       "form": "",
       "species": "Pichu",
       "evolution": "",
@@ -1314,6 +1368,7 @@
     {
       "id": "173",
       "name": "Cleffa",
+      "category": "",
       "form": "",
       "species": "Cleffa",
       "evolution": "",
