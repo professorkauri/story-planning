@@ -1,49 +1,1959 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Home Menu</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f5f5f5;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-        }
-        h1 {
-            margin-bottom: 2rem;
-        }
-        ul {
-            list-style: none;
-            padding: 0;
-        }
-        li {
-            margin: 1rem 0;
-        }
-        a {
-            text-decoration: none;
-            color: #3366cc;
-            font-size: 1.2rem;
-            padding: 0.5rem 1.5rem;
-            border: 1px solid #3366cc;
-            border-radius: 4px;
-            transition: background 0.2s, color 0.2s;
-        }
-        a:hover {
-            background: #3366cc;
-            color: #fff;
-        }
-    </style>
+  <meta charset="utf-8" />
+  <title>Timelines</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="styles/timelines.css">
 </head>
-<body>
-    <h1>Home Menu</h1>
-    <ul>
-        <li><a href="/timelines/index.html">Timeline Maker</a></li>
-        <li><a href="/pkmnsearch/index.html">Pokedex Search</a></li>
-    </ul>
+<body class="theme-light granularity--day">
+  <header>
+    <h1>Timelines</h1>
+    <div class="meta" id="meta">Loading…</div>
+    <div class="err" id="err"></div>
+    <div class="actions">
+      <div class="seg" id="granularity" data-label="Timeline View">
+        <button id="btn-gran-day"  type="button" aria-pressed="true">Day</button>
+        <button id="btn-gran-week" type="button" aria-pressed="false">Week</button>
+        <button id="btn-gran-year" type="button" aria-pressed="false">Year</button>
+      </div>
+      <div class="seg" data-label="Light/Dark Mode">
+      <button id="btn-theme" type="button">Light</button>
+      </div>
+      <div class="seg" data-label="Collapse Empty Days">
+      <button id="btn-collapse" type="button">All Days</button>
+      </div>
+      <div class="seg" data-label="Manage Settings">
+        <button id="toggle-editor" type="button">Edit</button>
+        <button id="btn-import" class="ghost" type="button">Import</button>
+        <button id="btn-download" type="button">Download</button>
+      </div>
+    </div>
+  </header>
+
+  <div id="viewport" class="viewport">
+    <div id="grid" class="grid" role="table" aria-label="Timelines grid"></div>
+  </div>
+
+  <script>
+    /** ===================== CONFIG ===================== **/
+    const JSON_PATH = 'timelines.json';
+
+    const visualDebug = false;
+
+    // Single images folder (events, characters, seasonal, timelines)
+    const IMAGES_DIR = 'images/';
+
+    // ===== SIZING (edit these) =====
+    const GRID_SIZING = {
+      horizontal: {
+        namesColWidth:  '110px',
+        weekColWidth:   'minmax(var(--col-min, 140px), max-content)',
+        timelineRowMin: '40px',
+        weekHeaderRow:  'auto',
+      }
+    };
+
+    const LEGACY_PRESET_CATEGORIES = [
+      '', 'OrdinaryWorld','CallToAdventure','RefusalOfTheCall','MeetingTheMentor','CrossingTheThreshold',
+      'TestsAlliesEnemies','ApproachToTheInmostCave','TheOrdeal','Reward','TheRoadBack','Resurrection','TheReturn'
+    ];
+
+    const IMAGE_EXTS = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg', 'avif'];
+
+    /** ===================== SETTINGS (CATEGORIES) ===================== **/
+    let settingsState = null;
+
+    const DEFAULT_UI = {
+      title: 'Timelines',
+      theme: 'light',
+      collapseEmptyDays: false,
+      granularity: 'day', // 'day' | 'week' | 'year'
+      showSeasonalInYear: false,
+      maxChipsPerBin: 5,
+    };
+
+    const DEFAULT_SETTINGS = {
+      ui: { ...DEFAULT_UI },
+      categories: Array.from({ length: 12 }, (_, i) => ({
+        id: i + 1,
+        name: LEGACY_PRESET_CATEGORIES[i + 1] || `Category ${i + 1}`,
+        color: '',
+        text: 'black'
+      }))
+    };
+
+    function applyUIFromSettings() {
+      const ui = (settingsState?.ui) || DEFAULT_UI;
+
+      const h1 = document.querySelector('header h1');
+      if (h1) h1.textContent = ui.title || DEFAULT_UI.title;
+
+      // Theme classes
+      document.body.classList.toggle('theme-dark', ui.theme === 'dark');
+      document.body.classList.toggle('theme-light', ui.theme !== 'dark');
+
+      // Granularity class on body
+      document.body.classList.remove('granularity--day','granularity--week','granularity--year');
+      const g = ui.granularity === 'week' ? 'week' : (ui.granularity === 'year' ? 'year' : 'day');
+      document.body.classList.add(`granularity--${g}`);
+
+      applyGridSizing();
+      syncHeaderControlsFromSettings();
+    }
+
+    function getCatById(id) {
+      return (settingsState?.categories || []).find(c => c.id === id) || null;
+    }
+    function getCatIdByName(name) {
+      if (!name) return 0;
+      const n = name.toLowerCase();
+      const found = (settingsState?.categories || []).find(c => c.name.toLowerCase() === n);
+      return found ? found.id : 0;
+    }
+    function getCatName(id) { return getCatById(id)?.name || ''; }
+    function getCatText(id) { return getCatById(id)?.text || 'black'; }
+    function getCatColor(id) { return getCatById(id)?.color || ''; }
+
+    function toCatId(val) {
+      if (val == null) return 0;
+      if (typeof val === 'number' && Number.isInteger(val)) return val;
+      const s = String(val).trim();
+      if (!s) return 0;
+      const asNum = Number(s);
+      if (Number.isInteger(asNum)) return asNum;
+      return getCatIdByName(s);
+    }
+
+    /** ===================== SMALL HELPERS ===================== **/
+    const $ = (id) => document.getElementById(id);
+    const setText = (id, txt) => { const el = $(id); if (el) el.textContent = txt; };
+
+    // Specific ISO helpers
+    function isSpecificWeek(s) { return /^\d{4}-\d{2}$/.test(s || ''); }           // YYYY-WW
+    function isSpecificWeekDay(s) { return /^\d{4}-\d{2}-[1-7]$/.test(s || ''); } // YYYY-WW-D
+
+    // Relative dates
+    function parseRelDays(s) {                  // "#", "#d", "##D"
+      const m = /^(\d+)\s*[dD]?$/.exec(s || '');
+      return m ? parseInt(m[1], 10) : null;
+    }
+    function parseRelWeeks(s) {                  // "#w"
+      const m = /^(\d+)\s*[wW]$/.exec(s || '');
+      return m ? parseInt(m[1], 10) : null;
+    }
+
+    // Duration → days: accepts "#w", "#", or "#d"
+    function parseDuration(s) {
+      if (isPartDayDur(s)) return { days: 1, isSlice: true }; // bundle chip; never spills
+      if (!s) return { days: 0, isSlice: false };
+      const w = parseRelWeeks(s);
+      if (w != null) return { days: w * 7, isSlice: false };
+      const d = parseRelDays(s);
+      if (d != null) return { days: d, isSlice: false };
+      return { days: 0, isSlice: false };
+    }
+
+    // --- Start/Duration tokens ---
+    function isZeroStart(s){ return String(s||'').trim()==='0'; }
+    function isSameDayStart(s){ return String(s||'').trim()==='.'; }
+    function isPartDayDur(s){ return String(s||'').trim()==='.'; }
+
+    function syncHeaderControlsFromSettings() {
+      const themeBtn = document.getElementById('btn-theme');
+      const collapseBtn = document.getElementById('btn-collapse');
+      const gDay = document.getElementById('btn-gran-day');
+      const gWeek = document.getElementById('btn-gran-week');
+      const gYear = document.getElementById('btn-gran-year');
+
+      // Theme label
+      const theme = settingsState?.ui?.theme === 'dark' ? 'dark' : 'light';
+      if (themeBtn) {
+        themeBtn.textContent = theme === 'dark' ? 'Dark' : 'Light';
+        themeBtn.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
+      }
+
+      // Collapse
+      const collapsed = !!settingsState?.ui?.collapseEmptyDays;
+      if (collapseBtn) {
+        collapseBtn.textContent = collapsed ? 'Collapsed' : 'All Days';
+        collapseBtn.setAttribute('aria-pressed', collapsed ? 'true' : 'false');
+      }
+
+      // Granularity buttons
+      const g = settingsState?.ui?.granularity || 'day';
+      const setPressed = (btn, on) => btn && btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      setPressed(gDay,  g === 'day');
+      setPressed(gWeek, g === 'week');
+      setPressed(gYear, g === 'year');
+    }
+
+    function keyPrev(a) {
+      if (a.t === 'd') return { t: 'd', dayIdx: a.dayIdx - 1 };
+      if (a.t === 'w') {
+        const prevIdx = keySampleDayIdx(a) - 7; // Monday of previous week
+        return keyOf(prevIdx, 'week');
+      }
+      if (a.t === 'y') return { t: 'y', year: a.year - 1 };
+      return a;
+    }
+
+    function eventTouchesBin(ev, binKey, g) {
+      if (!binKey) return false;
+      const a = keyOf(ev.startIdx, g);
+      const b = keyOf(ev.startIdx + ev.durationDays - 1, g);
+      return keyCmp(a, binKey) <= 0 && keyCmp(binKey, b) <= 0;
+    }
+
+    function fragPosition(ev, binKey, g) {
+      const inCurr = eventTouchesBin(ev, binKey, g);
+      if (!inCurr) return null; // shouldn't happen
+      const inPrev = eventTouchesBin(ev, keyPrev(binKey), g);
+      const inNext = eventTouchesBin(ev, keyNext(binKey), g);
+      if (!inPrev && !inNext) return 'single';
+      if (!inPrev &&  inNext) return 'start';
+      if ( inPrev && !inNext) return 'end';
+      return 'middle';
+    }
+
+
+    // Assign vertical lanes to overlapping BAR events for the current granularity.
+    // Returns a Map(ev -> lane) and total lane count.
+    function assignBarLanes(bars, granularity) {
+      // Represent each bar by its inclusive bin interval [a..b] at this granularity
+      const items = bars.map(ev => {
+        const a = keyOf(ev.startIdx, granularity);
+        const b = keyOf(ev.startIdx + ev.durationDays - 1, granularity);
+        return { ev, a, b };
+      });
+
+      // Sort: earlier start first; ties -> longer first (helps pack tightly)
+      items.sort((x, y) => {
+        const c = keyCmp(x.a, y.a);
+        if (c) return c;
+        const d = keyCmp(y.b, x.b);
+        return d;
+      });
+
+      const lastEndPerLane = [];       // array of "b" keys (end) per lane
+      const laneOfEv = new Map();
+
+      for (const it of items) {
+        let lane = 0;
+        // Find first lane whose last end key is strictly before this start key
+        while (lane < lastEndPerLane.length && keyCmp(it.a, lastEndPerLane[lane]) <= 0) {
+          lane++;
+        }
+        lastEndPerLane[lane] = it.b;
+        laneOfEv.set(it.ev, lane);
+      }
+
+      return { laneOfEv, lanesCount: lastEndPerLane.length || 1 };
+    }
+
+
+    function toggleTheme() {
+      if (!settingsState.ui) settingsState.ui = { ...DEFAULT_UI };
+      settingsState.ui.theme = (settingsState.ui.theme === 'dark') ? 'light' : 'dark';
+      applyAllFromSettings();
+    }
+
+    function toggleCollapseEmptyDays() {
+      if (!settingsState.ui) settingsState.ui = { ...DEFAULT_UI };
+      settingsState.ui.collapseEmptyDays = !settingsState.ui.collapseEmptyDays;
+      applyAllFromSettings();
+    }
+
+    function setGranularity(g) {
+      if (!settingsState.ui) settingsState.ui = { ...DEFAULT_UI };
+      settingsState.ui.granularity = (g === 'week' || g === 'year') ? g : 'day';
+      applyAllFromSettings();
+    }
+
+    function isOutsideBuffered(range, dayIdx, pad = 1) {
+      if (!range) return true;
+      const left  = range.start + pad;  // first inside day
+      const right = range.end   - pad;  // exclusive upper bound
+      return dayIdx < left || dayIdx >= right;
+    }
+
+    function stripExt(name) { return name.replace(/\.[^.]+$/, ''); }
+    function encSeg(s) { return encodeURIComponent(s).replace(/%2F/g, '/'); }
+
+    function applyGridSizing() {
+      const g = document.getElementById('grid');
+      if (!g) return;
+      const sz = GRID_SIZING.horizontal;
+      g.style.setProperty('--names-col-width', sz.namesColWidth);
+      g.style.setProperty('--week-header-row', sz.weekHeaderRow);
+      g.style.setProperty('--week-col-width', sz.weekColWidth);
+      g.style.setProperty('--timeline-row-min', sz.timelineRowMin);
+    }
+
+    // Convert any hex (3/4/6/8) to #RRGGBB for <input type="color">
+    function normalizeHexColor(v) {
+      const s = String(v || '').trim().replace(/^#/, '');
+      if (/^[0-9a-f]{3}$/i.test(s)) return '#' + s;
+      if (/^[0-9a-f]{4}$/i.test(s)) return '#' + s;
+      if (/^[0-9a-f]{6}$/i.test(s)) return '#' + s;
+      if (/^[0-9a-f]{8}$/i.test(s)) return '#' + s;
+      return '';
+    }
+
+    function toColorInputValue(hex) {
+      const norm = normalizeHexColor(hex || '');
+      if (!norm) return '#000000';
+      let s = norm.replace(/^#/, '');
+      if (s.length === 8) s = s.slice(0, 6); // drop alpha
+      if (s.length === 3) s = s.split('').map(ch => ch + ch).join('');
+      if (s.length === 4) s = s.slice(0, 3).split('').map(ch => ch + ch).join('');
+      if (s.length !== 6) return '#000000';
+      return '#' + s.toUpperCase();
+    }
+
+    function buildTimelineHeaderEl(tl, activeGranularity) {
+      const th = document.createElement('div');
+      th.className = 'thead';
+
+      // Preferred granularity class (styling only)
+      const pref = tl.preferredGranularity || '';
+      if (pref) th.classList.add(`granularity-pref-${pref}`);
+      if (pref && pref === activeGranularity) th.classList.add('tl--emphasized');
+      if (pref && pref !== activeGranularity) th.classList.add('tl--deemphasized');
+
+      // image (fallback square if missing)
+      const insertPh = () => {
+        const ph = document.createElement('div');
+        ph.className = 'thead-thumb thead-thumb--ph';
+        th.appendChild(ph);
+      };
+
+      const thumb = makeSmartImgFallback(
+        IMAGES_DIR,
+        tl.imageName || '',
+        'thead-thumb',
+        tl.title || '',
+        insertPh
+      );
+      if (thumb) th.appendChild(thumb);
+
+      const title = document.createElement('span');
+      title.className = 'thead-title';
+      title.textContent = tl.title || '';
+      th.appendChild(title);
+
+      return th;
+    }
+
+    function applyAllFromSettings() {
+      applyUIFromSettings();
+      applyStateToRenderer();
+    }
+
+    async function tryLoadJSON() {
+      try {
+        const r = await fetch(`${JSON_PATH}?v=${Date.now()}`, { cache: 'no-store' });
+        if (!r.ok) return null;
+        const raw = await r.json();
+        const combined = coerceCombinedJson(raw);
+        if (!Array.isArray(combined.timelines)) return null;
+        return combined; // { settings, timelines, seasonal }
+      } catch { return null; }
+    }
+
+    function normalizeEditorState(es) {
+      if (!es || !Array.isArray(es.timelines)) return es;
+      es.timelines.forEach(tl => {
+        if (typeof tl.image !== 'string') tl.image = '';
+        if (!Array.isArray(tl.events)) tl.events = [];
+        if (!tl.preferredGranularity) tl.preferredGranularity = '';
+        tl.events.forEach(ev => {
+          if (typeof ev.location !== 'string') ev.location = '';
+          if (!Array.isArray(ev.characters)) ev.characters = [];
+          if (typeof ev.image !== 'string') ev.image = '';
+        });
+      });
+      if (!Array.isArray(es.seasonal)) es.seasonal = [];
+      return es;
+    }
+
+    function coerceCombinedJson(json) {
+      const out = {
+        settings: structuredClone(DEFAULT_SETTINGS),
+        timelines: [],
+        seasonal: []
+      };
+      if (!json || typeof json !== 'object') return out;
+
+      const srcSettings = json.settings || { ui: json.ui, categories: json.categories };
+      if (srcSettings) {
+        const ui = srcSettings.ui || {};
+        out.settings.ui = {
+          title: String(ui.title || DEFAULT_UI.title),
+          theme: ui.theme === 'dark' ? 'dark' : 'light',
+          collapseEmptyDays: !!ui.collapseEmptyDays,
+          granularity: (ui.granularity === 'week' || ui.granularity === 'year') ? ui.granularity : 'day',
+          showSeasonalInYear: !!ui.showSeasonalInYear,
+          maxChipsPerBin: Number.isInteger(ui.maxChipsPerBin) ? ui.maxChipsPerBin : DEFAULT_UI.maxChipsPerBin,
+        };
+        const cats = Array.isArray(srcSettings.categories) ? srcSettings.categories : DEFAULT_SETTINGS.categories;
+        out.settings.categories = cats
+          .filter(c => Number.isInteger(c.id) && c.id >= 1 && c.id <= 12)
+          .map(c => ({
+            id: c.id,
+            name: String(c.name || ''),
+            color: normalizeHexColor(c.color),
+            text: String(c.text || '').toLowerCase() === 'white' ? 'white' : 'black'
+          }));
+      }
+
+      out.timelines = Array.isArray(json.timelines) ? json.timelines : [];
+      out.seasonal  = Array.isArray(json.seasonal) ? json.seasonal : [];
+      return out;
+    }
+
+    /** CSV parse (unchanged) */
+    function parseCSV(text) {
+      const rows = []; let row = [], cur = '', inQ = false;
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i], nx = text[i + 1];
+        if (ch === '"') { if (inQ && nx === '"') { cur += '"'; i++; } else inQ = !inQ; }
+        else if (ch === ',' && !inQ) { row.push(cur); cur = ''; }
+        else if ((ch === '\n' || ch === '\r') && !inQ) { if (ch === '\r' && nx === '\n') i++; row.push(cur); cur=''; rows.push(row); row = []; }
+        else cur += ch;
+      }
+      row.push(cur); rows.push(row);
+      const maxLen = Math.max(...rows.map(r => r.length));
+      return rows.map(r => r.concat(Array(Math.max(0, maxLen - r.length)).fill('')));
+    }
+
+    /** Smart image helpers */
+    function makeSmartImg(dir, name, className, alt) {
+      if (!name) return null;
+      const img = document.createElement('img');
+      img.className = className || '';
+      img.alt = alt || name;
+      img.loading = 'lazy';
+      const exts = IMAGE_EXTS.slice();
+      let i = 0;
+      const tryNext = () => { if (i >= exts.length) { img.remove(); return; } img.src = `${dir}${encSeg(name)}.${exts[i++]}`; };
+      img.onerror = tryNext; tryNext(); return img;
+    }
+    function makeSmartImgFallback(dir, name, className, alt, onAllFail) {
+      if (!name) { if (typeof onAllFail === 'function') onAllFail(); return null; }
+      const img = document.createElement('img');
+      img.className = className || ''; img.alt = alt || name; img.loading = 'lazy';
+      const exts = IMAGE_EXTS.slice(); let i = 0;
+      const tryNext = () => {
+        if (i >= exts.length) { img.remove(); if (typeof onAllFail === 'function') onAllFail(); return; }
+        img.src = `${dir}${encSeg(name)}.${exts[i++]}`;
+      };
+      img.onerror = tryNext; tryNext(); return img;
+    }
+
+    // Event media: only event image (no location fallback)
+    function prependEventMedia(el, ev, setHasImage) {
+      const setFlag = (v) => { if (typeof setHasImage === 'function') setHasImage(!!v); };
+      const insertPlaceholder = () => {
+        const ph = document.createElement('div');
+        ph.className = 'thumb';
+        el.prepend(ph);
+        setFlag(false);
+      };
+      if (ev.imageName) {
+        const img = makeSmartImgFallback(IMAGES_DIR, ev.imageName, 'thumb', ev.imageName, insertPlaceholder);
+        if (img) {
+          img.addEventListener('load', () => setFlag(true), { once: true });
+          el.prepend(img);
+        }
+      } else insertPlaceholder();
+    }
+
+    /** ============ DAY-LEVEL HELPERS (canonical) ============ **/
+    const MS_PER_DAY = 24 * 3600 * 1000;
+    // Epoch Monday for ISO weeks
+    const EPOCH_MON = new Date(Date.UTC(1970, 0, 5)); // Monday 1970-01-05
+
+    // Monday (00:00 UTC) of ISO week "YYYY-WW"
+    function isoWeekToDate(iso) {
+      const [yStr, wStr] = String(iso).split('-');
+      const Y = +yStr, W = +wStr;
+      const jan4 = new Date(Date.UTC(Y, 0, 4));
+      const d = jan4.getUTCDay() || 7; // 1..7
+      const monW1 = new Date(jan4);
+      monW1.setUTCDate(jan4.getUTCDate() - (d - 1)); // Monday of week 1
+      const monW = new Date(monW1);
+      monW.setUTCDate(monW1.getUTCDate() + (W - 1) * 7);
+      monW.setUTCHours(0, 0, 0, 0);
+      return monW;
+    }
+
+    function dateToDayIdx(d) {
+      return Math.floor((d.getTime() - EPOCH_MON.getTime()) / MS_PER_DAY);
+    }
+    function dayIdxToDate(idx) {
+      const d = new Date(EPOCH_MON);
+      d.setUTCDate(EPOCH_MON.getUTCDate() + idx);
+      d.setUTCHours(0, 0, 0, 0);
+      return d;
+    }
+
+    // "YYYY-WW" -> Monday dayIdx
+    function isoWeekToDayIdx(iso) {
+      return dateToDayIdx(isoWeekToDate(iso));
+    }
+
+    // dayIdx -> ISO { year, week, day: 1..7 }
+    function idxToISODay(idx) {
+      const d = dayIdxToDate(idx);
+      const day = d.getUTCDay() || 7;     // 1..7
+      const th  = new Date(d);            // Thursday of this week
+      th.setUTCDate(d.getUTCDate() + (4 - day));
+      const isoYear = th.getUTCFullYear();
+      const w1 = new Date(Date.UTC(isoYear, 0, 4));
+      const wd = (w1.getUTCDay() || 7);
+      const w1Mon = new Date(w1);
+      w1Mon.setUTCDate(w1.getUTCDate() - (wd - 1));
+      const week = 1 + Math.floor((d - w1Mon) / MS_PER_DAY / 7);
+      return { year: isoYear, week, day };
+    }
+
+    /** ===== Resolve timelines (day canon) ===== */
+    function resolveTimelineDays(tl) {
+      let prevEnd = null;          // previous event's exclusive end dayIdx
+      let bundleDay = null;        // current bundle day (for "." starts)
+      const staged = [];
+      for (const ev of (tl.events || [])) {
+        const startRaw = (ev.rawDate || '').trim();
+        const durRaw   = (ev.rawDuration || '').trim();
+
+        let { days: durationDays, isSlice } = parseDuration(durRaw);
+        let startIdx = null;
+
+        if (isSpecificWeekDay(startRaw)) {
+          const [Y, W, D] = startRaw.split('-').map(Number);
+          const base = isoWeekToDayIdx(`${Y}-${String(W).padStart(2, '0')}`);
+          startIdx = base + (D - 1);
+          bundleDay = null;
+        } else if (isSpecificWeek(startRaw)) {
+          startIdx = isoWeekToDayIdx(startRaw);
+          bundleDay = null;
+        } else if (isZeroStart(startRaw)) {
+          startIdx = (prevEnd == null) ? 0 : (prevEnd);
+          bundleDay = null;
+        } else if (isSameDayStart(startRaw)) {
+          if (bundleDay != null) {
+            startIdx = bundleDay;
+          } else {
+            startIdx = (prevEnd == null) ? 0 : prevEnd;
+            bundleDay = startIdx;
+          }
+        } else {
+          const relW = parseRelWeeks(startRaw);
+          const relD = parseRelDays(startRaw);
+          if (relW != null) { startIdx = (prevEnd == null) ? relW * 7 : (prevEnd + relW * 7); bundleDay = null; }
+          else if (relD != null) { startIdx = (prevEnd == null) ? relD : (prevEnd + relD); bundleDay = null; }
+          else { continue; }
+        }
+
+        if (isSameDayStart(startRaw) && durationDays > 1) { isSlice = true; durationDays = 1; }
+        if (isSlice) durationDays = 1;
+        if (isSlice) { bundleDay = startIdx; } else { bundleDay = null; }
+
+        const endIdx = startIdx + Math.max(1, durationDays);
+        prevEnd = endIdx;
+
+        staged.push({
+          ...ev,
+          startIdx,
+          durationDays: Math.max(1, durationDays),
+          isSlice
+        });
+      }
+
+      return {
+        title: tl.title,
+        imageName: tl.imageName || '',
+        preferredGranularity: tl.preferredGranularity || '',
+        events: staged
+      };
+    }
+
+    /** ===== Column binning helpers ===== */
+    function activeGranularity() {
+      return settingsState?.ui?.granularity || 'day';
+    }
+
+    function keyOf(dayIdx, g) {
+      if (g === 'week') {
+        const { year, week } = idxToISODay(dayIdx);
+        return { t: 'w', year, week };
+      } else if (g === 'year') {
+        const { year } = idxToISODay(dayIdx);
+        return { t: 'y', year };
+      } else {
+        return { t: 'd', dayIdx };
+      }
+    }
+    function keyEq(a, b) {
+      if (!a || !b || a.t !== b.t) return false;
+      if (a.t === 'd') return a.dayIdx === b.dayIdx;
+      if (a.t === 'w') return a.year === b.year && a.week === b.week;
+      if (a.t === 'y') return a.year === b.year;
+      return false;
+    }
+    function keyCmp(a, b) {
+      if (a.t !== b.t) return 0;
+      if (a.t === 'd') return a.dayIdx - b.dayIdx;
+      if (a.t === 'w') return (a.year - b.year) || (a.week - b.week);
+      if (a.t === 'y') return (a.year - b.year);
+      return 0;
+    }
+    function keyNext(a) {
+      if (a.t === 'd') return { t: 'd', dayIdx: a.dayIdx + 1 };
+      if (a.t === 'w') {
+        // advance 7 days from Monday
+        const base = isoWeekToDayIdx(`${a.year}-${String(a.week).padStart(2,'0')}`);
+        const nextIdx = base + 7;
+        return keyOf(nextIdx, 'week');
+      }
+      if (a.t === 'y') return { t: 'y', year: a.year + 1 };
+      return a;
+    }
+    function keyToLabel(a) {
+      if (a.t === 'd') {
+        const { day } = idxToISODay(a.dayIdx);
+        const dname = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][day-1];
+        const dt = dayIdxToDate(a.dayIdx);
+        const dd = String(dt.getUTCDate()).padStart(2,'0');
+        return { text: `${dname} ${dd}`, year: idxToISODay(a.dayIdx).year };
+      }
+      if (a.t === 'w') {
+        const { year, week } = a;
+        return { text: `Week ${String(week).padStart(2,'0')}`, year };
+      }
+      if (a.t === 'y') {
+        return { text: String(a.year), year: a.year };
+      }
+      return { text: '', year: '' };
+    }
+    function keySampleDayIdx(a) {
+      if (a.t === 'd') return a.dayIdx;
+      if (a.t === 'w') return isoWeekToDayIdx(`${a.year}-${String(a.week).padStart(2,'0')}`);
+      if (a.t === 'y') return dateToDayIdx(new Date(Date.UTC(a.year,0,1)));
+      return 0;
+    }
+
+    function countKeysInclusive(a, b) {
+      if (!a || !b || a.t !== b.t) return 0;
+      let cnt = 1; let cur = a;
+      while (!keyEq(cur, b)) { cur = keyNext(cur); cnt++; if (cnt > 10000) break; }
+      return cnt;
+    }
+
+    /** ===================== EDITOR (BASIC) ===================== **/
+    let editorState = null;
+    let editMode = false;
+
+    function renderEditorUI() {
+      const root = document.createElement('div');
+      root.id = 'editor';
+      root.innerHTML = `
+        <div class="editor__backdrop" role="presentation"></div>
+        <div class="editor__panel" role="dialog" aria-modal="true" aria-label="Timeline editor">
+          <div class="editor__head">
+            <div class="editor__title">Timeline Editor</div>
+            <div class="editor__actions">
+              <span id="ed-actions"></span>
+              <button id="ed-close" type="button">Close</button>
+            </div>
+          </div>
+          <div class="editor__body">
+            <aside class="editor__sidebar" id="ed-sidebar"></aside>
+            <main class="editor__main" id="ed-main"></main>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(root);
+
+      document.getElementById('ed-close').onclick = exitEditMode;
+
+      renderSidebar();
+      ensureSelectedPane();
+      renderMain();
+      renderHeaderActions();
+    }
+
+    function enterEditMode() { editMode = true; document.body.classList.add('editing'); renderEditorUI(); }
+    function exitEditMode() { editMode = false; document.body.classList.remove('editing'); const panel = document.getElementById('editor'); if (panel) panel.remove(); }
+
+    function debounce(fn, ms) {
+      let t, lastArgs, lastThis;
+      const d = function (...a) {
+        lastArgs = a; lastThis = this;
+        clearTimeout(t);
+        t = setTimeout(() => { t = null; fn.apply(lastThis, lastArgs); }, ms);
+      };
+      d.flush = () => { if (t) { clearTimeout(t); t = null; fn.apply(lastThis, lastArgs); } };
+      return d;
+    }
+    const AUTOSAVE_MS = 400;
+    const debouncedApply = debounce(() => { applyStateToRenderer(); }, AUTOSAVE_MS);
+
+    function flushPendingEdits() {
+      const ae = document.activeElement;
+      if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable)) {
+        ae.dispatchEvent(new Event('input',  { bubbles: true }));
+        ae.dispatchEvent(new Event('change', { bubbles: true }));
+        ae.blur();
+      }
+      debouncedApply.flush?.();
+    }
+
+    async function applyStateToRenderer() {
+      const timelines = (editorState?.timelines || []).map(tl => ({
+        title: tl.title,
+        imageName: tl.image || '',
+        preferredGranularity: tl.preferredGranularity || '',
+        events: (tl.events || []).map(e => {
+          const categoryId = toCatId(e.categoryId ?? e.category ?? '');
+          return {
+            rawDate: e.date,
+            rawDuration: e.duration,
+            desc: e.desc,
+            categoryId,
+            imageName: e.image || '',
+            characters: Array.isArray(e.characters) ? e.characters : [],
+            location: String(e.location || '')
+          };
+        })
+      }));
+
+      const resolved = timelines.map(resolveTimelineDays);
+
+      // Map seasonal → day indices (we will hide them in Year view by default)
+      const seasonalMarkers = (editorState?.seasonal || []).map(s => {
+        if (isSpecificWeek(s.date)) {
+          return { type: 'static', dayIdx: isoWeekToDayIdx(s.date), id: s.id, name: s.name, desc: s.desc || '', imageName: s.id };
+        } else if (/^\d{2}$/.test(s.date)) {
+          return { type: 'recurring', week: parseInt(s.date, 10), id: s.id, name: s.name, desc: s.desc || '', imageName: s.id };
+        }
+        return null;
+      }).filter(Boolean);
+
+      await renderGridHorizontalGranularity(resolved, seasonalMarkers);
+    }
+
+    /** ===== Selection state ===== */
+    let selPane = null;
+    function ensureSelectedPane() {
+      if (!selPane) return;
+      if (selPane.type === 'timeline') {
+        const L = editorState?.timelines?.length ?? 0;
+        if (!(Number.isInteger(selPane.idx) && selPane.idx >= 0 && selPane.idx < L)) selPane = null;
+      } else if (!['world-static','world-recurring','settings'].includes(selPane.type)) {
+        selPane = null;
+      }
+    }
+
+    /** ===== Header actions in editor ===== */
+    function renderHeaderActions() {
+      const host = document.getElementById('ed-actions');
+      if (!host) return;
+      host.innerHTML = `
+        <button id="ed-import" class="ghost" type="button">Import timelines.json</button>
+        <button id="ed-download" type="button">Download timelines.json</button>
+      `;
+      document.getElementById('ed-import').onclick = onImportJSON;
+      document.getElementById('ed-download').onclick = onDownloadJSON;
+    }
+
+    /** ===== Sidebar ===== */
+    function renderSidebar() {
+      const host = document.getElementById('ed-sidebar');
+      if (!host) return;
+      host.innerHTML = '';
+
+      // SETTINGS
+      const settingsHead = document.createElement('div');
+      settingsHead.className = 'ed-main-head';
+      settingsHead.innerHTML = `<div><strong>Settings</strong></div>`;
+      host.appendChild(settingsHead);
+
+      const settingsRow = document.createElement('div');
+      settingsRow.className = 'ed-tl';
+      settingsRow.innerHTML = `
+        <button class="ghost select-settings" title="Open settings" type="button">●</button>
+        <div class="ed-timelines">
+          <div class="ed-tl__title">Settings</div>
+        </div>`;
+      host.appendChild(settingsRow);
+      settingsRow.classList.toggle('is-active', selPane?.type === 'settings');
+      settingsRow.querySelector('.select-settings').onclick = () => { selPane = { type: 'settings' }; renderSidebar(); renderMain(); renderHeaderActions(); };
+
+      // WORLD EVENTS
+      const worldHead = document.createElement('div');
+      worldHead.className = 'ed-main-head';
+      worldHead.innerHTML = `<div><strong>World Events</strong></div>`;
+      host.appendChild(worldHead);
+
+      const worldList = document.createElement('div');
+      worldList.className = 'ed-tl-list';
+      host.appendChild(worldList);
+
+      const rowStatic = document.createElement('div');
+      rowStatic.className = 'ed-tl';
+      rowStatic.innerHTML = `
+        <button class="ghost select-world" data-kind="world-static" title="Select">●</button>
+        <div class="ed-timelines">
+          <div class="ed-tl__title">One-off Events</div>
+          <div class="ed-tl__meta">Static (YYYY-WW)</div>
+        </div>`;
+      worldList.appendChild(rowStatic);
+
+      const rowRecurring = document.createElement('div');
+      rowRecurring.className = 'ed-tl';
+      rowRecurring.innerHTML = `
+        <button class="ghost select-world" data-kind="world-recurring" title="Select">●</button>
+        <div class="ed-timelines">
+          <div class="ed-tl__title">Recurring Events</div>
+          <div class="ed-tl__meta">Annual (WW)</div>
+        </div>`;
+      worldList.appendChild(rowRecurring);
+
+      rowStatic.classList.toggle('is-active', selPane?.type === 'world-static');
+      rowRecurring.classList.toggle('is-active', selPane?.type === 'world-recurring');
+
+      rowStatic.querySelector('.select-world').onclick = () => { selPane = { type: 'world-static' }; renderSidebar(); renderMain(); renderHeaderActions(); };
+      rowRecurring.querySelector('.select-world').onclick = () => { selPane = { type: 'world-recurring' }; renderSidebar(); renderMain(); renderHeaderActions(); };
+
+      // TIMELINES
+      const head = document.createElement('div');
+      head.className = 'ed-main-head';
+      head.innerHTML = `<div><strong>Timelines</strong></div><div><button id="ed-add-tl" type="button"><b>＋</b></button></div>`;
+      host.appendChild(head);
+
+      document.getElementById('ed-add-tl').onclick = () => {
+        const id = `tl_${Date.now()}`;
+        editorState.timelines.push({ id, title: 'New Timeline', image: '', preferredGranularity: '', events: [] });
+        selPane = { type: 'timeline', idx: editorState.timelines.length - 1 };
+        debouncedApply(); renderSidebar(); renderMain();
+      };
+
+      const list = document.createElement('div');
+      list.className = 'ed-tl-list';
+      host.appendChild(list);
+
+      (editorState.timelines || []).forEach((tl, i) => {
+        const row = document.createElement('div');
+        row.className = 'ed-tl';
+        row.innerHTML = `
+          <button class="ghost select-timeline" title="Select" type="button">●</button>
+          <div class="ed-timelines">
+            <input type="text" class="ed-tl__title" value="${tl.title || ''}" />
+            <div class="ed-tl__meta">${(tl.events||[]).length} events</div>
+            <div class="ed-row" style="display:flex; gap:.5rem; align-items:center; margin-top:.35rem;">
+              <label style="font-size:.85em; opacity:.7;">Pref:</label>
+              <select class="ed-pref-gran">
+                <option value="">(none)</option>
+                <option value="day"  ${tl.preferredGranularity==='day'?'selected':''}>Day</option>
+                <option value="week" ${tl.preferredGranularity==='week'?'selected':''}>Week</option>
+                <option value="year" ${tl.preferredGranularity==='year'?'selected':''}>Year</option>
+              </select>
+            </div>
+            <div class="ed-btn-box small">
+              <button class="ghost" data-act="up" title="Move up">▲</button>
+              <button class="ghost" data-act="down" title="Move down">▼</button>
+              <button class="danger" data-act="del" title="Delete timeline">X</button>
+            </div>
+          </div>`;
+        list.appendChild(row);
+
+        row.classList.toggle('is-active', selPane?.type === 'timeline' && selPane.idx === i);
+        row.querySelector('.select-timeline').onclick = () => { selPane = { type: 'timeline', idx: i }; renderSidebar(); renderMain(); };
+
+        row.querySelector('.ed-tl__title').oninput = (e) => { tl.title = e.target.value; debouncedApply(); renderSidebar(); };
+        row.querySelector('.ed-pref-gran').onchange = (e) => { tl.preferredGranularity = e.target.value; debouncedApply(); };
+
+        row.querySelector('[data-act="up"]').onclick = () => {
+          if (i>0){ const a = editorState.timelines[i-1]; editorState.timelines[i-1] = editorState.timelines[i]; editorState.timelines[i] = a; if (selPane?.type==='timeline'&&selPane.idx===i) selPane.idx=i-1; debouncedApply(); renderSidebar(); renderMain(); }
+        };
+        row.querySelector('[data-act="down"]').onclick = () => {
+          if (i<editorState.timelines.length-1){ const a = editorState.timelines[i+1]; editorState.timelines[i+1] = editorState.timelines[i]; editorState.timelines[i] = a; if (selPane?.type==='timeline'&&selPane.idx===i) selPane.idx=i+1; debouncedApply(); renderSidebar(); renderMain(); }
+        };
+        row.querySelector('[data-act="del"]').onclick = () => {
+          if (confirm(`Delete timeline "${tl.title}"?`)){
+            editorState.timelines.splice(i,1);
+            if (selPane?.type === 'timeline') {
+              if (editorState.timelines.length === 0) selPane = null;
+              else if (selPane.idx >= editorState.timelines.length) selPane.idx = editorState.timelines.length - 1;
+            }
+            debouncedApply(); renderSidebar(); renderMain();
+          }
+        };
+      });
+    }
+
+    /** ===== Main panel ===== */
+    function renderSettingsEditor(host) {
+      const head = document.createElement('div');
+      head.className = 'ed-main-head';
+      head.innerHTML = `<div><strong>Settings</strong></div>`;
+      host.appendChild(head);
+
+      const wrap = document.createElement('div');
+      wrap.className = 'ed-sect';
+      host.appendChild(wrap);
+
+      // General
+      const uiCard = document.createElement('div');
+      uiCard.className = 'ed-sect';
+      const ui = settingsState.ui || DEFAULT_UI;
+      uiCard.innerHTML = `
+        <h3>General</h3>
+        <div class="ed-list">
+          <div class="ed-row">
+            <label style="display:block; font-weight:600; margin-bottom:.25rem;">Title</label>
+            <input type="text" id="ui-title" value="${(ui.title) || DEFAULT_UI.title}" placeholder="Site title" />
+          </div>
+
+          <div class="ed-row" style="margin-top:12px;">
+            <label style="display:block; font-weight:600; margin-bottom:.25rem;">Theme</label>
+            <label style="margin-right:1rem;">
+              <input type="radio" name="ui-theme" value="light" ${(ui.theme === 'dark') ? '' : 'checked'}>
+              Light
+            </label>
+            <label>
+              <input type="radio" name="ui-theme" value="dark" ${(ui.theme === 'dark') ? 'checked' : ''}>
+              Dark
+            </label>
+          </div>
+
+          <div class="ed-row" style="margin-top:12px;">
+            <label style="display:block; font-weight:600; margin-bottom:.25rem;">Empty Columns</label>
+            <label>
+              <input type="checkbox" id="ui-collapse" ${(ui.collapseEmptyDays ? 'checked' : '')}>
+              Collapse empty columns
+            </label>
+          </div>
+
+          <div class="ed-row" style="margin-top:12px;">
+            <label style="display:block; font-weight:600; margin-bottom:.25rem;">View (Granularity)</label>
+            <select id="ui-gran">
+              <option value="day"  ${ui.granularity==='day'?'selected':''}>Day</option>
+              <option value="week" ${ui.granularity==='week'?'selected':''}>Week</option>
+              <option value="year" ${ui.granularity==='year'?'selected':''}>Year</option>
+            </select>
+          </div>
+
+          <div class="ed-row" style="margin-top:12px;">
+            <label style="display:block; font-weight:600; margin-bottom:.25rem;">Seasonal markers in Year view</label>
+            <label>
+              <input type="checkbox" id="ui-year-seasonal" ${(ui.showSeasonalInYear ? 'checked' : '')}>
+              Show seasonal markers in Year view (off = hide)
+            </label>
+          </div>
+
+          <div class="ed-row" style="margin-top:12px;">
+            <label style="display:block; font-weight:600; margin-bottom:.25rem;">Max chips per bin</label>
+            <input type="number" id="ui-maxchips" min="1" max="99" step="1" value="${ui.maxChipsPerBin}">
+          </div>
+        </div>
+      `;
+      wrap.appendChild(uiCard);
+
+      const iTitle = uiCard.querySelector('#ui-title');
+      iTitle.addEventListener('input', () => { if (!settingsState.ui) settingsState.ui = { ...DEFAULT_UI }; settingsState.ui.title = iTitle.value; applyAllFromSettings(); });
+
+      uiCard.querySelectorAll('input[name="ui-theme"]').forEach(r => {
+        r.addEventListener('change', (e) => { if (!settingsState.ui) settingsState.ui = { ...DEFAULT_UI }; settingsState.ui.theme = e.target.value === 'dark' ? 'dark' : 'light'; applyAllFromSettings(); });
+      });
+
+      const iCollapse = uiCard.querySelector('#ui-collapse');
+      iCollapse.addEventListener('change', () => { if (!settingsState.ui) settingsState.ui = { ...DEFAULT_UI }; settingsState.ui.collapseEmptyDays = !!iCollapse.checked; applyAllFromSettings(); });
+
+      const iGran = uiCard.querySelector('#ui-gran');
+      iGran.addEventListener('change', () => { if (!settingsState.ui) settingsState.ui = { ...DEFAULT_UI }; settingsState.ui.granularity = iGran.value; applyAllFromSettings(); });
+
+      const iSeasonYear = uiCard.querySelector('#ui-year-seasonal');
+      iSeasonYear.addEventListener('change', () => { if (!settingsState.ui) settingsState.ui = { ...DEFAULT_UI }; settingsState.ui.showSeasonalInYear = !!iSeasonYear.checked; applyAllFromSettings(); });
+
+      const iMaxChips = uiCard.querySelector('#ui-maxchips');
+      iMaxChips.addEventListener('change', () => { if (!settingsState.ui) settingsState.ui = { ...DEFAULT_UI }; const v = parseInt(iMaxChips.value,10); settingsState.ui.maxChipsPerBin = Number.isFinite(v) ? Math.max(1, Math.min(99, v)) : DEFAULT_UI.maxChipsPerBin; applyAllFromSettings(); });
+
+      // Categories table (no emoji)
+      const table = document.createElement('table');
+      table.className = 'ed-table';
+      table.innerHTML = `
+        <thead>
+          <tr>
+            <th style="width:70px;">ID</th>
+            <th>Name</th>
+            <th style="width:160px;">Color</th>
+            <th style="width:90px;">Inner Text</th>
+          </tr>
+        </thead>
+        <tbody></tbody>`;
+      wrap.appendChild(table);
+
+      const tbody = table.querySelector('tbody');
+      (settingsState.categories || []).slice().sort((a,b)=>a.id-b.id).forEach(cat => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><code>${cat.id}</code></td>
+          <td><input type="text" class="cat-name" value="${cat.name}" placeholder="Category ${cat.id}" /></td>
+          <td>
+            <div style="display:flex; align-items:center; gap:.5rem;">
+              <input type="color" class="cat-color-picker" value="${toColorInputValue(cat.color)}" />
+              <input type="text" class="cat-color" value="${cat.color || ''}" placeholder="#RRGGBB" />
+            </div>
+          </td>
+          <td>
+            <button type="button" class="cat-text-toggle" title="Toggle text color (black/white)" style="width:40px;height:26px;border:1px solid #ccc;border-radius:4px; background:${cat.color || 'transparent'}; color:${cat.text === 'white' ? '#fff' : '#000'};">A</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+
+        const iName = tr.querySelector('.cat-name');
+        const iColorText = tr.querySelector('.cat-color');
+        const iColorPicker = tr.querySelector('.cat-color-picker');
+        const textBtn = tr.querySelector('.cat-text-toggle');
+
+        iName.addEventListener('input', () => { cat.name = iName.value; applyStateToRenderer(); });
+
+        iColorText.addEventListener('input', () => {
+          const raw = iColorText.value; const norm = normalizeHexColor(raw);
+          if (raw.trim() === '' || norm) { cat.color = norm; textBtn.style.background = norm || 'transparent'; if (norm) iColorPicker.value = toColorInputValue(norm); applyStateToRenderer(); }
+        });
+        iColorPicker.addEventListener('input', () => {
+          const val = iColorPicker.value; const norm = normalizeHexColor(val); cat.color = norm; iColorText.value = norm; textBtn.style.background = norm || 'transparent'; applyStateToRenderer();
+        });
+        iColorText.addEventListener('input', () => {
+          const raw = iColorText.value.trim(); if (raw === '') { cat.color=''; textBtn.style.background='transparent'; applyStateToRenderer(); return; }
+          const norm = normalizeHexColor(raw); if (!norm) return; iColorText.value = norm.toUpperCase(); cat.color = norm; iColorPicker.value = toColorInputValue(norm); textBtn.style.background = norm || 'transparent'; applyStateToRenderer();
+        });
+        textBtn.addEventListener('click', () => { cat.text = (cat.text === 'white') ? 'black' : 'white'; textBtn.style.color = (cat.text === 'white') ? '#fff' : '#000'; applyStateToRenderer(); });
+      });
+    }
+
+    function renderWorldEditor(host, kind) {
+      const isStatic = (kind === 'static');
+      const title = isStatic ? 'One-off Events' : 'Recurring Events';
+      const placeholder = isStatic ? 'YYYY-WW' : 'WW';
+
+      const head = document.createElement('div');
+      head.className = 'ed-main-head';
+      head.innerHTML = `
+        <div><strong>${title}</strong></div>
+        <div class="ed-btn-box"><button id="ed-add-world" type="button"><b>＋</b></button></div>`;
+      host.appendChild(head);
+
+      const wrap = document.createElement('div');
+      wrap.className = 'ed-sect';
+      host.appendChild(wrap);
+
+      const list = document.createElement('div');
+      list.className = 'ed-list';
+      wrap.appendChild(list);
+
+      const items = (editorState.seasonal || []).filter(s => { const isS = /^\d{4}-\d{2}$/.test(s.date); return isStatic ? isS : !isS; });
+
+      items.forEach((s) => {
+        const row = document.createElement('div');
+        row.className = 'ed-sea';
+        row.innerHTML = `
+      <div class="ed-row-data-top">
+        <input type="text" class="ed-sea-name" value="${s.name}" title="Event Name" placeholder="Event Name">
+        <input type="text" class="ed-sea-date" value="${s.date}" placeholder="${placeholder}" title="Date: ${placeholder}">
+      </div>
+      <input type="text" class="ed-sea-desc" value="${s.desc || ''}" title="Event Description" placeholder="Event Description">
+      <div class="ed-row-data-bottom">
+        <div class="ed-sea-image">
+          <div class="ed-thumb ed-thumb--ph" aria-hidden="false"></div>
+          <input type="text" class="ed-sea-id" value="${s.id}" title="Image Slug" placeholder="Image Slug">
+        </div>
+        <div class="ed-btn-box small">
+          <button data-act="up" class="ghost">▲</button>
+          <button data-act="down" class="ghost">▼</button>
+          <button data-act="del" class="danger">🞬</button>
+        </div>
+      </div>`;
+        list.appendChild(row);
+
+        const iName = row.querySelector('.ed-sea-name');
+        const iId = row.querySelector('.ed-sea-id');
+        const iDesc = row.querySelector('.ed-sea-desc');
+        const iDate = row.querySelector('.ed-sea-date');
+        const imgWrap = row.querySelector('.ed-sea-image');
+
+        function updateSeasonalPreview() {
+          imgWrap.querySelectorAll('.ed-thumb').forEach(n => n.remove());
+          const slug = (iId.value || '').trim();
+          if (!slug) { const ph = document.createElement('div'); ph.className = 'ed-thumb ed-thumb--ph'; ph.setAttribute('aria-hidden','false'); imgWrap.insertBefore(ph, iId); return; }
+          const imgEl = makeSmartImgFallback(IMAGES_DIR, slug, 'ed-thumb', slug, () => {
+            const ph = document.createElement('div'); ph.className = 'ed-thumb ed-thumb--ph'; ph.setAttribute('aria-hidden','false'); imgWrap.insertBefore(ph, iId);
+          });
+          if (imgEl) imgWrap.insertBefore(imgEl, iId);
+        }
+        updateSeasonalPreview();
+
+        iName.addEventListener('input', () => { s.name = iName.value; debouncedApply(); });
+        iId.addEventListener('input', () => { s.id = iId.value.trim(); updateSeasonalPreview(); debouncedApply(); });
+        iDesc.addEventListener('input', () => { s.desc = iDesc.value; debouncedApply(); });
+        iDate.addEventListener('input', () => { s.date = iDate.value.trim(); debouncedApply(); });
+
+        row.querySelector('[data-act="up"]').onclick = () => {
+          const arr = editorState.seasonal || []; const idx = arr.indexOf(s);
+          if (idx > 0) { const a = arr[idx - 1]; arr[idx - 1] = arr[idx]; arr[idx] = a; renderMain(); debouncedApply(); }
+        };
+        row.querySelector('[data-act="down"]').onclick = () => {
+          const arr = editorState.seasonal || []; const idx = arr.indexOf(s);
+          if (idx < arr.length - 1) { const a = arr[idx + 1]; arr[idx + 1] = arr[idx]; arr[idx] = a; renderMain(); debouncedApply(); }
+        };
+        row.querySelector('[data-act="del"]').onclick = () => {
+          const arr = editorState.seasonal || []; const idx = arr.indexOf(s);
+          if (idx >= 0) { arr.splice(idx, 1); renderMain(); debouncedApply(); }
+        };
+      });
+
+      document.getElementById('ed-add-world').onclick = () => {
+        if (!editorState.seasonal) editorState.seasonal = [];
+        editorState.seasonal.push(
+          isStatic ? { date: `${new Date().getUTCFullYear()}-01`, id: 'season', name: 'Event', desc: '' }
+                   : { date: '01', id: 'season', name: 'Event', desc: '' }
+        );
+        renderMain(); debouncedApply();
+      };
+    }
+
+    function renderMain() {
+      ensureSelectedPane();
+      renderHeaderActions();
+      const host = document.getElementById('ed-main');
+      if (!host) return;
+      host.innerHTML = '';
+
+      if (!selPane) {
+        host.innerHTML = `
+          <div class="ed-main-head"><strong>Nothing selected</strong></div>
+          <div class="ed-empty">Choose <em>Settings</em>, <em>One-off Events</em>, <em>Recurring Events</em>, or a <em>Timeline</em> from the left.</div>`;
+        return;
+      }
+
+      if (selPane.type === 'settings') { renderSettingsEditor(host); return; }
+      if (selPane.type === 'world-static' || selPane.type === 'world-recurring') { renderWorldEditor(host, selPane.type === 'world-static' ? 'static' : 'recurring'); return; }
+
+      if (!editorState.timelines.length) { host.innerHTML = '<div class="ed-main-head"><em>No timelines. Add one from the left.</em></div>'; return; }
+      const tl = editorState.timelines[selPane.idx];
+
+      const head = document.createElement('div');
+      head.className = 'ed-main-head';
+      head.innerHTML = `
+        <div class="ed-main-titlebar" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <div class="ed-main-title" style="font-weight:700;">${tl.title || 'Untitled'}</div>
+
+          <div class="ed-tl-image" style="display:flex;align-items:center;gap:8px;">
+            <div class="ed-thumb ed-thumb--ph" aria-hidden="false" style="width:36px;height:36px;border-radius:6px;background:#f2f2f2;border:1px solid #ddd;"></div>
+            <input type="text" id="ed-tl-image-input" value="${tl.image || ''}" placeholder="Timeline image slug" title="Timeline Image Slug" style="min-width:220px;">
+          </div>
+
+          <div class="ed-btn-box" style="margin-left:auto;display:flex;gap:8px;">
+            <button id="ed-add-ev" type="button"><b>＋</b></button>
+            <button id="ed-dup-evs" class="ghost" type="button">++ All</button>
+            <button id="ed-clear-evs" class="danger" type="button">X All</button>
+          </div>
+        </div>`;
+      host.appendChild(head);
+
+      // Wire timeline image preview
+      (function () {
+        const wrap = head.querySelector('.ed-tl-image');
+        const input = head.querySelector('#ed-tl-image-input');
+        function updateTlImagePreview() {
+          wrap.querySelectorAll('.ed-thumb').forEach(n => n.remove());
+          const slug = (input.value || '').trim();
+          if (!slug) { const ph = document.createElement('div'); ph.className = 'ed-thumb ed-thumb--ph'; ph.setAttribute('aria-hidden','false'); ph.style.cssText = 'width:36px;height:36px;border-radius:6px;background:#f2f2f2;border:1px solid #ddd;'; wrap.insertBefore(ph, input); return; }
+          const imgEl = makeSmartImgFallback(IMAGES_DIR, slug, 'ed-thumb', slug, () => { const ph = document.createElement('div'); ph.className = 'ed-thumb ed-thumb--ph'; ph.setAttribute('aria-hidden','false'); ph.style.cssText = 'width:36px;height:36px;border-radius:6px;background:#f2f2f2;border:1px solid #ddd;'; wrap.insertBefore(ph, input); });
+          if (imgEl) { imgEl.style.cssText = 'width:36px;height:36px;border-radius:6px;object-fit:cover;border:1px solid #ddd;'; wrap.insertBefore(imgEl, input); }
+        }
+        updateTlImagePreview();
+        input.addEventListener('input', () => { tl.image = input.value.trim(); updateTlImagePreview(); debouncedApply(); });
+      })();
+
+      const table = document.createElement('table');
+      table.className = 'ed-table';
+      table.innerHTML = `<tbody></tbody>`;
+      host.appendChild(table);
+
+      const tbody = table.querySelector('tbody');
+      const evs = tl.events || [];
+
+      evs.slice().reverse().forEach((ev, rIdx) => {
+        const i = evs.length - 1 - rIdx;
+        ev.categoryId = toCatId(ev.categoryId ?? ev.category ?? '');
+
+        const tr = document.createElement('tr');
+        tr.dataset.catId = ev.categoryId || 0;
+        const catColor = getCatColor(ev.categoryId);
+        tr.dataset.catColor = catColor || '';
+        tr.style.setProperty('--jcolor', catColor || 'transparent');
+        tr.innerHTML = `
+      <td>
+        <div class="ed-row-data">
+          <div class="ed-row-data-top">
+            <input type="text" class="ed-desc" value="${ev.desc || ''}" placeholder="Event Name" title="Event Name">
+            <div class="ed-category"></div>
+          </div>
+          <div class="ed-row-data-bottom">
+            <input type="text" class="ed-date" value="${ev.date || ''}" placeholder="Date" title="Date: YYYY-WW or 2w or 3d or 0 or .">
+            <input type="text" class="ed-duration" value="${ev.duration || ''}" placeholder="Duration" title="Duration: e.g. 3w, 5d, .">
+            <input type="text" class="ed-characters" value="${(ev.characters || []).join(', ')}" placeholder="Characters (comma separated)" title="Characters: comma separated">
+            <input type="text" class="ed-location"   value="${ev.location || ''}"               placeholder="Location"  title="Single location string">
+          </div>
+        </div>
+        <div class="ed-row-btns">
+          <div class="ed-image">
+            <div class="ed-thumb ed-thumb--ph" aria-hidden="false"></div>
+            <input type="text" class="ed-image-input" value="${ev.image || ''}" placeholder="Image slug" title="Image Slug">
+          </div>
+          <div class="ed-btn-box small">
+            <button data-act="up" class="ghost" title="Move up">▲</button>
+            <button data-act="down" class="ghost" title="Move down">▼</button>
+            <button data-act="dup" class="ghost" title="Duplicate">++</button>
+            <button data-act="del" class="danger" title="Delete">X</button>
+          </div>
+        </div>
+      </td>`;
+        tbody.appendChild(tr);
+
+        // Category select
+        const catCell = tr.querySelector('.ed-category');
+        const sel = document.createElement('select');
+        const cats = [{ id: 0, name: '—' }].concat(settingsState.categories || []);
+        sel.innerHTML = cats.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        sel.value = String(ev.categoryId || 0);
+        catCell.appendChild(sel);
+        sel.addEventListener('change', e => { ev.categoryId = parseInt(e.target.value, 10) || 0; tr.dataset.catId = ev.categoryId; debouncedApply(); });
+
+        const iDesc = tr.querySelector('.ed-desc');
+        const iDate = tr.querySelector('.ed-date');
+        const iDur = tr.querySelector('.ed-duration');
+        const iImg = tr.querySelector('.ed-image-input');
+        const iCh = tr.querySelector('.ed-characters');
+        const iLo = tr.querySelector('.ed-location');
+
+        // image preview
+        const imgCell = tr.querySelector('.ed-image');
+        function updateImagePreview() {
+          imgCell.querySelectorAll('.ed-thumb').forEach(n => n.remove());
+          const slug = (iImg.value || '').trim();
+          if (!slug) { const ph = document.createElement('div'); ph.className = 'ed-thumb ed-thumb--ph'; imgCell.insertBefore(ph, iImg); return; }
+          const imgEl = makeSmartImgFallback(IMAGES_DIR, slug, 'ed-thumb', slug, () => { const ph = document.createElement('div'); ph.className = 'ed-thumb ed-thumb--ph'; imgCell.insertBefore(ph, iImg); });
+          if (imgEl) imgCell.insertBefore(imgEl, iImg);
+        }
+        updateImagePreview();
+
+        iDesc.addEventListener('input', () => { ev.desc = iDesc.value; debouncedApply(); });
+        iDate.addEventListener('input', () => { ev.date = iDate.value.trim(); debouncedApply(); });
+        iDur.addEventListener('input', () => { ev.duration = iDur.value.trim(); debouncedApply(); });
+        iImg.addEventListener('input', () => { ev.image = iImg.value.trim(); updateImagePreview(); debouncedApply(); });
+        iCh.addEventListener('input', () => { ev.characters = tokenise(iCh.value); debouncedApply(); });
+        iLo.addEventListener('input', () => { ev.location = (iLo.value || '').trim(); debouncedApply(); });
+
+        tr.querySelector('[data-act="down"]').onclick = () => { if (i > 0) { const a = evs[i - 1]; evs[i - 1] = evs[i]; evs[i] = a; renderMain(); debouncedApply(); } };
+        tr.querySelector('[data-act="up"]').onclick = () => { if (i < evs.length - 1) { const a = evs[i + 1]; evs[i + 1] = evs[i]; evs[i] = a; renderMain(); debouncedApply(); } };
+        tr.querySelector('[data-act="dup"]').onclick = () => { evs.splice(i + 1, 0, structuredClone(ev)); renderMain(); debouncedApply(); };
+        tr.querySelector('[data-act="del"]').onclick = () => { evs.splice(i, 1); renderMain(); debouncedApply(); };
+      });
+
+      document.getElementById('ed-add-ev').onclick = () => { evs.push({ date: '', duration: '1w', desc: '', categoryId: 0, image: '', characters: [], location: '' }); renderMain(); debouncedApply(); };
+      document.getElementById('ed-dup-evs').onclick = () => { tl.events = [...evs.map(e => structuredClone(e)), ...evs.map(e => structuredClone(e))]; renderMain(); debouncedApply(); };
+      document.getElementById('ed-clear-evs').onclick = () => { if (confirm('Remove all events in this timeline?')) { tl.events = []; renderMain(); debouncedApply(); } };
+    }
+
+    function tokenise(s) { if (!s) return []; return [...new Set(s.split(',').map(x => x.trim()).filter(Boolean))]; }
+
+    /** ===================== Persistence ===================== */
+    function onDownloadJSON() {
+      flushPendingEdits();
+      const combined = { settings: settingsState || DEFAULT_SETTINGS, timelines: normalizeEditorState(structuredClone(editorState)).timelines || [], seasonal:  normalizeEditorState(structuredClone(editorState)).seasonal  || [] };
+      const blob = new Blob([JSON.stringify(combined, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'timelines.json';
+      document.body.appendChild(a); a.click(); URL.revokeObjectURL(a.href); a.remove();
+    }
+
+    async function onImportJSON() {
+      const inp = document.createElement('input');
+      inp.type = 'file'; inp.accept = '.json,application/json';
+      inp.onchange = async () => {
+        const file = inp.files[0]; if (!file) return;
+        try {
+          const text = await file.text();
+          const raw  = JSON.parse(text);
+          const combined = coerceCombinedJson(raw);
+          settingsState = combined.settings || DEFAULT_SETTINGS;
+          editorState   = normalizeEditorState({ timelines: combined.timelines || [], seasonal:  combined.seasonal  || [] });
+          applyAllFromSettings(); renderSidebar(); renderMain();
+        } catch (e) { alert('Failed to import: ' + (e.message || e)); }
+      };
+      inp.click();
+    }
+
+    /** ===================== GRID RENDER (Granularity) ===================== **/
+    function computeTimelineRanges(timelines) {
+      return timelines.map(tl => {
+        if (!tl.events || tl.events.length === 0) return null;
+        let start = Infinity, end = -Infinity;
+        for (const ev of tl.events) { start = Math.min(start, ev.startIdx); end = Math.max(end, ev.startIdx + ev.durationDays); }
+        if (!Number.isFinite(start) || !Number.isFinite(end)) return null;
+        return { start, end }; // [start, end)
+      });
+    }
+
+    async function renderGridHorizontalGranularity(timelines, seasonalMarkers = []) {
+      const grid = $('grid');
+      grid.innerHTML = '';
+
+      const g = activeGranularity();
+
+      // Bounds
+      const eventBounds = timelines.flatMap(tl => tl.events.map(ev => [ev.startIdx, ev.startIdx + ev.durationDays]));
+      const hasAnyEvents = eventBounds.length > 0;
+      const minIdx = hasAnyEvents ? Math.min(...eventBounds.map(b => b[0])) : 0;
+      const maxIdx = hasAnyEvents ? Math.max(...eventBounds.map(b => b[1])) : 1; // exclusive
+      const totalDays = Math.max(1, maxIdx - minIdx);
+
+      // Seasonal expansion (day & week view; optionally hide in year view)
+      const { year: minYear } = idxToISODay(minIdx);
+      const { year: maxYear } = idxToISODay(maxIdx - 1);
+      const expandedSeasonal = [];
+      const showSeasonal = (g !== 'year') || !!settingsState?.ui?.showSeasonalInYear;
+      if (showSeasonal) {
+        for (const m of seasonalMarkers) {
+          if (m.type === 'static') expandedSeasonal.push(m);
+          else if (m.type === 'recurring') {
+            const ww = String(m.week).padStart(2, '0');
+            for (let y = minYear; y <= maxYear; y++) {
+              const dayIdx = isoWeekToDayIdx(`${y}-${ww}`);
+              if (dayIdx >= minIdx && dayIdx < maxIdx) expandedSeasonal.push({ ...m, type: 'static', dayIdx });
+            }
+          }
+        }
+      }
+      const seasonalByDay = new Map();
+      for (const m of expandedSeasonal) {
+        if (!seasonalByDay.has(m.dayIdx)) seasonalByDay.set(m.dayIdx, []);
+        seasonalByDay.get(m.dayIdx).push(m);
+      }
+
+      // Active days for day view (for collapse) — ignore Year-pref timelines
+      const activeDayCounts = new Map();
+      if (g === 'day') {
+        for (const tl of timelines) {
+          const pref = (tl.preferredGranularity || '').toLowerCase();
+          if (pref === 'year') continue; // 🔑 ignore Year timelines in Day view collapse
+
+          for (const ev of tl.events) {
+            const a = Math.min(ev.startIdx, ev.startIdx + ev.durationDays);
+            const b = Math.max(ev.startIdx, ev.startIdx + ev.durationDays);
+            for (let i = a; i < b; i++) {
+              activeDayCounts.set(i, (activeDayCounts.get(i) || 0) + 1);
+            }
+          }
+        }
+      }
+
+
+
+      // Build bin keys across range
+      const firstKey = keyOf(minIdx, g);
+      const lastKey  = keyOf(maxIdx - 1, g);
+      const keyList = [];
+      let cur = firstKey; keyList.push(cur);
+      while (!keyEq(cur, lastKey)) { cur = keyNext(cur); keyList.push(cur); if (keyList.length > 20000) break; }
+
+      // Collapse logic per granularity
+      const collapse = !!settingsState?.ui?.collapseEmptyDays;
+      const columns = [];
+      const colIndexByKey = new Map();
+
+      function binHasAnyEvent(binKey) {
+        if (g === 'day') {
+          const d = binKey.dayIdx;
+          return activeDayCounts.has(d);
+        }
+        // For week/year: check any event overlaps this bin
+        for (const tl of timelines) {
+          const pref = (tl.preferredGranularity || '').toLowerCase();
+          if (g === 'week' && pref === 'year') continue; // 🔑 ignore Year timelines in Week view collapse
+
+          for (const ev of tl.events) {
+            const aKey = keyOf(ev.startIdx, g);
+            const bKey = keyOf(ev.startIdx + ev.durationDays - 1, g);
+            if (keyCmp(aKey, binKey) <= 0 && keyCmp(binKey, bKey) <= 0) return true;
+          }
+        }
+        return false;
+      }
+
+
+      // Build bin keys across range ... (unchanged above)
+
+      for (const k of keyList) {
+        if (g === 'day') {
+          const d = k.dayIdx;
+
+          // collapse = only keep days that have activity
+          const addDay = collapse ? activeDayCounts.has(d) : true;
+          if (!addDay) continue;
+
+          // Only insert seasonal columns if the day is being shown
+          const seas = seasonalByDay.get(d);
+          if (showSeasonal && seas && seas.length) {
+            for (const m of seas) {
+              columns.push({ type: 'seasonal', key: { t:'d', dayIdx: d }, data: m });
+            }
+          }
+
+          // Now the actual day column
+          colIndexByKey.set(JSON.stringify(k), columns.length);
+          columns.push({ type: 'bin', key: k });
+        } else {
+          const addBin = collapse ? binHasAnyEvent(k) : true;
+          if (addBin) {
+            colIndexByKey.set(JSON.stringify(k), columns.length);
+            columns.push({ type: 'bin', key: k });
+          }
+        }
+      }
+
+
+      // Grid templates
+      grid.style.gridTemplateRows = [
+        'var(--week-header-row)', // header band
+        'var(--week-header-row)', // sub header
+        ...timelines.map(() => 'minmax(var(--timeline-row-min), auto)')
+      ].join(' ');
+      grid.style.gridTemplateColumns = [ 'var(--names-col-width)', ...columns.map(() => 'var(--week-col-width)') ].join(' ');
+
+      // Corner
+      const corner = document.createElement('div');
+      corner.className = 'corner';
+      corner.style.gridRow = '1 / 3';
+      corner.style.gridColumn = '1 / 2';
+      corner.textContent = '';
+      grid.appendChild(corner);
+
+      // Header labels
+      columns.forEach((col, c) => {
+        const gridCol = 2 + c;
+        if (col.type === 'seasonal') {
+          // seasonal header (day view only)
+          const hdr = document.createElement('div');
+          hdr.className = 'wlabel wlabel--seasonal';
+          const { year } = idxToISODay(col.data.dayIdx);
+          hdr.dataset.year = String(year);
+          const inner = document.createElement('div'); inner.className = 'wlabel__inner wlabel__inner--seasonal';
+          const m = col.data;
+          const img = makeSmartImg(IMAGES_DIR, m.imageName, 'seasonal-thumb', m.name);
+          if (img) inner.appendChild(img);
+          const nameEl = document.createElement('span'); nameEl.className = 'seasonal-name'; nameEl.textContent = m.name; inner.appendChild(nameEl);
+          if (m.desc) { const descEl = document.createElement('span'); descEl.className = 'seasonal-desc'; descEl.textContent = m.desc; inner.appendChild(descEl); }
+          hdr.appendChild(inner);
+          hdr.style.gridRow = '2 / 3'; hdr.style.gridColumn = `${gridCol} / ${gridCol + 1}`; grid.appendChild(hdr);
+        } else {
+          const hdr = document.createElement('div');
+          hdr.className = 'wlabel';
+          const { text, year } = keyToLabel(col.key);
+          hdr.dataset.year = String(year);
+          hdr.dataset.sampleDayIdx = String(keySampleDayIdx(col.key));
+          const inner = document.createElement('div'); inner.className = 'wlabel__inner'; inner.textContent = text;
+          hdr.appendChild(inner);
+          hdr.style.gridRow = '2 / 3'; hdr.style.gridColumn = `${gridCol} / ${gridCol + 1}`; grid.appendChild(hdr);
+        }
+      });
+
+      // Week bands (only meaningful in day view: they span the day columns created)
+      if (g === 'day') {
+        const firstMonday = isoWeekToDayIdx(`${idxToISODay(minIdx).year}-${String(idxToISODay(minIdx).week).padStart(2,'0')}`);
+        let wkStart = firstMonday;
+        while (wkStart < maxIdx) {
+          const wkEnd = wkStart + 7;
+          const dayStart = Math.max(wkStart, minIdx);
+          const dayEnd   = Math.min(wkEnd,   maxIdx);
+          let spanCols = 0; let colStart = null;
+          for (let d = dayStart; d < dayEnd; d++) {
+            const seas = seasonalByDay.get(d)?.length || 0;
+            const hasDayCol = colIndexByKey.has(JSON.stringify({ t:'d', dayIdx:d }));
+            if (seas || hasDayCol) {
+              if (colStart == null) {
+                if (seas) { colStart = 2 + columns.findIndex(c => c.type === 'seasonal' && c.key.dayIdx === d); }
+                else { colStart = 2 + (colIndexByKey.get(JSON.stringify({ t:'d', dayIdx:d })) ?? 0); }
+              }
+              spanCols += seas + (hasDayCol ? 1 : 0);
+            }
+          }
+          if (colStart != null && spanCols > 0) {
+            const { year, week } = idxToISODay(wkStart);
+            const wkHdr = document.createElement('div'); wkHdr.className = 'wlabel wlabel--weekband';
+            const inner = document.createElement('div'); inner.className = 'wlabel__inner wlabel__inner--weekband'; inner.textContent = `Week ${String(week).padStart(2, '0')}`; wkHdr.appendChild(inner);
+            wkHdr.style.gridRow = '1 / 2'; wkHdr.style.gridColumn = `${colStart} / ${colStart + spanCols}`; wkHdr.dataset.year = String(year);
+            grid.appendChild(wkHdr);
+          }
+          wkStart += 7;
+        }
+      }
+
+      // Precompute ranges for outside shading
+      const tlRanges = computeTimelineRanges(timelines);
+
+      // Left names column + background cells
+      timelines.forEach((tl, r) => {
+        const gridRow = 3 + r;
+        const name = buildTimelineHeaderEl({ title: tl.title, imageName: tl.imageName, preferredGranularity: tl.preferredGranularity }, g);
+        name.style.gridRow = `${gridRow} / ${gridRow + 1}`; name.style.gridColumn = '1 / 2'; grid.appendChild(name);
+
+        columns.forEach((col, c) => {
+          const bg = document.createElement('div');
+          bg.className = 'cell' + (col.type === 'seasonal' ? ' cell--seasonal' : '');
+          bg.style.gridRow = `${gridRow} / ${gridRow + 1}`; bg.style.gridColumn = `${2 + c} / ${3 + c}`;
+          const range = tlRanges[r];
+          const sample = keySampleDayIdx(col.key || { t:'d', dayIdx: col?.data?.dayIdx ?? minIdx });
+          if (isOutsideBuffered(range, sample, 1)) bg.classList.add('outside');
+          grid.appendChild(bg);
+        });
+      });
+
+      // Classification rules
+      const YEAR_MICRO_MAX_DAYS = 30;
+      function isChip(ev) {
+        if (g === 'day') return !!(ev.isSlice && ev.durationDays === 1);
+        const first = keyOf(ev.startIdx, g);
+        const last  = keyOf(ev.startIdx + ev.durationDays - 1, g);
+        const bins = countKeysInclusive(first, last);
+        if (g === 'week') {
+          return (bins === 1 && ev.durationDays < 7);
+        }
+        if (g === 'year') {
+          return (bins === 1 && ev.durationDays < YEAR_MICRO_MAX_DAYS);
+        }
+        return false;
+      }
+
+      // Build map of chips per row/bin
+      const chipsByRowBin = timelines.map(() => new Map()); // row -> Map(JSON(key) -> [ev])
+
+      // ---- Collect chips into their bin for each row ----
+      for (let r = 0; r < timelines.length; r++) {
+        const tl = timelines[r];
+        const binMap = chipsByRowBin[r];
+
+        for (const ev of tl.events) {
+          if (!isChip(ev)) continue;
+
+          // Drop the chip into the bin that contains its start
+          const binKey = (g === 'day') ? { t: 'd', dayIdx: ev.startIdx } : keyOf(ev.startIdx, g);
+          const keyStr = JSON.stringify(binKey);
+
+          // If this bin wasn’t rendered due to collapse (very unlikely), skip gracefully
+          if (!columns.some(col => col.type === 'bin' && JSON.stringify(col.key) === keyStr)) continue;
+
+          if (!binMap.has(keyStr)) binMap.set(keyStr, []);
+          binMap.get(keyStr).push(ev);
+        }
+      }
+
+      // ---------- PLACEMENT ----------
+      if (g === 'day') {
+        // === ORIGINAL DAY PATH (unchanged) ===
+
+        for (let r = 0; r < timelines.length; r++) {
+          const tl = timelines[r];
+          const gridRow = 3 + r;
+
+          // Bars placement (day view uses real spanning)
+          const bars = tl.events.filter(ev => !isChip(ev));
+          const { laneOfEv, lanesCount } = assignBarLanes(bars, g); // harmless in day
+
+          for (const ev of tl.events) {
+            if (isChip(ev)) continue;
+
+            const startIdx = ev.startIdx;
+            const endExclusive = ev.startIdx + ev.durationDays;
+            const aKey = keyOf(startIdx, g);
+            const bKey = keyOf(endExclusive - 1, g);
+
+            // find first/last visible day columns
+            let firstVis = null, lastVis = null;
+            for (const col of columns) {
+              if (col.type !== 'bin') continue;
+              if (keyCmp(col.key, aKey) < 0) continue;
+              if (keyCmp(col.key, bKey) > 0) break;
+              if (!firstVis) firstVis = col.key; lastVis = col.key;
+            }
+            if (!firstVis || !lastVis) continue;
+
+            // span = number of visible day columns between firstVis..lastVis inclusive
+            let span = 0; let colStartIdx = -1;
+            for (let c = 0; c < columns.length; c++) {
+              const col = columns[c];
+              if (col.type !== 'bin') continue;
+              if (keyCmp(col.key, firstVis) >= 0 && keyCmp(col.key, lastVis) <= 0) {
+                if (colStartIdx === -1) colStartIdx = c;
+                span++;
+              }
+            }
+            if (span <= 0 || colStartIdx < 0) continue;
+            const gridColStart = 2 + colStartIdx;
+
+            const el = buildEventEl(ev, /*inBundle=*/false, gridRow, gridColStart, span, tl.preferredGranularity);
+            const lane = laneOfEv.get(ev) || 0;
+            el.style.setProperty('--lane', lane);
+            el.style.setProperty('--lanes', lanesCount);
+            grid.appendChild(el);
+          }
+
+          // Chip bundles per day-bin (your existing bundle UI)
+          for (let c = 0; c < columns.length; c++) {
+            const col = columns[c];
+            if (col.type !== 'bin') continue;
+            const keyStr = JSON.stringify(col.key);
+            const list = chipsByRowBin[r].get(keyStr);
+            if (!list || list.length === 0) continue;
+
+            list.sort((a,b)=> a.startIdx - b.startIdx);
+
+            const host = document.createElement('div');
+            host.className = `bundle-host bundle-host--${g}`;
+            host.style.gridRow = `${gridRow} / ${gridRow + 1}`;
+            host.style.gridColumn = `${2 + c} / ${3 + c}`;
+
+            const cap = settingsState?.ui?.maxChipsPerBin ?? 5;
+            const toShow = list.slice(0, cap);
+            const remain = list.length - toShow.length;
+
+            for (const ev of toShow) host.appendChild(buildEventEl(ev, /*inBundle=*/true, null, null, null, tl.preferredGranularity));
+            if (remain > 0) {
+              const more = document.createElement('div');
+              more.className = 'event event--micro event--more';
+              const inner = document.createElement('div'); inner.className = 'event-sticky';
+              const title = document.createElement('div'); title.className = 'desc'; title.textContent = `+${remain} more`;
+              inner.appendChild(title); more.appendChild(inner); host.appendChild(more);
+            }
+            grid.appendChild(host);
+          }
+        }
+      } else {
+        // === NEW SEGMENTED BIN PATH FOR WEEK/YEAR ===
+
+        for (let r = 0; r < timelines.length; r++) {
+          const tl = timelines[r];
+          const gridRow = 3 + r;
+
+          // SPECIAL-CASE: In Week view, show year-pref timelines as spanning bars (not segmented)
+          if (g === 'week' && (tl.preferredGranularity === 'year')) {
+            // 1) Bars: span across visible week columns
+            const bars = tl.events.filter(ev => !isChip(ev));
+            const { laneOfEv, lanesCount } = assignBarLanes(bars, g);
+
+            for (const ev of bars) {
+              const aKey = keyOf(ev.startIdx, g);
+              const bKey = keyOf(ev.startIdx + ev.durationDays - 1, g);
+
+              let firstVis = null, lastVis = null;
+              let span = 0, colStartIdx = -1;
+              for (let c = 0; c < columns.length; c++) {
+                const col = columns[c];
+                if (col.type !== 'bin') continue;
+                if (keyCmp(col.key, aKey) < 0) continue;
+                if (keyCmp(col.key, bKey) > 0) break;
+                if (!firstVis) firstVis = col.key;
+                lastVis = col.key;
+                if (colStartIdx === -1) colStartIdx = c;
+                span++;
+              }
+              if (span > 0 && colStartIdx >= 0) {
+                const gridColStart = 2 + colStartIdx;
+                const el = buildEventEl(ev, /*inBundle=*/false, gridRow, gridColStart, span, tl.preferredGranularity);
+                const lane = laneOfEv.get(ev) || 0;
+                el.style.setProperty('--lane', lane);
+                el.style.setProperty('--lanes', lanesCount);
+                grid.appendChild(el);
+              }
+            }
+
+            // 2) Chips: bundle in each week bin (use the existing chipsByRowBin map)
+            for (let c = 0; c < columns.length; c++) {
+              const col = columns[c];
+              if (col.type !== 'bin') continue;
+              const keyStr = JSON.stringify(col.key);
+              const list = chipsByRowBin[r].get(keyStr);
+              if (!list || !list.length) continue;
+
+              list.sort((a,b)=> a.startIdx - b.startIdx);
+              const host = document.createElement('div');
+              host.className = `bundle-host bundle-host--${g}`;
+              host.style.gridRow = `${gridRow} / ${gridRow + 1}`;
+              host.style.gridColumn = `${2 + c} / ${3 + c}`;
+
+              const cap = settingsState?.ui?.maxChipsPerBin ?? 5;
+              const toShow = list.slice(0, cap);
+              const remain = list.length - toShow.length;
+              for (const ev of toShow) {
+                host.appendChild(buildEventEl(ev, /*inBundle=*/true, null, null, null, tl.preferredGranularity));
+              }
+              if (remain > 0) {
+                const more = document.createElement('div');
+                more.className = 'event event--micro event--more';
+                const inner = document.createElement('div'); inner.className = 'event-sticky';
+                const title = document.createElement('div'); title.className = 'desc'; title.textContent = `+${remain} more`;
+                inner.appendChild(title); more.appendChild(inner); host.appendChild(more);
+              }
+              grid.appendChild(host);
+            }
+            continue; // skip segmented path for this row
+          }
+
+          // Track slot continuity across bins for bars
+          let prevSlots = new Map(); // ev -> slot index
+
+          for (let c = 0; c < columns.length; c++) {
+            const col = columns[c];
+            if (col.type !== 'bin') continue;
+
+            // Build current bin’s items list
+            const items = [];
+            for (const ev of tl.events) {
+              if (isChip(ev)) {
+                // chip belongs only to its start bin
+                const k = keyOf(ev.startIdx, g);
+                if (keyEq(k, col.key)) items.push({ ev, kind: 'chip' });
+              } else {
+                const a = keyOf(ev.startIdx, g);
+                const b = keyOf(ev.startIdx + ev.durationDays - 1, g);
+                if (keyCmp(a, col.key) <= 0 && keyCmp(col.key, b) <= 0) {
+                  items.push({ ev, kind: 'bar' });
+                }
+              }
+            }
+            if (!items.length) { prevSlots = new Map(); continue; }
+
+            // Stable slotting: keep same slot from previous bin when possible
+            const slots = new Map();  // ev -> slot
+            const used = [];
+
+            for (const it of items) {
+              const prev = prevSlots.get(it.ev);
+              if (prev != null && !used[prev]) { slots.set(it.ev, prev); used[prev] = true; }
+            }
+            let sIdx = 0;
+            for (const it of items) {
+              if (slots.has(it.ev)) continue;
+              while (used[sIdx]) sIdx++;
+              slots.set(it.ev, sIdx); used[sIdx] = true;
+            }
+            const slotsCount = used.length || 1;
+
+            // Host for this bin
+            const host = document.createElement('div');
+            host.className = `bin-host bin-host--${g}`;
+            host.style.gridRow = `${gridRow} / ${gridRow + 1}`;
+            host.style.gridColumn = `${2 + c} / ${3 + c}`;
+            host.style.setProperty('--slots', slotsCount);
+            grid.appendChild(host);
+
+            // Render fragments in their slots
+            for (const it of items) {
+              const el = buildEventEl(it.ev, /*inBundle=*/true, null, null, null, tl.preferredGranularity);
+              el.classList.add(it.kind === 'bar' ? 'bar-frag' : 'chip-frag');
+              const pref = tl.preferredGranularity || '';
+              if (pref) el.classList.add(`granularity-pref-${pref}`);
+              el.style.setProperty('--slot', slots.get(it.ev) || 0);
+
+              if (it.kind === 'bar') {
+                const pos = fragPosition(it.ev, col.key, g); // 'single' | 'start' | 'middle' | 'end'
+                if (pos) el.classList.add(`frag--${pos}`);
+                // (optional) quick debug:
+                // el.dataset.pos = pos;
+              }
+
+              host.appendChild(el);
+            }
+
+
+            // Carry forward only bars (chips end in this bin)
+            const nextPrev = new Map();
+            for (const it of items) if (it.kind === 'bar') nextPrev.set(it.ev, slots.get(it.ev));
+            prevSlots = nextPrev;
+          }
+        }
+      }
+
+
+      // Meta + year tracker
+      const firstL = (function(){const {year,week,day}=idxToISODay(minIdx); return `${year}-W${String(week).padStart(2,'0')}-${day}`})();
+      const lastL  = (function(){const {year,week,day}=idxToISODay(maxIdx-1); return `${year}-W${String(week).padStart(2,'0')}-${day}`})();
+      setText('meta', `Timelines: ${timelines.length} • Days: ${totalDays} • Range: ${firstL} → ${lastL}`);
+      setupCornerYearTrackerHorizontal(grid, corner);
+    }
+
+    function buildEventEl(ev, inBundle, gridRow, gridColStart, span, prefGran) {
+      const el = document.createElement('div');
+      el.className = 'event';
+      if (prefGran) el.classList.add(`granularity-pref-${prefGran}`);
+
+      const catId   = toCatId(ev.categoryId);
+      const catName = getCatName(catId);
+      const catColor= getCatColor(catId);
+      const catText = getCatText(catId);
+
+      el.dataset.catId    = String(catId || 0);
+      el.dataset.catTitle = catName || '';
+      el.dataset.catColor = catColor || '';
+      el.style.setProperty('--jcolor', catColor || 'transparent');
+      el.style.setProperty('--jtext',  catText  || 'black');
+
+      if (!inBundle) {
+        el.style.gridRow    = `${gridRow} / ${gridRow + 1}`;
+        el.style.gridColumn = `${gridColStart} / ${gridColStart + span}`;
+      }
+
+      const { year, week, day } = idxToISODay(ev.startIdx);
+      const labelStart = `${year}-${String(week).padStart(2,'0')}-${day}`;
+
+      const topline = document.createElement('div');
+      topline.className = 'topline';
+
+      const sticky = document.createElement('div');
+      sticky.className = 'event-sticky';
+      sticky.dataset.image = 'false';
+      prependEventMedia(sticky, ev, (has) => { sticky.dataset.image = has ? 'true' : 'false'; });
+
+      if (catName) {
+        const cat = document.createElement('div');
+        cat.className = 'cat';
+        cat.textContent = catName;
+        topline.appendChild(cat);
+      }
+
+      const title = document.createElement('div');
+      title.className = 'desc';
+      title.textContent = ev.desc || '(no description)';
+      topline.appendChild(title);
+
+      const meta = document.createElement('div');
+      meta.className = 'meta';
+      meta.textContent = ev.isSlice ? `${labelStart} • slice` : `${labelStart} • ${ev.durationDays}d`;
+      topline.appendChild(meta);
+
+      // Combined chips (location first, then characters; plain text, comma-separated)
+      const chips = document.createElement('div');
+      chips.className = 'chips';
+
+      const loc = (ev.location || '').trim();
+      if (loc) {
+        const chipLoc = document.createElement('span');
+        chipLoc.className = 'chip location';
+        chipLoc.title = `Location: ${loc}`;
+        chipLoc.textContent = loc;
+        chips.appendChild(chipLoc);
+      }
+      if (Array.isArray(ev.characters) && ev.characters.length) {
+        ev.characters.forEach((n, idx) => {
+          const name = String(n).trim(); if (!name) return;
+          const chipChar = document.createElement('span');
+          chipChar.className = 'chip character';
+          chipChar.title = `Character: ${name}`;
+          chipChar.textContent = name;
+          chips.appendChild(chipChar);
+        });
+      }
+      if (chips.children.length) {
+        topline.appendChild(chips);
+      }
+
+      sticky.appendChild(topline);
+      el.appendChild(sticky);
+      return el;
+    }
+
+    /** Year tracker (works off .wlabel elements) **/
+    function setupCornerYearTrackerHorizontal(grid, corner) {
+      if (!grid || !corner) return;
+      const scroller = grid.parentElement; if (!scroller) return;
+      if (scroller._yearTracker) scroller._yearTracker.abort();
+      const controller = new AbortController(); scroller._yearTracker = controller;
+
+      const getNamesColWidthPx = () => { const v = getComputedStyle(grid).getPropertyValue('--names-col-width') || ''; const n = parseFloat(v); return Number.isFinite(n) ? n : 0; };
+      let lastHeader = null;
+      const headerMidY = () => { const any = grid.querySelector('.wlabel'); if (!any) return 0; const r = any.getBoundingClientRect(); return r.top + r.height / 2; };
+
+      const pickHeaderAt = (x, y) => {
+        const stack = (document.elementsFromPoint?.(x, y) || []);
+        for (const el of stack) { if (el.classList?.contains('wlabel')) return el; }
+        const all = grid.querySelectorAll('.wlabel');
+        for (const h of all) { const r = h.getBoundingClientRect(); if (x >= r.left && x < r.right && y >= r.top && y < r.bottom) return h; }
+        return lastHeader || all[0] || null;
+      };
+      const yearFromHeader = (h) => {
+        if (!h) return '';
+        if (h.dataset.year) return h.dataset.year;
+        const dIdx = parseInt(h.dataset.sampleDayIdx||'', 10);
+        if (Number.isFinite(dIdx)) return String(idxToISODay(dIdx).year);
+        return '';
+      };
+
+      const update = () => {
+        const x = scroller.getBoundingClientRect().left + getNamesColWidthPx() + 1;
+        const y = headerMidY();
+        const header = y ? pickHeaderAt(x, y) : grid.querySelector('.wlabel');
+        if (header) lastHeader = header;
+        const yr = yearFromHeader(header);
+        if (yr && corner.textContent !== yr) corner.textContent = yr;
+      };
+
+      update();
+      scroller.addEventListener('scroll', update, { passive: true, signal: controller.signal });
+      window.addEventListener('resize', update, { signal: controller.signal });
+      requestAnimationFrame(update);
+      requestAnimationFrame(() => requestAnimationFrame(update));
+    }
+
+    /** ===================== BOOT ===================== **/
+    (async function main() {
+      try {
+        const disk = await tryLoadJSON();
+        if (disk) {
+          settingsState = disk.settings || DEFAULT_SETTINGS;
+          editorState   = normalizeEditorState({ timelines: disk.timelines || [], seasonal: disk.seasonal || [] });
+        } else {
+          settingsState = DEFAULT_SETTINGS;
+          editorState   = normalizeEditorState({ timelines: [], seasonal: [] });
+        }
+
+        applyUIFromSettings();
+        await applyStateToRenderer();
+        if (visualDebug && !editMode) enterEditMode();
+
+        const btn = document.getElementById('toggle-editor');
+        if (btn) btn.addEventListener('click', () => (editMode ? exitEditMode() : enterEditMode()));
+
+        const btnCollapse = document.getElementById('btn-collapse'); if (btnCollapse) btnCollapse.onclick = toggleCollapseEmptyDays;
+        const btnImport = document.getElementById('btn-import'); if (btnImport) btnImport.onclick = onImportJSON;
+        const btnDownload = document.getElementById('btn-download'); if (btnDownload) btnDownload.onclick = onDownloadJSON;
+        const btnTheme = document.getElementById('btn-theme'); if (btnTheme) btnTheme.onclick = toggleTheme;
+
+        // Granularity segmented buttons
+        const gDay = document.getElementById('btn-gran-day');  if (gDay)  gDay.onclick  = () => setGranularity('day');
+        const gWeek= document.getElementById('btn-gran-week'); if (gWeek) gWeek.onclick = () => setGranularity('week');
+        const gYear= document.getElementById('btn-gran-year'); if (gYear) gYear.onclick = () => setGranularity('year');
+
+        // Initial label sync
+        syncHeaderControlsFromSettings();
+      } catch (e) { console.error(e); setText('err', e.message || String(e)); }
+    })();
+  </script>
 </body>
 </html>
