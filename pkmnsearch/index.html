@@ -434,6 +434,11 @@
             gap: 8px;
             align-items: center
         }
+
+        .pokedex-card {
+            border: 1px solid var(--dex_color);
+            background: color-mix(in srgb, var(--dex_color) 6%, var(--panel));
+        }
     </style>
 </head>
 
@@ -582,23 +587,44 @@
             }
 
             if (Array.isArray(json.pokemon)) {
-                out.pokemon = json.pokemon.map(p => ({
-                    id: t(p.id ?? p.ID ?? crypto.randomUUID()),
-                    name: t(p.name ?? p.Name ?? p[" Name"]),
-                    category: t(p.category ?? p.Category ?? p[" Category"]),
-                    form: t(p.form ?? p.Form ?? p[" Form"]),
-                    species: t(p.species ?? p.Species ?? p[" Species"]),
-                    evolution: t(p.evolution ?? p.Evolution),
-                    type1: t(p.type1 ?? p.Type1 ?? p[" Type1"]),
-                    type2: t(p.type2 ?? p.Type2 ?? p[" Type2"]),
-                    hp: numberOrNull(p.hp ?? p.HP),
-                    attack: numberOrNull(p.attack ?? p.Attack),
-                    defense: numberOrNull(p.defense ?? p.Defense),
-                    spAtk: numberOrNull(p.spAtk ?? p["Sp Atk"] ?? p[" Sp Atk"]),
-                    spDef: numberOrNull(p.spDef ?? p["Sp Def"] ?? p[" Sp Def"]),
-                    speed: numberOrNull(p.speed ?? p.Speed),
-                    pokedex: (typeof p.pokedex === "object" && p.pokedex !== null) ? p.pokedex : {}
-                }));
+                out.pokemon = json.pokemon.map(p => {
+                    // NEW: normalize pokedex into { [gameId]: { regionalDexNumber, entry } }
+                    let pokedexObj = {};
+                    if (Array.isArray(p.pokedex)) {
+                        for (const e of p.pokedex) {
+                            const gameId = String(e.version ?? e.gameId ?? "").trim();
+                            if (!gameId) continue;
+                            const entry = String(e.text ?? e.entry ?? "");
+                            const regional = String(e.regionalDexNumber ?? e.regional ?? "").trim();
+                            pokedexObj[gameId] = { regionalDexNumber: regional, entry };
+                        }
+                    } else if (p.pokedex && typeof p.pokedex === "object") {
+                        // Also normalize any existing object-ish shapes
+                        for (const [k, v] of Object.entries(p.pokedex)) {
+                            const entry = String((v && (v.entry ?? v.text)) ?? "");
+                            const regional = String((v && (v.regionalDexNumber ?? v.regional)) ?? "");
+                            pokedexObj[String(k)] = { regionalDexNumber: regional, entry };
+                        }
+                    }
+
+                    return {
+                        id: String(p.id ?? p.ID ?? crypto.randomUUID()).trim(),
+                        name: String(p.name ?? p.Name ?? p[" Name"] ?? "").trim(),
+                        category: String(p.category ?? p.Category ?? p[" Category"] ?? "").trim(),
+                        form: String(p.form ?? p.Form ?? p[" Form"] ?? "").trim(),
+                        species: String(p.species ?? p.Species ?? p[" Species"] ?? "").trim(),
+                        evolution: String(p.evolution ?? p.Evolution ?? "").trim(),
+                        type1: String(p.type1 ?? p.Type1 ?? p[" Type1"] ?? "").trim(),
+                        type2: String(p.type2 ?? p.Type2 ?? p[" Type2"] ?? "").trim(),
+                        hp: numberOrNull(p.hp ?? p.HP),
+                        attack: numberOrNull(p.attack ?? p.Attack),
+                        defense: numberOrNull(p.defense ?? p.Defense),
+                        spAtk: numberOrNull(p.spAtk ?? p["Sp Atk"] ?? p[" Sp Atk"]),
+                        spDef: numberOrNull(p.spDef ?? p["Sp Def"] ?? p[" Sp Def"]),
+                        speed: numberOrNull(p.speed ?? p.Speed),
+                        pokedex: pokedexObj
+                    };
+                });
             }
             return out;
         }
@@ -940,7 +966,8 @@
         }
 
         function renderAdminLeftList() {
-            const list = document.getElementById("leftList"); list.innerHTML = "";
+            const list = document.getElementById("leftList");
+            list.innerHTML = "";
             let source;
 
             if (adminActiveView === "pokemon") {
@@ -961,9 +988,11 @@
             }
 
             const filtered = source.filter(item => {
-                const key = adminActiveView === "pokemon"
-                    ? `${item.name} ${item.id} ${item.species}`.toLowerCase()
-                    : `${item.title} ${item.console} ${item.releaseDate}`.toLowerCase();
+                const key = (adminActiveView === "pokemon"
+                    // include form in the searchable string
+                    ? `${item.name} ${item.form || ""} ${item.id} ${item.species}`.toLowerCase()
+                    : `${item.title} ${item.console} ${item.releaseDate}`.toLowerCase()
+                );
                 return key.includes(leftFilter);
             });
 
@@ -992,16 +1021,36 @@
                 }
 
                 const left = document.createElement("div");
-                left.style.display = "flex";
+                left.style.display = "grid";
                 left.style.alignItems = "center";
+                left.style.gridTemplateColumns = "auto 1fr";
+                left.style.columnGap = "8px";
+
                 left.appendChild(thumb);
-                const titleSpan = document.createElement("span");
+
+                const titleWrap = document.createElement("div");
+                // Name (bold)
+                const titleSpan = document.createElement("div");
                 titleSpan.innerHTML = adminActiveView === "pokemon"
                     ? `<strong>${safeHtml(item.name || "(new Pokémon)")}</strong>`
                     : `<strong>${safeHtml(item.title || "(untitled)")}</strong>`;
-                left.appendChild(titleSpan);
+                titleWrap.appendChild(titleSpan);
 
-                const right = document.createElement("div"); right.className = "muted";
+                // Form (muted, smaller, on its own line) — only for Pokémon and only if present
+                if (adminActiveView === "pokemon" && item.form) {
+                    const formLine = document.createElement("div");
+                    formLine.className = "muted";
+                    formLine.style.fontSize = "12px";
+                    formLine.style.lineHeight = "1.2";
+                    formLine.style.marginTop = "2px";
+                    formLine.textContent = item.form;
+                    titleWrap.appendChild(formLine);
+                }
+
+                left.appendChild(titleWrap);
+
+                const right = document.createElement("div");
+                right.className = "muted";
                 right.textContent = adminActiveView === "pokemon" ? (item.id || "") : (item.releaseDate || "");
 
                 div.appendChild(left);
@@ -1035,67 +1084,169 @@
             const body = document.getElementById("rightBody");
             body.innerHTML = "";
             deleteBtn.style.display = selectedId ? "inline-block" : "none";
-            if (!selectedId) { rightTitle.textContent = "No item selected"; body.innerHTML = `<div class="muted">Select or add an item to edit its details.</div>`; return; }
+            if (!selectedId) {
+                rightTitle.textContent = "No item selected";
+                body.innerHTML = `<div class="muted">Select or add an item to edit its details.</div>`;
+                return;
+            }
 
             if (adminActiveView === "pokemon") {
-                const p = DATA.pokemon.find(x => (x.id || x._tempId) === selectedId); if (!p) return;
+                const p = DATA.pokemon.find(x => (x.id || x._tempId) === selectedId);
+                if (!p) return;
+
                 rightTitle.textContent = p.name || "(new Pokémon)";
-                const wrap = document.createElement("div"); wrap.className = "field-grid";
 
-                // Preview first (ID-based)
-                const prevBox = document.createElement("div"); prevBox.className = "field";
-                const prevLabel = document.createElement("label"); prevLabel.textContent = "Image Preview (images/pkmn/ID.png — case sensitive)";
-                const prev = document.createElement("div"); prev.className = "img-preview";
-                prevBox.appendChild(prevLabel); prevBox.appendChild(prev); wrap.appendChild(prevBox);
+                // ============ BASIC INFO ============ //
+                const basic = document.createElement("div");
+                basic.className = "subsection";
+                basic.innerHTML = `<h4>Basic Info</h4>`;
+                const basicGrid = document.createElement("div");
+                basicGrid.className = "field-grid";
 
-                function updatePrev() { const id = (p.id || "").trim(); const url = id ? `images/pkmn/${encodeURIComponent(id)}.png` : ""; setPreviewIfExists(url, prev); }
+                // Image preview
+                const prevBox = document.createElement("div");
+                prevBox.className = "field";
+                const prevLabel = document.createElement("label");
+                prevLabel.textContent = "Image Preview (images/pkmn/ID.png — case sensitive)";
+                const prev = document.createElement("div");
+                prev.className = "img-preview";
+                prevBox.appendChild(prevLabel);
+                prevBox.appendChild(prev);
+                basicGrid.appendChild(prevBox);
+
+                function updatePrev() {
+                    const id = (p.id || "").trim();
+                    const url = id ? `images/pkmn/${encodeURIComponent(id)}.png` : "";
+                    setPreviewIfExists(url, prev);
+                }
 
                 // ID
-                wrap.appendChild(makeField("ID", "text", p.id ?? "", (val) => { p.id = val; renderAdminLeftList(); updatePrev(); }).container);
-                // Name
-                wrap.appendChild(makeField("Name", "text", p.name ?? "", (val) => { p.name = val; rightTitle.textContent = p.name || "(new Pokémon)"; renderAdminLeftList(); }).container);
-                // Category
-                wrap.appendChild(makeField("Category","text",p.category ?? "", (val)=>{ p.category=val; }).container);
-                // Form
-                wrap.appendChild(makeField("Form", "text", p.form ?? "", (val) => { p.form = val; }).container);
-                // Species
-                wrap.appendChild(makeField("Species", "text", p.species ?? "", (val) => { p.species = val; }).container);
-                // Evolution
-                wrap.appendChild(makeField("Evolution", "text", p.evolution ?? "", (val) => { p.evolution = val; }).container);
-                // Types
-                wrap.appendChild(makeField("Type 1", "select", p.type1 ?? "", (val) => { p.type1 = val; }, { options: TYPE_OPTIONS }).container);
-                wrap.appendChild(makeField("Type 2", "select", p.type2 ?? "", (val) => { p.type2 = val; }, { options: TYPE_OPTIONS }).container);
-                // Stats
-                wrap.appendChild(makeField("HP", "number", (p.hp ?? ""), (val) => { p.hp = val; }).container);
-                wrap.appendChild(makeField("Attack", "number", (p.attack ?? ""), (val) => { p.attack = val; }).container);
-                wrap.appendChild(makeField("Defense", "number", (p.defense ?? ""), (val) => { p.defense = val; }).container);
-                wrap.appendChild(makeField("Sp Atk", "number", (p.spAtk ?? ""), (val) => { p.spAtk = val; }).container);
-                wrap.appendChild(makeField("Sp Def", "number", (p.spDef ?? ""), (val) => { p.spDef = val; }).container);
-                wrap.appendChild(makeField("Speed", "number", (p.speed ?? ""), (val) => { p.speed = val; }).container);
-                body.appendChild(wrap);
+                basicGrid.appendChild(
+                    makeField("ID", "text", p.id ?? "", (val) => {
+                        p.id = val;
+                        renderAdminLeftList();
+                        updatePrev();
+                    }).container
+                );
 
-                // Pokédex section mirrors Games
-                const pdx = document.createElement("div"); pdx.className = "subsection";
+                // Name
+                basicGrid.appendChild(
+                    makeField("Name", "text", p.name ?? "", (val) => {
+                        p.name = val;
+                        rightTitle.textContent = p.name || "(new Pokémon)";
+                        renderAdminLeftList();
+                    }).container
+                );
+
+                // Form
+                basicGrid.appendChild(
+                    makeField("Form", "text", p.form ?? "", (val) => {
+                        p.form = val;
+                        renderAdminLeftList();
+                    }).container
+                );
+
+                basic.appendChild(basicGrid);
+
+                // ============ SECONDARY INFO ============ //
+                const secondary = document.createElement("div");
+                secondary.className = "subsection";
+                secondary.innerHTML = `<h4>Secondary Info</h4>`;
+                const secondaryGrid = document.createElement("div");
+                secondaryGrid.className = "field-grid";
+
+                // Type 1 / Type 2
+                secondaryGrid.appendChild(
+                    makeField("Type 1", "select", p.type1 ?? "", (val) => { p.type1 = val; }, { options: TYPE_OPTIONS }).container
+                );
+                secondaryGrid.appendChild(
+                    makeField("Type 2", "select", p.type2 ?? "", (val) => { p.type2 = val; }, { options: TYPE_OPTIONS }).container
+                );
+
+                // Evolution
+                secondaryGrid.appendChild(
+                    makeField("Evolution", "text", p.evolution ?? "", (val) => { p.evolution = val; }).container
+                );
+
+                // Species
+                secondaryGrid.appendChild(
+                    makeField("Species", "text", p.species ?? "", (val) => { p.species = val; }).container
+                );
+
+                secondary.appendChild(secondaryGrid);
+
+                // ============ STATS ============ //
+                const stats = document.createElement("div");
+                stats.className = "subsection";
+                stats.innerHTML = `<h4>Stats</h4>`;
+                const statsGrid = document.createElement("div");
+                statsGrid.className = "field-grid";
+
+                statsGrid.appendChild(makeField("HP", "number", (p.hp ?? ""), (val) => { p.hp = val; }).container);
+                statsGrid.appendChild(makeField("Attack", "number", (p.attack ?? ""), (val) => { p.attack = val; }).container);
+                statsGrid.appendChild(makeField("Defence", "number", (p.defense ?? ""), (val) => { p.defense = val; }).container);
+                statsGrid.appendChild(makeField("Sp. Attack", "number", (p.spAtk ?? ""), (val) => { p.spAtk = val; }).container);
+                statsGrid.appendChild(makeField("Sp. Defence", "number", (p.spDef ?? ""), (val) => { p.spDef = val; }).container);
+                statsGrid.appendChild(makeField("Speed", "number", (p.speed ?? ""), (val) => { p.speed = val; }).container);
+
+                stats.appendChild(statsGrid);
+
+                // ============ APPEND GROUPS TO RIGHT PANEL ============ //
+                const body = document.getElementById("rightBody");
+                body.innerHTML = "";
+                body.appendChild(basic);
+                body.appendChild(secondary);
+                body.appendChild(stats);
+
+                // ============ POKÉDEX ENTRIES (unchanged) ============ //
+                const pdx = document.createElement("div");
+                pdx.className = "subsection";
                 pdx.innerHTML = `<h4>Pokédex Entries (linked to Games)</h4><div class="muted">Add a Game to see inputs here.</div>`;
-                const grid = document.createElement("div"); grid.className = "pokedex-grid";
+                const grid = document.createElement("div");
+                grid.className = "pokedex-grid";
+
                 const sortedGames = DATA.games.slice().sort(byReleaseDateAsc);
                 if (sortedGames.length === 0) {
-                    const empty = document.createElement("div"); empty.className = "muted"; empty.textContent = "No games defined yet."; grid.appendChild(empty);
+                    const empty = document.createElement("div");
+                    empty.className = "muted";
+                    empty.textContent = "No games defined yet.";
+                    grid.appendChild(empty);
                 } else {
                     for (const g of sortedGames) {
-                        const card = document.createElement("div"); card.className = "pokedex-card";
+                        const card = document.createElement("div");
+                        card.className = "pokedex-card";
+                        const gameColor = g.colorHex && /^#[0-9a-f]{6}$/i.test(g.colorHex) ? g.colorHex.toUpperCase() : "#888888";
+                        card.setAttribute("style", `--dex_color:${gameColor}`);
                         const title = document.createElement("div");
-                        title.innerHTML = `<strong>${safeHtml(g.title || "(untitled)")}</strong> <span class="muted">• ${safeHtml(g.releaseDate || "—")} • ${safeHtml(g.console || "—")}</span>`;
+                        // show bullets only for present parts
+                        const parts = [];
+                        if (g.releaseDate) parts.push(safeHtml(g.releaseDate));
+                        if (g.console) parts.push(safeHtml(g.console));
+                        title.innerHTML = `<strong>${safeHtml(g.title || "(untitled)")}</strong> <span class="muted">${parts.length ? "• " + parts.join(" • ") : ""}</span>`;
                         card.appendChild(title);
-                        const fwrap = document.createElement("div"); fwrap.className = "field-grid";
+
+                        const fwrap = document.createElement("div");
+                        fwrap.className = "field-grid";
+
                         const pd = (p.pokedex[g.id] ||= { regionalDexNumber: "", entry: "" });
-                        fwrap.appendChild(makeField("Regional Dex Number", "text", pd.regionalDexNumber, (val) => { pd.regionalDexNumber = val; }).container);
-                        fwrap.appendChild(makeField("Pokédex Entry", "textarea", pd.entry, (val) => { pd.entry = val; }).container);
-                        card.appendChild(fwrap); grid.appendChild(card);
+
+                        fwrap.appendChild(
+                            makeField("Regional Dex Number", "text", pd.regionalDexNumber, (val) => { pd.regionalDexNumber = val; }).container
+                        );
+                        fwrap.appendChild(
+                            makeField("Pokédex Entry", "textarea", pd.entry, (val) => { pd.entry = val; }).container
+                        );
+
+                        card.appendChild(fwrap);
+                        grid.appendChild(card);
                     }
                 }
-                pdx.appendChild(grid); body.appendChild(pdx);
+                pdx.appendChild(grid);
+                body.appendChild(pdx);
+
+                // kick off preview
                 updatePrev();
+
 
             } else {
                 const g = DATA.games.find(x => x.id === selectedId); if (!g) return;
