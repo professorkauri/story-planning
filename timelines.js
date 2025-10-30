@@ -28,7 +28,7 @@ window.TIMELINES_DEFAULT = {
         "year": "2025",
         "title": "New Project",
         "desc": "Years-only timelines launched!",
-        "image": "pkmn/3m.webp"
+        "image": "pkmn/3M.webp"
       }
     ]
   },
