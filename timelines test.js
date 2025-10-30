@@ -1,4 +1,4 @@
-{
+window.TIMELINES_DATA ={
   "settings": {
     "ui": {
       "title": "My Timeline",

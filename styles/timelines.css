@@ -474,6 +474,12 @@ button.ghost:hover {
 }
 
 
+.event.we-oneoff,
+.event.we-recurring {
+  opacity: 0.9;
+  border-style: dashed;
+}
+
 
 
 /* Bundle host owns the day cell when present */

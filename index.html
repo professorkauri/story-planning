@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8" />
   <title>Timelines</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="styles/timelines.css">
 </head>
+
 <body class="theme-light granularity--day">
   <header>
     <h1>Timelines</h1>
@@ -13,15 +15,15 @@
     <div class="err" id="err"></div>
     <div class="actions">
       <div class="seg" id="granularity" data-label="Timeline View">
-        <button id="btn-gran-day"  type="button" aria-pressed="true">Day</button>
+        <button id="btn-gran-day" type="button" aria-pressed="true">Day</button>
         <button id="btn-gran-week" type="button" aria-pressed="false">Week</button>
         <button id="btn-gran-year" type="button" aria-pressed="false">Year</button>
       </div>
       <div class="seg" data-label="Light/Dark Mode">
-      <button id="btn-theme" type="button">Light</button>
+        <button id="btn-theme" type="button">Light</button>
       </div>
       <div class="seg" data-label="Collapse Empty Days">
-      <button id="btn-collapse" type="button">All Days</button>
+        <button id="btn-collapse" type="button">All Days</button>
       </div>
       <div class="seg" data-label="Manage Settings">
         <button id="toggle-editor" type="button">Edit</button>
@@ -35,9 +37,9 @@
     <div id="grid" class="grid" role="table" aria-label="Timelines grid"></div>
   </div>
 
+  <script src="timelines.js"></script>
   <script>
     /** ===================== CONFIG ===================== **/
-    const JSON_PATH = 'timelines.json';
 
     const visualDebug = false;
 
@@ -47,16 +49,16 @@
     // ===== SIZING (edit these) =====
     const GRID_SIZING = {
       horizontal: {
-        namesColWidth:  '110px',
-        weekColWidth:   'minmax(var(--col-min, 140px), max-content)',
+        namesColWidth: '110px',
+        weekColWidth: 'minmax(var(--col-min, 140px), max-content)',
         timelineRowMin: '40px',
-        weekHeaderRow:  'auto',
+        weekHeaderRow: 'auto',
       }
     };
 
     const LEGACY_PRESET_CATEGORIES = [
-      '', 'OrdinaryWorld','CallToAdventure','RefusalOfTheCall','MeetingTheMentor','CrossingTheThreshold',
-      'TestsAlliesEnemies','ApproachToTheInmostCave','TheOrdeal','Reward','TheRoadBack','Resurrection','TheReturn'
+      '', 'OrdinaryWorld', 'CallToAdventure', 'RefusalOfTheCall', 'MeetingTheMentor', 'CrossingTheThreshold',
+      'TestsAlliesEnemies', 'ApproachToTheInmostCave', 'TheOrdeal', 'Reward', 'TheRoadBack', 'Resurrection', 'TheReturn'
     ];
 
     const IMAGE_EXTS = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg', 'avif'];
@@ -94,7 +96,7 @@
       document.body.classList.toggle('theme-light', ui.theme !== 'dark');
 
       // Granularity class on body
-      document.body.classList.remove('granularity--day','granularity--week','granularity--year');
+      document.body.classList.remove('granularity--day', 'granularity--week', 'granularity--year');
       const g = ui.granularity === 'week' ? 'week' : (ui.granularity === 'year' ? 'year' : 'day');
       document.body.classList.add(`granularity--${g}`);
 
@@ -130,34 +132,30 @@
     const setText = (id, txt) => { const el = $(id); if (el) el.textContent = txt; };
 
     // Specific ISO helpers
+    function isSpecificYear(s) { return /^\d{4}$/.test(s || ''); }                 // YYYY
     function isSpecificWeek(s) { return /^\d{4}-\d{2}$/.test(s || ''); }           // YYYY-WW
-    function isSpecificWeekDay(s) { return /^\d{4}-\d{2}-[1-7]$/.test(s || ''); } // YYYY-WW-D
+    function isSpecificWeekDay(s) { return /^\d{4}-\d{2}-[1-7]$/.test(s || ''); }  // YYYY-WW-D
 
-    // Relative dates
-    function parseRelDays(s) {                  // "#", "#d", "##D"
-      const m = /^(\d+)\s*[dD]?$/.exec(s || '');
-      return m ? parseInt(m[1], 10) : null;
-    }
-    function parseRelWeeks(s) {                  // "#w"
-      const m = /^(\d+)\s*[wW]$/.exec(s || '');
+    // Relative "after" (timeline-unit based): a#  → # units after previous event end
+    function parseRelAfterUnits(s) {
+      const m = /^a\s*(\d+)$/.exec(String(s || '').trim());
       return m ? parseInt(m[1], 10) : null;
     }
 
-    // Duration → days: accepts "#w", "#", or "#d"
-    function parseDuration(s) {
-      if (isPartDayDur(s)) return { days: 1, isSlice: true }; // bundle chip; never spills
-      if (!s) return { days: 0, isSlice: false };
-      const w = parseRelWeeks(s);
-      if (w != null) return { days: w * 7, isSlice: false };
-      const d = parseRelDays(s);
-      if (d != null) return { days: d, isSlice: false };
-      return { days: 0, isSlice: false };
+    // Duration is numeric only. Meaning depends on the timeline's preferredGranularity:
+    // - day timeline: N days
+    // - week timeline: N weeks
+    // - year timeline: N years (approx in days; exact span handled at render-time)
+    function parseDurationUnits(s) {
+      const m = /^\s*(\d+)\s*$/.exec(String(s || ''));
+      if (!m) return 1; // default to 1 if empty/invalid
+      return Math.max(1, parseInt(m[1], 10));
     }
 
     // --- Start/Duration tokens ---
-    function isZeroStart(s){ return String(s||'').trim()==='0'; }
-    function isSameDayStart(s){ return String(s||'').trim()==='.'; }
-    function isPartDayDur(s){ return String(s||'').trim()==='.'; }
+    function isZeroStart(s) { return String(s || '').trim() === '0'; }
+    function isSameDayStart(s) { return String(s || '').trim() === '.'; }
+    function isPartDayDur(s) { return String(s || '').trim() === '.'; }
 
     function syncHeaderControlsFromSettings() {
       const themeBtn = document.getElementById('btn-theme');
@@ -183,7 +181,7 @@
       // Granularity buttons
       const g = settingsState?.ui?.granularity || 'day';
       const setPressed = (btn, on) => btn && btn.setAttribute('aria-pressed', on ? 'true' : 'false');
-      setPressed(gDay,  g === 'day');
+      setPressed(gDay, g === 'day');
       setPressed(gWeek, g === 'week');
       setPressed(gYear, g === 'year');
     }
@@ -211,8 +209,8 @@
       const inPrev = eventTouchesBin(ev, keyPrev(binKey), g);
       const inNext = eventTouchesBin(ev, keyNext(binKey), g);
       if (!inPrev && !inNext) return 'single';
-      if (!inPrev &&  inNext) return 'start';
-      if ( inPrev && !inNext) return 'end';
+      if (!inPrev && inNext) return 'start';
+      if (inPrev && !inNext) return 'end';
       return 'middle';
     }
 
@@ -272,8 +270,8 @@
 
     function isOutsideBuffered(range, dayIdx, pad = 1) {
       if (!range) return true;
-      const left  = range.start + pad;  // first inside day
-      const right = range.end   - pad;  // exclusive upper bound
+      const left = range.start + pad;  // first inside day
+      const right = range.end - pad;  // exclusive upper bound
       return dayIdx < left || dayIdx >= right;
     }
 
@@ -321,21 +319,27 @@
       if (pref && pref === activeGranularity) th.classList.add('tl--emphasized');
       if (pref && pref !== activeGranularity) th.classList.add('tl--deemphasized');
 
-      // image (fallback square if missing)
-      const insertPh = () => {
-        const ph = document.createElement('div');
-        ph.className = 'thead-thumb thead-thumb--ph';
-        th.appendChild(ph);
-      };
-
-      const thumb = makeSmartImgFallback(
-        IMAGES_DIR,
-        tl.imageName || '',
-        'thead-thumb',
-        tl.title || '',
-        insertPh
-      );
-      if (thumb) th.appendChild(thumb);
+      // World Events: add class and OMIT image/thumb entirely
+      const isWorld =
+        !!(tl?.__autoWorldRow || tl?.isAutoWorldRow) ||
+        String(tl?.title || '').toLowerCase() === 'world events';
+      if (isWorld) th.classList.add('worldEvents');
+      else {
+        // Regular timelines keep their image/placeholder
+        const insertPh = () => {
+          const ph = document.createElement('div');
+          ph.className = 'thead-thumb thead-thumb--ph';
+          th.appendChild(ph);
+        };
+        const thumb = makeSmartImgFallback(
+          IMAGES_DIR,
+          tl.imageName || '',
+          'thead-thumb',
+          tl.title || '',
+          insertPh
+        );
+        if (thumb) th.appendChild(thumb);
+      }
 
       const title = document.createElement('span');
       title.className = 'thead-title';
@@ -345,6 +349,7 @@
       return th;
     }
 
+
     function applyAllFromSettings() {
       applyUIFromSettings();
       applyStateToRenderer();
@@ -352,14 +357,18 @@
 
     async function tryLoadJSON() {
       try {
-        const r = await fetch(`${JSON_PATH}?v=${Date.now()}`, { cache: 'no-store' });
-        if (!r.ok) return null;
-        const raw = await r.json();
+        const raw = (window && typeof window.TIMELINES_DATA === 'object')
+          ? window.TIMELINES_DATA
+          : null;
+        if (!raw) return null;
         const combined = coerceCombinedJson(raw);
         if (!Array.isArray(combined.timelines)) return null;
         return combined; // { settings, timelines, seasonal }
-      } catch { return null; }
+      } catch {
+        return null;
+      }
     }
+
 
     function normalizeEditorState(es) {
       if (!es || !Array.isArray(es.timelines)) return es;
@@ -408,7 +417,7 @@
       }
 
       out.timelines = Array.isArray(json.timelines) ? json.timelines : [];
-      out.seasonal  = Array.isArray(json.seasonal) ? json.seasonal : [];
+      out.seasonal = Array.isArray(json.seasonal) ? json.seasonal : [];
       return out;
     }
 
@@ -419,7 +428,7 @@
         const ch = text[i], nx = text[i + 1];
         if (ch === '"') { if (inQ && nx === '"') { cur += '"'; i++; } else inQ = !inQ; }
         else if (ch === ',' && !inQ) { row.push(cur); cur = ''; }
-        else if ((ch === '\n' || ch === '\r') && !inQ) { if (ch === '\r' && nx === '\n') i++; row.push(cur); cur=''; rows.push(row); row = []; }
+        else if ((ch === '\n' || ch === '\r') && !inQ) { if (ch === '\r' && nx === '\n') i++; row.push(cur); cur = ''; rows.push(row); row = []; }
         else cur += ch;
       }
       row.push(cur); rows.push(row);
@@ -507,7 +516,7 @@
     function idxToISODay(idx) {
       const d = dayIdxToDate(idx);
       const day = d.getUTCDay() || 7;     // 1..7
-      const th  = new Date(d);            // Thursday of this week
+      const th = new Date(d);            // Thursday of this week
       th.setUTCDate(d.getUTCDate() + (4 - day));
       const isoYear = th.getUTCFullYear();
       const w1 = new Date(Date.UTC(isoYear, 0, 4));
@@ -520,16 +529,31 @@
 
     /** ===== Resolve timelines (day canon) ===== */
     function resolveTimelineDays(tl) {
+      const tlPref = (tl.preferredGranularity || '').toLowerCase(); // '', 'day', 'week', 'year'
+      const unitMult = (tlPref === 'week') ? 7 : (tlPref === 'year' ? 365 : 1); // days per unit (approx for year)
       let prevEnd = null;          // previous event's exclusive end dayIdx
       let bundleDay = null;        // current bundle day (for "." starts)
       const staged = [];
+
       for (const ev of (tl.events || [])) {
         const startRaw = (ev.rawDate || '').trim();
-        const durRaw   = (ev.rawDuration || '').trim();
+        const durRaw = (ev.rawDuration || '').trim();
 
-        let { days: durationDays, isSlice } = parseDuration(durRaw);
+        // Determine kind from start token
+        let kind = 'day';
+        if (isSpecificYear(startRaw)) kind = 'year';
+        else if (isSpecificWeek(startRaw)) kind = 'week';
+        else if (isSpecificWeekDay(startRaw)) kind = 'day';
+        else if (/^a\s*\d+$/.test(startRaw)) {
+          // relative uses timeline pref to determine unit kind
+          kind = (tlPref === 'year') ? 'year' : (tlPref === 'week' ? 'week' : 'day');
+        } else if (isZeroStart(startRaw) || isSameDayStart(startRaw)) {
+          // keep your legacy zero/".": treat as timeline pref kind
+          kind = (tlPref === 'year') ? 'year' : (tlPref === 'week' ? 'week' : 'day');
+        }
+
+        // Compute startIdx
         let startIdx = null;
-
         if (isSpecificWeekDay(startRaw)) {
           const [Y, W, D] = startRaw.split('-').map(Number);
           const base = isoWeekToDayIdx(`${Y}-${String(W).padStart(2, '0')}`);
@@ -538,24 +562,39 @@
         } else if (isSpecificWeek(startRaw)) {
           startIdx = isoWeekToDayIdx(startRaw);
           bundleDay = null;
-        } else if (isZeroStart(startRaw)) {
-          startIdx = (prevEnd == null) ? 0 : (prevEnd);
+        } else if (isSpecificYear(startRaw)) {
+          // start at Jan 1 (midnight UTC); render-time will snap to first visible column of that year
+          const Y = parseInt(startRaw, 10);
+          startIdx = dateToDayIdx(new Date(Date.UTC(Y, 0, 1)));
           bundleDay = null;
-        } else if (isSameDayStart(startRaw)) {
-          if (bundleDay != null) {
-            startIdx = bundleDay;
-          } else {
-            startIdx = (prevEnd == null) ? 0 : prevEnd;
-            bundleDay = startIdx;
-          }
         } else {
-          const relW = parseRelWeeks(startRaw);
-          const relD = parseRelDays(startRaw);
-          if (relW != null) { startIdx = (prevEnd == null) ? relW * 7 : (prevEnd + relW * 7); bundleDay = null; }
-          else if (relD != null) { startIdx = (prevEnd == null) ? relD : (prevEnd + relD); bundleDay = null; }
-          else { continue; }
+          const relUnits = parseRelAfterUnits(startRaw);
+          if (relUnits != null) {
+            const offsetDays = relUnits * unitMult;
+            startIdx = (prevEnd == null) ? offsetDays : (prevEnd + offsetDays);
+            bundleDay = null;
+          } else if (isZeroStart(startRaw)) {
+            startIdx = (prevEnd == null) ? 0 : (prevEnd);
+            bundleDay = null;
+          } else if (isSameDayStart(startRaw)) {
+            if (bundleDay != null) startIdx = bundleDay;
+            else {
+              startIdx = (prevEnd == null) ? 0 : prevEnd;
+              bundleDay = startIdx;
+            }
+          } else {
+            // unrecognised → skip
+            continue;
+          }
         }
 
+        // Duration → days (units depend on timeline pref);
+        // for chips ('.') keep 1-day slice
+        const units = parseDurationUnits(durRaw);
+        let isSlice = isPartDayDur(ev.rawDuration);
+        let durationDays = isSlice ? 1 : Math.max(1, units * unitMult);
+
+        // Keep bundle "." to 1 day
         if (isSameDayStart(startRaw) && durationDays > 1) { isSlice = true; durationDays = 1; }
         if (isSlice) durationDays = 1;
         if (isSlice) { bundleDay = startIdx; } else { bundleDay = null; }
@@ -567,7 +606,9 @@
           ...ev,
           startIdx,
           durationDays: Math.max(1, durationDays),
-          isSlice
+          isSlice,
+          kind,              // 'year' | 'week' | 'day'
+          _units: units      // raw units (years/weeks/days depending on tlPref)
         });
       }
 
@@ -613,7 +654,7 @@
       if (a.t === 'd') return { t: 'd', dayIdx: a.dayIdx + 1 };
       if (a.t === 'w') {
         // advance 7 days from Monday
-        const base = isoWeekToDayIdx(`${a.year}-${String(a.week).padStart(2,'0')}`);
+        const base = isoWeekToDayIdx(`${a.year}-${String(a.week).padStart(2, '0')}`);
         const nextIdx = base + 7;
         return keyOf(nextIdx, 'week');
       }
@@ -623,14 +664,12 @@
     function keyToLabel(a) {
       if (a.t === 'd') {
         const { day } = idxToISODay(a.dayIdx);
-        const dname = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][day-1];
-        const dt = dayIdxToDate(a.dayIdx);
-        const dd = String(dt.getUTCDate()).padStart(2,'0');
-        return { text: `${dname} ${dd}`, year: idxToISODay(a.dayIdx).year };
+        const dname = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][day - 1];
+        return { text: dname, year: idxToISODay(a.dayIdx).year };
       }
       if (a.t === 'w') {
         const { year, week } = a;
-        return { text: `Week ${String(week).padStart(2,'0')}`, year };
+        return { text: `Week ${String(week).padStart(2, '0')}`, year };
       }
       if (a.t === 'y') {
         return { text: String(a.year), year: a.year };
@@ -639,8 +678,8 @@
     }
     function keySampleDayIdx(a) {
       if (a.t === 'd') return a.dayIdx;
-      if (a.t === 'w') return isoWeekToDayIdx(`${a.year}-${String(a.week).padStart(2,'0')}`);
-      if (a.t === 'y') return dateToDayIdx(new Date(Date.UTC(a.year,0,1)));
+      if (a.t === 'w') return isoWeekToDayIdx(`${a.year}-${String(a.week).padStart(2, '0')}`);
+      if (a.t === 'y') return dateToDayIdx(new Date(Date.UTC(a.year, 0, 1)));
       return 0;
     }
 
@@ -703,14 +742,73 @@
     function flushPendingEdits() {
       const ae = document.activeElement;
       if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable)) {
-        ae.dispatchEvent(new Event('input',  { bubbles: true }));
+        ae.dispatchEvent(new Event('input', { bubbles: true }));
         ae.dispatchEvent(new Event('change', { bubbles: true }));
         ae.blur();
       }
       debouncedApply.flush?.();
     }
 
+    function buildAutoWorldRow(seasonal, minIdx, maxIdx) {
+      // Collect seasonal entries that land within [minIdx, maxIdx)
+      const evs = [];
+      if (!Array.isArray(seasonal) || !Number.isFinite(minIdx) || !Number.isFinite(maxIdx) || maxIdx <= minIdx) {
+        return { title: 'World Events', imageName: '', preferredGranularity: '', events: [] };
+      }
+
+      const minIso = idxToISODay(minIdx);           // {year, week, day}
+      const maxIso = idxToISODay(maxIdx - 1);       // inclusive end sample
+
+      const startYear = minIso.year;
+      const endYear = maxIso.year;
+
+      // Helper to push an event if its Monday (startIdx) falls within the window
+      const maybePushByIso = (isoStr, name, id, desc, type) => {
+        try {
+          const start = isoWeekToDayIdx(isoStr);
+          if (start >= minIdx && start < maxIdx) {
+            evs.push({
+              rawDate: isoStr,
+              rawDuration: '1',
+              desc: name || '(event)',
+              categoryId: 0,
+              imageName: id || '',
+              characters: [],
+              location: String(desc || ''),
+              _weType: type === 'recurring' ? 'recurring' : 'oneoff' // <-- mark type
+            });
+          }
+        } catch { /* ignore bad ISO week strings */ }
+      };
+
+      for (const s of seasonal) {
+        const date = String(s?.date || '').trim();
+        const name = s?.name || '';
+        const id = s?.id || '';
+        const desc = s?.desc || '';
+
+        if (/^\d{4}-\d{2}$/.test(date)) {
+          // One-off: YYYY-WW
+          maybePushByIso(date, name, id, desc, 'oneoff');
+        } else if (/^\d{2}$/.test(date)) {
+          // Recurring: WW — replicate across years
+          const ww = date;
+          for (let y = startYear; y <= endYear; y++) {
+            const iso = `${y}-${ww}`;
+            maybePushByIso(iso, name, id, desc, 'recurring');
+          }
+        }
+
+      }
+
+      // Resolve to day-canon using existing path
+      const autoRaw = { title: 'World Events', imageName: '', preferredGranularity: '', events: evs };
+      return resolveTimelineDays(autoRaw);
+    }
+
+
     async function applyStateToRenderer() {
+      // 1) Project editor state → lightweight timelines for resolution
       const timelines = (editorState?.timelines || []).map(tl => ({
         title: tl.title,
         imageName: tl.image || '',
@@ -729,20 +827,38 @@
         })
       }));
 
+      // 2) Resolve real timelines into day-index canon
       const resolved = timelines.map(resolveTimelineDays);
 
-      // Map seasonal → day indices (we will hide them in Year view by default)
-      const seasonalMarkers = (editorState?.seasonal || []).map(s => {
-        if (isSpecificWeek(s.date)) {
-          return { type: 'static', dayIdx: isoWeekToDayIdx(s.date), id: s.id, name: s.name, desc: s.desc || '', imageName: s.id };
-        } else if (/^\d{2}$/.test(s.date)) {
-          return { type: 'recurring', week: parseInt(s.date, 10), id: s.id, name: s.name, desc: s.desc || '', imageName: s.id };
+      // 3) Determine the overall min/max only from REAL timelines (the synthetic row must not expand bounds)
+      let minIdx = Infinity, maxIdx = -Infinity;
+      for (const tl of resolved) {
+        for (const ev of tl.events) {
+          minIdx = Math.min(minIdx, ev.startIdx);
+          maxIdx = Math.max(maxIdx, ev.startIdx + ev.durationDays);
         }
-        return null;
-      }).filter(Boolean);
+      }
+      const hasRealRange = Number.isFinite(minIdx) && Number.isFinite(maxIdx) && maxIdx > minIdx;
 
-      await renderGridHorizontalGranularity(resolved, seasonalMarkers);
+      // 4) Build synthetic "World Events" row within those bounds only
+      let withAuto = resolved.slice();
+      if (hasRealRange) {
+        const auto = buildAutoWorldRow(
+          editorState?.seasonal || [],
+          minIdx,
+          maxIdx
+        );
+        if (auto && auto.events.length) {
+          // mark so the renderer can ignore this row when computing bounds
+          auto.__autoWorldRow = true;
+          withAuto = [auto, ...resolved];
+        }
+      }
+
+      // 5) Render
+      await renderGridHorizontalGranularity(withAuto, []);
     }
+
 
     /** ===== Selection state ===== */
     let selPane = null;
@@ -751,7 +867,7 @@
       if (selPane.type === 'timeline') {
         const L = editorState?.timelines?.length ?? 0;
         if (!(Number.isInteger(selPane.idx) && selPane.idx >= 0 && selPane.idx < L)) selPane = null;
-      } else if (!['world-static','world-recurring','settings'].includes(selPane.type)) {
+      } else if (!['world-static', 'world-recurring', 'settings'].includes(selPane.type)) {
         selPane = null;
       }
     }
@@ -761,8 +877,8 @@
       const host = document.getElementById('ed-actions');
       if (!host) return;
       host.innerHTML = `
-        <button id="ed-import" class="ghost" type="button">Import timelines.json</button>
-        <button id="ed-download" type="button">Download timelines.json</button>
+        <button id="ed-import" class="ghost" type="button">Import timelines.js</button>
+        <button id="ed-download" type="button">Download timelines.js</button>
       `;
       document.getElementById('ed-import').onclick = onImportJSON;
       document.getElementById('ed-download').onclick = onDownloadJSON;
@@ -851,14 +967,14 @@
           <button class="ghost select-timeline" title="Select" type="button">●</button>
           <div class="ed-timelines">
             <input type="text" class="ed-tl__title" value="${tl.title || ''}" />
-            <div class="ed-tl__meta">${(tl.events||[]).length} events</div>
+            <div class="ed-tl__meta">${(tl.events || []).length} events</div>
             <div class="ed-row" style="display:flex; gap:.5rem; align-items:center; margin-top:.35rem;">
               <label style="font-size:.85em; opacity:.7;">Pref:</label>
               <select class="ed-pref-gran">
                 <option value="">(none)</option>
-                <option value="day"  ${tl.preferredGranularity==='day'?'selected':''}>Day</option>
-                <option value="week" ${tl.preferredGranularity==='week'?'selected':''}>Week</option>
-                <option value="year" ${tl.preferredGranularity==='year'?'selected':''}>Year</option>
+                <option value="day"  ${tl.preferredGranularity === 'day' ? 'selected' : ''}>Day</option>
+                <option value="week" ${tl.preferredGranularity === 'week' ? 'selected' : ''}>Week</option>
+                <option value="year" ${tl.preferredGranularity === 'year' ? 'selected' : ''}>Year</option>
               </select>
             </div>
             <div class="ed-btn-box small">
@@ -872,18 +988,36 @@
         row.classList.toggle('is-active', selPane?.type === 'timeline' && selPane.idx === i);
         row.querySelector('.select-timeline').onclick = () => { selPane = { type: 'timeline', idx: i }; renderSidebar(); renderMain(); };
 
-        row.querySelector('.ed-tl__title').oninput = (e) => { tl.title = e.target.value; debouncedApply(); renderSidebar(); };
+        const iTitle = row.querySelector('.ed-tl__title');
+
+        // Update data + grid as you type, but DO NOT re-render the sidebar
+        iTitle.addEventListener('input', (e) => {
+          tl.title = e.target.value;
+          debouncedApply();
+
+          // Live-update the main panel title if this timeline is selected
+          if (selPane?.type === 'timeline' && selPane.idx === i) {
+            const mainTitle = document.querySelector('.ed-main-title');
+            if (mainTitle) mainTitle.textContent = tl.title || 'Untitled';
+          }
+        });
+
+        // Only refresh the sidebar UI when you finish editing
+        iTitle.addEventListener('blur', () => {
+          renderSidebar();
+        });
+
         row.querySelector('.ed-pref-gran').onchange = (e) => { tl.preferredGranularity = e.target.value; debouncedApply(); };
 
         row.querySelector('[data-act="up"]').onclick = () => {
-          if (i>0){ const a = editorState.timelines[i-1]; editorState.timelines[i-1] = editorState.timelines[i]; editorState.timelines[i] = a; if (selPane?.type==='timeline'&&selPane.idx===i) selPane.idx=i-1; debouncedApply(); renderSidebar(); renderMain(); }
+          if (i > 0) { const a = editorState.timelines[i - 1]; editorState.timelines[i - 1] = editorState.timelines[i]; editorState.timelines[i] = a; if (selPane?.type === 'timeline' && selPane.idx === i) selPane.idx = i - 1; debouncedApply(); renderSidebar(); renderMain(); }
         };
         row.querySelector('[data-act="down"]').onclick = () => {
-          if (i<editorState.timelines.length-1){ const a = editorState.timelines[i+1]; editorState.timelines[i+1] = editorState.timelines[i]; editorState.timelines[i] = a; if (selPane?.type==='timeline'&&selPane.idx===i) selPane.idx=i+1; debouncedApply(); renderSidebar(); renderMain(); }
+          if (i < editorState.timelines.length - 1) { const a = editorState.timelines[i + 1]; editorState.timelines[i + 1] = editorState.timelines[i]; editorState.timelines[i] = a; if (selPane?.type === 'timeline' && selPane.idx === i) selPane.idx = i + 1; debouncedApply(); renderSidebar(); renderMain(); }
         };
         row.querySelector('[data-act="del"]').onclick = () => {
-          if (confirm(`Delete timeline "${tl.title}"?`)){
-            editorState.timelines.splice(i,1);
+          if (confirm(`Delete timeline "${tl.title}"?`)) {
+            editorState.timelines.splice(i, 1);
             if (selPane?.type === 'timeline') {
               if (editorState.timelines.length === 0) selPane = null;
               else if (selPane.idx >= editorState.timelines.length) selPane.idx = editorState.timelines.length - 1;
@@ -940,9 +1074,9 @@
           <div class="ed-row" style="margin-top:12px;">
             <label style="display:block; font-weight:600; margin-bottom:.25rem;">View (Granularity)</label>
             <select id="ui-gran">
-              <option value="day"  ${ui.granularity==='day'?'selected':''}>Day</option>
-              <option value="week" ${ui.granularity==='week'?'selected':''}>Week</option>
-              <option value="year" ${ui.granularity==='year'?'selected':''}>Year</option>
+              <option value="day"  ${ui.granularity === 'day' ? 'selected' : ''}>Day</option>
+              <option value="week" ${ui.granularity === 'week' ? 'selected' : ''}>Week</option>
+              <option value="year" ${ui.granularity === 'year' ? 'selected' : ''}>Year</option>
             </select>
           </div>
 
@@ -979,7 +1113,7 @@
       iSeasonYear.addEventListener('change', () => { if (!settingsState.ui) settingsState.ui = { ...DEFAULT_UI }; settingsState.ui.showSeasonalInYear = !!iSeasonYear.checked; applyAllFromSettings(); });
 
       const iMaxChips = uiCard.querySelector('#ui-maxchips');
-      iMaxChips.addEventListener('change', () => { if (!settingsState.ui) settingsState.ui = { ...DEFAULT_UI }; const v = parseInt(iMaxChips.value,10); settingsState.ui.maxChipsPerBin = Number.isFinite(v) ? Math.max(1, Math.min(99, v)) : DEFAULT_UI.maxChipsPerBin; applyAllFromSettings(); });
+      iMaxChips.addEventListener('change', () => { if (!settingsState.ui) settingsState.ui = { ...DEFAULT_UI }; const v = parseInt(iMaxChips.value, 10); settingsState.ui.maxChipsPerBin = Number.isFinite(v) ? Math.max(1, Math.min(99, v)) : DEFAULT_UI.maxChipsPerBin; applyAllFromSettings(); });
 
       // Categories table (no emoji)
       const table = document.createElement('table');
@@ -997,7 +1131,7 @@
       wrap.appendChild(table);
 
       const tbody = table.querySelector('tbody');
-      (settingsState.categories || []).slice().sort((a,b)=>a.id-b.id).forEach(cat => {
+      (settingsState.categories || []).slice().sort((a, b) => a.id - b.id).forEach(cat => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td><code>${cat.id}</code></td>
@@ -1029,7 +1163,7 @@
           const val = iColorPicker.value; const norm = normalizeHexColor(val); cat.color = norm; iColorText.value = norm; textBtn.style.background = norm || 'transparent'; applyStateToRenderer();
         });
         iColorText.addEventListener('input', () => {
-          const raw = iColorText.value.trim(); if (raw === '') { cat.color=''; textBtn.style.background='transparent'; applyStateToRenderer(); return; }
+          const raw = iColorText.value.trim(); if (raw === '') { cat.color = ''; textBtn.style.background = 'transparent'; applyStateToRenderer(); return; }
           const norm = normalizeHexColor(raw); if (!norm) return; iColorText.value = norm.toUpperCase(); cat.color = norm; iColorPicker.value = toColorInputValue(norm); textBtn.style.background = norm || 'transparent'; applyStateToRenderer();
         });
         textBtn.addEventListener('click', () => { cat.text = (cat.text === 'white') ? 'black' : 'white'; textBtn.style.color = (cat.text === 'white') ? '#fff' : '#000'; applyStateToRenderer(); });
@@ -1089,9 +1223,9 @@
         function updateSeasonalPreview() {
           imgWrap.querySelectorAll('.ed-thumb').forEach(n => n.remove());
           const slug = (iId.value || '').trim();
-          if (!slug) { const ph = document.createElement('div'); ph.className = 'ed-thumb ed-thumb--ph'; ph.setAttribute('aria-hidden','false'); imgWrap.insertBefore(ph, iId); return; }
+          if (!slug) { const ph = document.createElement('div'); ph.className = 'ed-thumb ed-thumb--ph'; ph.setAttribute('aria-hidden', 'false'); imgWrap.insertBefore(ph, iId); return; }
           const imgEl = makeSmartImgFallback(IMAGES_DIR, slug, 'ed-thumb', slug, () => {
-            const ph = document.createElement('div'); ph.className = 'ed-thumb ed-thumb--ph'; ph.setAttribute('aria-hidden','false'); imgWrap.insertBefore(ph, iId);
+            const ph = document.createElement('div'); ph.className = 'ed-thumb ed-thumb--ph'; ph.setAttribute('aria-hidden', 'false'); imgWrap.insertBefore(ph, iId);
           });
           if (imgEl) imgWrap.insertBefore(imgEl, iId);
         }
@@ -1120,7 +1254,7 @@
         if (!editorState.seasonal) editorState.seasonal = [];
         editorState.seasonal.push(
           isStatic ? { date: `${new Date().getUTCFullYear()}-01`, id: 'season', name: 'Event', desc: '' }
-                   : { date: '01', id: 'season', name: 'Event', desc: '' }
+            : { date: '01', id: 'season', name: 'Event', desc: '' }
         );
         renderMain(); debouncedApply();
       };
@@ -1172,8 +1306,8 @@
         function updateTlImagePreview() {
           wrap.querySelectorAll('.ed-thumb').forEach(n => n.remove());
           const slug = (input.value || '').trim();
-          if (!slug) { const ph = document.createElement('div'); ph.className = 'ed-thumb ed-thumb--ph'; ph.setAttribute('aria-hidden','false'); ph.style.cssText = 'width:36px;height:36px;border-radius:6px;background:#f2f2f2;border:1px solid #ddd;'; wrap.insertBefore(ph, input); return; }
-          const imgEl = makeSmartImgFallback(IMAGES_DIR, slug, 'ed-thumb', slug, () => { const ph = document.createElement('div'); ph.className = 'ed-thumb ed-thumb--ph'; ph.setAttribute('aria-hidden','false'); ph.style.cssText = 'width:36px;height:36px;border-radius:6px;background:#f2f2f2;border:1px solid #ddd;'; wrap.insertBefore(ph, input); });
+          if (!slug) { const ph = document.createElement('div'); ph.className = 'ed-thumb ed-thumb--ph'; ph.setAttribute('aria-hidden', 'false'); ph.style.cssText = 'width:36px;height:36px;border-radius:6px;background:#f2f2f2;border:1px solid #ddd;'; wrap.insertBefore(ph, input); return; }
+          const imgEl = makeSmartImgFallback(IMAGES_DIR, slug, 'ed-thumb', slug, () => { const ph = document.createElement('div'); ph.className = 'ed-thumb ed-thumb--ph'; ph.setAttribute('aria-hidden', 'false'); ph.style.cssText = 'width:36px;height:36px;border-radius:6px;background:#f2f2f2;border:1px solid #ddd;'; wrap.insertBefore(ph, input); });
           if (imgEl) { imgEl.style.cssText = 'width:36px;height:36px;border-radius:6px;object-fit:cover;border:1px solid #ddd;'; wrap.insertBefore(imgEl, input); }
         }
         updateTlImagePreview();
@@ -1266,7 +1400,7 @@
         tr.querySelector('[data-act="del"]').onclick = () => { evs.splice(i, 1); renderMain(); debouncedApply(); };
       });
 
-      document.getElementById('ed-add-ev').onclick = () => { evs.push({ date: '', duration: '1w', desc: '', categoryId: 0, image: '', characters: [], location: '' }); renderMain(); debouncedApply(); };
+      document.getElementById('ed-add-ev').onclick = () => { evs.push({ date: '', duration: '1', desc: '', categoryId: 0, image: '', characters: [], location: '' }); renderMain(); debouncedApply(); };
       document.getElementById('ed-dup-evs').onclick = () => { tl.events = [...evs.map(e => structuredClone(e)), ...evs.map(e => structuredClone(e))]; renderMain(); debouncedApply(); };
       document.getElementById('ed-clear-evs').onclick = () => { if (confirm('Remove all events in this timeline?')) { tl.events = []; renderMain(); debouncedApply(); } };
     }
@@ -1276,30 +1410,65 @@
     /** ===================== Persistence ===================== */
     function onDownloadJSON() {
       flushPendingEdits();
-      const combined = { settings: settingsState || DEFAULT_SETTINGS, timelines: normalizeEditorState(structuredClone(editorState)).timelines || [], seasonal:  normalizeEditorState(structuredClone(editorState)).seasonal  || [] };
-      const blob = new Blob([JSON.stringify(combined, null, 2)], { type: 'application/json' });
+      const combined = {
+        settings: settingsState || DEFAULT_SETTINGS,
+        timelines: normalizeEditorState(structuredClone(editorState)).timelines || [],
+        seasonal: normalizeEditorState(structuredClone(editorState)).seasonal || []
+      };
+
+      const js = 'window.TIMELINES_DATA = ' + JSON.stringify(combined, null, 2) + ';\n';
+      const blob = new Blob([js], { type: 'application/javascript' });
+
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = 'timelines.json';
-      document.body.appendChild(a); a.click(); URL.revokeObjectURL(a.href); a.remove();
+      a.download = 'timelines.js';
+      document.body.appendChild(a);
+      a.click();
+      URL.revokeObjectURL(a.href);
+      a.remove();
     }
 
     async function onImportJSON() {
       const inp = document.createElement('input');
-      inp.type = 'file'; inp.accept = '.json,application/json';
+      // accept both .js and .json to keep life easy if you ever paste raw JSON
+      inp.type = 'file';
+      inp.accept = '.js,application/javascript,.json,application/json';
+
       inp.onchange = async () => {
-        const file = inp.files[0]; if (!file) return;
+        const file = inp.files[0];
+        if (!file) return;
         try {
           const text = await file.text();
-          const raw  = JSON.parse(text);
+
+          let raw;
+          if (/window\.TIMELINES_DATA\s*=/.test(text)) {
+            // Extract the object literal assigned to window.TIMELINES_DATA
+            const match = text.match(/window\.TIMELINES_DATA\s*=\s*([\s\S]*?);\s*$/);
+            if (!match) throw new Error('Could not parse timelines.js payload');
+            raw = JSON.parse(match[1]);
+          } else {
+            // Fallback if user gives plain JSON
+            raw = JSON.parse(text);
+          }
+
           const combined = coerceCombinedJson(raw);
           settingsState = combined.settings || DEFAULT_SETTINGS;
-          editorState   = normalizeEditorState({ timelines: combined.timelines || [], seasonal:  combined.seasonal  || [] });
-          applyAllFromSettings(); renderSidebar(); renderMain();
-        } catch (e) { alert('Failed to import: ' + (e.message || e)); }
+          editorState = normalizeEditorState({
+            timelines: combined.timelines || [],
+            seasonal: combined.seasonal || []
+          });
+
+          applyAllFromSettings();
+          renderSidebar();
+          renderMain();
+        } catch (e) {
+          alert('Failed to import: ' + (e.message || e));
+        }
       };
+
       inp.click();
     }
+
 
     /** ===================== GRID RENDER (Granularity) ===================== **/
     function computeTimelineRanges(timelines) {
@@ -1312,133 +1481,378 @@
       });
     }
 
-    async function renderGridHorizontalGranularity(timelines, seasonalMarkers = []) {
+    // ===== Visible-span helpers for collapsed layouts =====
+
+    // Return the visible span (start col index + width) of N years starting at startYear
+    // across the CURRENT columns array (which may contain year, week, or day bins).
+    function spanVisibleYears(columns, startYear, yearsCount) {
+      // Span across *visible* columns whose key year ∈ [startYear .. endYear].
+      if (!Array.isArray(columns) || !columns.length) return null;
+      const endYear = startYear + Math.max(1, yearsCount) - 1;
+
+      const keyYear = (key) => {
+        if (!key) return NaN;
+        if (key.t === 'y') return key.year;
+        if (key.t === 'w') return key.year;
+        if (key.t === 'd') return idxToISODay(key.dayIdx).year;
+        return NaN;
+      };
+
+      // find first visible column in startYear
+      let colStartIdx = -1;
+      for (let i = 0; i < columns.length; i++) {
+        const col = columns[i];
+        if (col?.type !== 'bin') continue;
+        const y = keyYear(col.key);
+        if (y === startYear) { colStartIdx = i; break; }
+      }
+      if (colStartIdx < 0) return null;
+
+      // grow span while we remain within [startYear..endYear]
+      let span = 0;
+      for (let i = colStartIdx; i < columns.length; i++) {
+        const col = columns[i];
+        if (col?.type !== 'bin') break;
+        const y = keyYear(col.key);
+        if (y < startYear) break;
+        if (y > endYear) break;           // clamp BEFORE including the first col of next year
+        span++;
+      }
+
+      return (span > 0) ? { colStartIdx, span } : null;
+    }
+
+    // In DAY view, weeks are represented either by many day bins or a single compacted bin.
+    // This finds the visible span that covers `units` weeks starting from `startIdx` (the
+    // Monday dayIdx of the first week) across the CURRENT columns array.
+    function spanVisibleWeeksAsDays(columns, startIdx, units) {
+      if (!Array.isArray(columns) || !columns.length) return null;
+      const w0 = idxToISODay(startIdx); // {year, week}
+      const totalWeeks = Math.max(1, units);
+      // Compute inclusive end (year,week) by advancing weeks
+      const weekPlus = (Y, W, add) => {
+        // add can be positive
+        const mon = isoWeekToDayIdx(`${Y}-${String(W).padStart(2, '0')}`);
+        const mon2 = mon + add * 7;
+        const iso = idxToISODay(mon2);
+        return { year: iso.year, week: iso.week };
+      };
+      const wEnd = weekPlus(w0.year, w0.week, totalWeeks - 1);
+
+      const keyWeek = (k) => {
+        if (!k) return null;
+        if (k.t === 'w') return { year: k.year, week: k.week };
+        if (k.t === 'd') { const { year, week } = idxToISODay(k.dayIdx); return { year, week }; }
+        if (k.t === 'y') return { year: k.year, week: null };
+        return null;
+      };
+      const wkCmp = (a, b) => (a.year - b.year) || (a.week - b.week);
+
+      // Find first visible column that belongs to the start week
+      let colStartIdx = -1;
+      for (let i = 0; i < columns.length; i++) {
+        const col = columns[i];
+        if (col?.type !== 'bin') continue;
+        const wk = keyWeek(col.key);
+        if (!wk || wk.week == null) continue; // skip pure year bins
+        if (wk.year === w0.year && wk.week === w0.week) { colStartIdx = i; break; }
+      }
+      if (colStartIdx < 0) return null; // start week not visible
+
+      // Extend span across all columns whose (year,week) is within [w0 .. wEnd]
+      let span = 0;
+      for (let i = colStartIdx; i < columns.length; i++) {
+        const col = columns[i];
+        if (col?.type !== 'bin') break;
+        const wk = keyWeek(col.key);
+        if (!wk || wk.week == null) break; // hit a year-only column; stop
+        if (wkCmp(wk, w0) < 0) break;
+        if (wkCmp(wk, wEnd) > 0) break;
+        span++;
+      }
+
+      return (span > 0) ? { colStartIdx, span } : null;
+    }
+
+
+    function renderGridHorizontalGranularity(timelines, seasonalMarkers = []) {
       const grid = $('grid');
       grid.innerHTML = '';
 
       const g = activeGranularity();
+      const collapse = !!settingsState?.ui?.collapseEmptyDays;
 
-      // Bounds
-      const eventBounds = timelines.flatMap(tl => tl.events.map(ev => [ev.startIdx, ev.startIdx + ev.durationDays]));
+      // World Events visibility:
+      // - Visible in all views when NOT collapsed
+      // - Hidden in all views when collapsed
+      const timelinesForRender = collapse
+        ? timelines.filter(tl => !tl.__autoWorldRow)
+        : timelines.slice();
+
+      // ===== Bounds (only REAL timelines) =====
+      const realRows = timelines.filter(tl => !tl.__autoWorldRow);
+      const eventBounds = realRows.flatMap(tl => tl.events.map(ev => [ev.startIdx, ev.startIdx + ev.durationDays]));
       const hasAnyEvents = eventBounds.length > 0;
       const minIdx = hasAnyEvents ? Math.min(...eventBounds.map(b => b[0])) : 0;
       const maxIdx = hasAnyEvents ? Math.max(...eventBounds.map(b => b[1])) : 1; // exclusive
       const totalDays = Math.max(1, maxIdx - minIdx);
 
-      // Seasonal expansion (day & week view; optionally hide in year view)
-      const { year: minYear } = idxToISODay(minIdx);
-      const { year: maxYear } = idxToISODay(maxIdx - 1);
-      const expandedSeasonal = [];
-      const showSeasonal = (g !== 'year') || !!settingsState?.ui?.showSeasonalInYear;
-      if (showSeasonal) {
-        for (const m of seasonalMarkers) {
-          if (m.type === 'static') expandedSeasonal.push(m);
-          else if (m.type === 'recurring') {
-            const ww = String(m.week).padStart(2, '0');
-            for (let y = minYear; y <= maxYear; y++) {
-              const dayIdx = isoWeekToDayIdx(`${y}-${ww}`);
-              if (dayIdx >= minIdx && dayIdx < maxIdx) expandedSeasonal.push({ ...m, type: 'static', dayIdx });
+      // ---------- day keys for grouping ----------
+      const firstDayKey = keyOf(minIdx, 'day');
+      const lastDayKey = keyOf(maxIdx - 1, 'day');
+      const dayKeys = [];
+      { let cur = firstDayKey; dayKeys.push(cur); while (!keyEq(cur, lastDayKey)) { cur = keyNext(cur); dayKeys.push(cur); if (dayKeys.length > 20000) break; } }
+
+      // ---------- pre-scan sets ----------
+      const daysWithDayEvents = new Set();
+      const weekHasWeekEvents = new Set();  // "YYYY-WW"
+      const yearHasYearEvents = new Set();  // "YYYY"
+
+      for (const tl of realRows) {
+        for (const ev of tl.events) {
+          const a = Math.min(ev.startIdx, ev.startIdx + ev.durationDays);
+          const b = Math.max(ev.startIdx, ev.startIdx + ev.durationDays);
+
+          if (ev.kind === 'day') {
+            for (let i = a; i < b; i++) daysWithDayEvents.add(i);
+          }
+
+          if (ev.kind === 'week') {
+            // enumerate weeks touched by this event (conservatively) but confirm with eventTouchesBin
+            const start = idxToISODay(ev.startIdx);
+            const units = Math.max(1, ev._units || Math.ceil((b - a) / 7));
+            for (let u = 0; u < units + 8; u++) {
+              const wkMon = isoWeekToDayIdx(`${start.year}-${String(start.week + u).padStart(2, '0')}`);
+              const wkIso = idxToISODay(wkMon);
+              const wkKey = { t: 'w', year: wkIso.year, week: wkIso.week };
+              if (eventTouchesBin(ev, wkKey, 'week')) {
+                weekHasWeekEvents.add(`${wkKey.year}-${String(wkKey.week).padStart(2, '0')}`);
+              }
+            }
+          }
+
+          if (ev.kind === 'year') {
+            const y0 = idxToISODay(a).year;
+            const y1 = idxToISODay(b - 1).year;
+            for (let Y = y0; Y <= y1; Y++) {
+              if (eventTouchesBin(ev, { t: 'y', year: Y }, 'year')) yearHasYearEvents.add(String(Y));
             }
           }
         }
       }
-      const seasonalByDay = new Map();
-      for (const m of expandedSeasonal) {
-        if (!seasonalByDay.has(m.dayIdx)) seasonalByDay.set(m.dayIdx, []);
-        seasonalByDay.get(m.dayIdx).push(m);
-      }
 
-      // Active days for day view (for collapse) — ignore Year-pref timelines
-      const activeDayCounts = new Map();
-      if (g === 'day') {
-        for (const tl of timelines) {
-          const pref = (tl.preferredGranularity || '').toLowerCase();
-          if (pref === 'year') continue; // 🔑 ignore Year timelines in Day view collapse
-
-          for (const ev of tl.events) {
-            const a = Math.min(ev.startIdx, ev.startIdx + ev.durationDays);
-            const b = Math.max(ev.startIdx, ev.startIdx + ev.durationDays);
-            for (let i = a; i < b; i++) {
-              activeDayCounts.set(i, (activeDayCounts.get(i) || 0) + 1);
-            }
-          }
-        }
-      }
-
-
-
-      // Build bin keys across range
-      const firstKey = keyOf(minIdx, g);
-      const lastKey  = keyOf(maxIdx - 1, g);
-      const keyList = [];
-      let cur = firstKey; keyList.push(cur);
-      while (!keyEq(cur, lastKey)) { cur = keyNext(cur); keyList.push(cur); if (keyList.length > 20000) break; }
-
-      // Collapse logic per granularity
-      const collapse = !!settingsState?.ui?.collapseEmptyDays;
-      const columns = [];
-      const colIndexByKey = new Map();
-
-      function binHasAnyEvent(binKey) {
-        if (g === 'day') {
-          const d = binKey.dayIdx;
-          return activeDayCounts.has(d);
-        }
-        // For week/year: check any event overlaps this bin
-        for (const tl of timelines) {
-          const pref = (tl.preferredGranularity || '').toLowerCase();
-          if (g === 'week' && pref === 'year') continue; // 🔑 ignore Year timelines in Week view collapse
-
-          for (const ev of tl.events) {
-            const aKey = keyOf(ev.startIdx, g);
-            const bKey = keyOf(ev.startIdx + ev.durationDays - 1, g);
-            if (keyCmp(aKey, binKey) <= 0 && keyCmp(binKey, bKey) <= 0) return true;
-          }
+      // helpers
+      function yearHasAnyEvents(Y) {
+        for (const tl of realRows) for (const ev of tl.events) {
+          const y0 = idxToISODay(ev.startIdx).year;
+          const y1 = idxToISODay(ev.startIdx + ev.durationDays - 1).year;
+          if (Y >= y0 && Y <= y1) return true;
         }
         return false;
       }
+      function yearHasWeekOrDay(Y) {
+        for (const tl of realRows) for (const ev of tl.events) {
+          if (ev.kind === 'year') continue;
+          const y0 = idxToISODay(ev.startIdx).year;
+          const y1 = idxToISODay(ev.startIdx + ev.durationDays - 1).year;
+          if (Y >= y0 && Y <= y1) return true;
+        }
+        return false;
+      }
+      function weekHasDay(yr, ww) {
+        const monday = isoWeekToDayIdx(`${yr}-${String(ww).padStart(2, '0')}`);
+        if (isNaN(monday)) return false;
+        for (let i = 0; i < 7; i++) if (daysWithDayEvents.has(monday + i)) return true;
+        return false;
+      }
+      function weekHasWeek(yr, ww) {
+        return weekHasWeekEvents.has(`${yr}-${String(ww).padStart(2, '0')}`);
+      }
 
+      // ========== Build the visible column list ==========
+      const columns = [];
+      const colIndexByKey = new Map();
 
-      // Build bin keys across range ... (unchanged above)
+      // Prepare full list of keys for current granularity
+      const firstKey = keyOf(minIdx, g);
+      const lastKey = keyOf(maxIdx - 1, g);
+      const keyList = [];
+      { let cur = firstKey; keyList.push(cur); while (!keyEq(cur, lastKey)) { cur = keyNext(cur); keyList.push(cur); if (keyList.length > 20000) break; } }
 
-      for (const k of keyList) {
-        if (g === 'day') {
-          const d = k.dayIdx;
-
-          // collapse = only keep days that have activity
-          const addDay = collapse ? activeDayCounts.has(d) : true;
-          if (!addDay) continue;
-
-          // Only insert seasonal columns if the day is being shown
-          const seas = seasonalByDay.get(d);
-          if (showSeasonal && seas && seas.length) {
-            for (const m of seas) {
-              columns.push({ type: 'seasonal', key: { t:'d', dayIdx: d }, data: m });
-            }
-          }
-
-          // Now the actual day column
-          colIndexByKey.set(JSON.stringify(k), columns.length);
-          columns.push({ type: 'bin', key: k });
-        } else {
-          const addBin = collapse ? binHasAnyEvent(k) : true;
-          if (addBin) {
+      // ------ DAY VIEW ------
+      if (g === 'day') {
+        if (!collapse) {
+          // Normal day view: show all days
+          for (const k of keyList) {
             colIndexByKey.set(JSON.stringify(k), columns.length);
             columns.push({ type: 'bin', key: k });
+          }
+        } else {
+          // Collapsed: Year → Week → Day
+          let i = 0;
+          while (i < dayKeys.length) {
+            const { year: Y } = idxToISODay(dayKeys[i].dayIdx);
+            const hasAny = yearHasAnyEvents(Y);
+            const hasWoD = yearHasWeekOrDay(Y);
+            const hasYearOnly = yearHasYearEvents.has(String(Y)) && !hasWoD;
+
+            if (!hasAny) {
+              // collapse entire year
+              while (i < dayKeys.length && idxToISODay(dayKeys[i].dayIdx).year === Y) i++;
+              continue;
+            }
+
+            if (hasYearOnly) {
+              // compact entire year to ONE representative day bin (Mon of W01)
+              const wkMon = isoWeekToDayIdx(`${Y}-01`);
+              const k = { t: 'd', dayIdx: wkMon };
+              const keyStr = JSON.stringify(k);
+              if (!colIndexByKey.has(keyStr)) {
+                colIndexByKey.set(keyStr, columns.length);
+                columns.push({ type: 'bin', key: k, __compactYear: true });
+              }
+              while (i < dayKeys.length && idxToISODay(dayKeys[i].dayIdx).year === Y) i++;
+              continue;
+            }
+
+            // Expanded year: walk weeks inside Y
+            let j = i;
+            while (j < dayKeys.length && idxToISODay(dayKeys[j].dayIdx).year === Y) {
+              const { week: W } = idxToISODay(dayKeys[j].dayIdx);
+              const hasDayInW = weekHasDay(Y, W);
+              const hasWeekInW = weekHasWeek(Y, W);
+
+              if (!hasDayInW && !hasWeekInW) {
+                // collapse this entire week (skip all 7 days)
+                while (j < dayKeys.length) {
+                  const dY = idxToISODay(dayKeys[j].dayIdx).year;
+                  const dW = idxToISODay(dayKeys[j].dayIdx).week;
+                  if (dY !== Y || dW !== W) break;
+                  j++;
+                }
+              } else if (hasWeekInW && !hasDayInW) {
+                // compact this week to ONE representative day (Mon)
+                const wkMon = isoWeekToDayIdx(`${Y}-${String(W).padStart(2, '0')}`);
+                const wkKey = { t: 'd', dayIdx: wkMon };
+                const keyStr = JSON.stringify(wkKey);
+                if (!colIndexByKey.has(keyStr)) {
+                  colIndexByKey.set(keyStr, columns.length);
+                  columns.push({ type: 'bin', key: wkKey, __compactWeek: true });
+                }
+                while (j < dayKeys.length) {
+                  const dY = idxToISODay(dayKeys[j].dayIdx).year;
+                  const dW = idxToISODay(dayKeys[j].dayIdx).week;
+                  if (dY !== Y || dW !== W) break;
+                  j++;
+                }
+              } else {
+                // show only days that actually have day events
+                while (j < dayKeys.length) {
+                  const di = dayKeys[j].dayIdx;
+                  const dY = idxToISODay(di).year;
+                  const dW = idxToISODay(di).week;
+                  if (dY !== Y || dW !== W) break;
+                  if (daysWithDayEvents.has(di)) {
+                    const k = { t: 'd', dayIdx: di };
+                    const keyStr = JSON.stringify(k);
+                    if (!colIndexByKey.has(keyStr)) {
+                      colIndexByKey.set(keyStr, columns.length);
+                      columns.push({ type: 'bin', key: k });
+                    }
+                  }
+                  j++;
+                }
+              }
+            }
+            i = j;
+          }
+        }
+      }
+
+      // ------ WEEK VIEW ------
+      else if (g === 'week') {
+        if (!collapse) {
+          for (const k of keyList) {
+            colIndexByKey.set(JSON.stringify(k), columns.length);
+            columns.push({ type: 'bin', key: k });
+          }
+        } else {
+          // Build by scanning years, then weeks — lets us strictly collapse empties.
+          // Determine min/max visible years from the dataset bounds.
+          const minY = idxToISODay(minIdx).year;
+          const maxY = idxToISODay(maxIdx - 1).year;
+
+          for (let Y = minY; Y <= maxY; Y++) {
+            const hasAnyY = yearHasAnyEvents(Y);
+            if (!hasAnyY) continue; // collapse empty year
+
+            const hasWoD_Y = yearHasWeekOrDay(Y);
+            const hasYearOnlyY = yearHasYearEvents.has(String(Y)) && !hasWoD_Y;
+
+            if (hasYearOnlyY) {
+              // Compact this year to a single YEAR bin
+              const yKey = { t: 'y', year: Y };
+              const yStr = JSON.stringify(yKey);
+              if (!colIndexByKey.has(yStr)) {
+                colIndexByKey.set(yStr, columns.length);
+                columns.push({ type: 'bin', key: yKey, __compactYear: true });
+              }
+              continue; // do NOT add week bins for this year
+            }
+
+            // Expanded year: add only weeks that have ANY week OR day events
+            for (let W = 1; W <= 53; W++) {
+              const monday = isoWeekToDayIdx(`${Y}-${String(W).padStart(2, '0')}`);
+              if (isNaN(monday)) continue; // non-existent week
+              // ignore weeks outside dataset range
+              if (monday + 6 < minIdx || monday > maxIdx - 1) continue;
+
+              const hasDayW = weekHasDay(Y, W);
+              const hasWeekW = weekHasWeek(Y, W);
+              if (!(hasDayW || hasWeekW)) continue; // collapse this week
+
+              const wkKey = { t: 'w', year: Y, week: W };
+              const keyStr = JSON.stringify(wkKey);
+              if (!colIndexByKey.has(keyStr)) {
+                colIndexByKey.set(keyStr, columns.length);
+                columns.push({ type: 'bin', key: wkKey });
+              }
+            }
+          }
+        }
+      }
+
+      // ------ YEAR VIEW ------
+      else {
+        if (!collapse) {
+          for (const k of keyList) {
+            colIndexByKey.set(JSON.stringify(k), columns.length);
+            columns.push({ type: 'bin', key: k });
+          }
+        } else {
+          // Only include years that actually have ANY events
+          const minY = idxToISODay(minIdx).year;
+          const maxY = idxToISODay(maxIdx - 1).year;
+          for (let Y = minY; Y <= maxY; Y++) {
+            if (!yearHasAnyEvents(Y)) continue; // collapse empty year
+            const yKey = { t: 'y', year: Y };
+            const keyStr = JSON.stringify(yKey);
+            colIndexByKey.set(keyStr, columns.length);
+            columns.push({ type: 'bin', key: yKey });
           }
         }
       }
 
 
-      // Grid templates
+      // ===== Grid templates =====
       grid.style.gridTemplateRows = [
         'var(--week-header-row)', // header band
         'var(--week-header-row)', // sub header
-        ...timelines.map(() => 'minmax(var(--timeline-row-min), auto)')
+        ...timelinesForRender.map(() => 'minmax(var(--timeline-row-min), auto)')
       ].join(' ');
-      grid.style.gridTemplateColumns = [ 'var(--names-col-width)', ...columns.map(() => 'var(--week-col-width)') ].join(' ');
+      grid.style.gridTemplateColumns = ['var(--names-col-width)', ...columns.map(() => 'var(--week-col-width)')].join(' ');
 
-      // Corner
+      // ===== Corner =====
       const corner = document.createElement('div');
       corner.className = 'corner';
       corner.style.gridRow = '1 / 3';
@@ -1446,176 +1860,151 @@
       corner.textContent = '';
       grid.appendChild(corner);
 
-      // Header labels
+      // ===== Header labels (fix compact-week text) =====
       columns.forEach((col, c) => {
         const gridCol = 2 + c;
-        if (col.type === 'seasonal') {
-          // seasonal header (day view only)
-          const hdr = document.createElement('div');
-          hdr.className = 'wlabel wlabel--seasonal';
-          const { year } = idxToISODay(col.data.dayIdx);
-          hdr.dataset.year = String(year);
-          const inner = document.createElement('div'); inner.className = 'wlabel__inner wlabel__inner--seasonal';
-          const m = col.data;
-          const img = makeSmartImg(IMAGES_DIR, m.imageName, 'seasonal-thumb', m.name);
-          if (img) inner.appendChild(img);
-          const nameEl = document.createElement('span'); nameEl.className = 'seasonal-name'; nameEl.textContent = m.name; inner.appendChild(nameEl);
-          if (m.desc) { const descEl = document.createElement('span'); descEl.className = 'seasonal-desc'; descEl.textContent = m.desc; inner.appendChild(descEl); }
-          hdr.appendChild(inner);
-          hdr.style.gridRow = '2 / 3'; hdr.style.gridColumn = `${gridCol} / ${gridCol + 1}`; grid.appendChild(hdr);
+        const hdr = document.createElement('div');
+        hdr.className = 'wlabel';
+
+        let text, year;
+        if (col.__compactWeek) {
+          text = 'Mon – Sun'; // compacted week label
+          year = idxToISODay(col.key.dayIdx).year;
+        } else if (col.__compactYear && col.key.t === 'd') {
+          // compacted year represented by a 'd' key → label with YYYY
+          year = idxToISODay(col.key.dayIdx).year;
+          text = String(year);
         } else {
-          const hdr = document.createElement('div');
-          hdr.className = 'wlabel';
-          const { text, year } = keyToLabel(col.key);
-          hdr.dataset.year = String(year);
-          hdr.dataset.sampleDayIdx = String(keySampleDayIdx(col.key));
-          const inner = document.createElement('div'); inner.className = 'wlabel__inner'; inner.textContent = text;
-          hdr.appendChild(inner);
-          hdr.style.gridRow = '2 / 3'; hdr.style.gridColumn = `${gridCol} / ${gridCol + 1}`; grid.appendChild(hdr);
+          const k = keyToLabel(col.key);
+          text = k.text; year = k.year;
         }
+
+        hdr.textContent = text || '';
+        hdr.dataset.year = String(year || '');
+        hdr.style.gridRow = '2 / 3';
+        hdr.style.gridColumn = `${gridCol} / ${gridCol + 1}`;
+        grid.appendChild(hdr);
       });
 
-      // Week bands (only meaningful in day view: they span the day columns created)
-      if (g === 'day') {
-        const firstMonday = isoWeekToDayIdx(`${idxToISODay(minIdx).year}-${String(idxToISODay(minIdx).week).padStart(2,'0')}`);
-        let wkStart = firstMonday;
+      // ===== Week bands (unchanged) =====
+      if (g === 'day' || g === 'week') {
+        let wkStart = minIdx - (idxToISODay(minIdx).day - 1); // Monday
         while (wkStart < maxIdx) {
-          const wkEnd = wkStart + 7;
-          const dayStart = Math.max(wkStart, minIdx);
-          const dayEnd   = Math.min(wkEnd,   maxIdx);
-          let spanCols = 0; let colStart = null;
-          for (let d = dayStart; d < dayEnd; d++) {
-            const seas = seasonalByDay.get(d)?.length || 0;
-            const hasDayCol = colIndexByKey.has(JSON.stringify({ t:'d', dayIdx:d }));
-            if (seas || hasDayCol) {
-              if (colStart == null) {
-                if (seas) { colStart = 2 + columns.findIndex(c => c.type === 'seasonal' && c.key.dayIdx === d); }
-                else { colStart = 2 + (colIndexByKey.get(JSON.stringify({ t:'d', dayIdx:d })) ?? 0); }
-              }
-              spanCols += seas + (hasDayCol ? 1 : 0);
-            }
-          }
-          if (colStart != null && spanCols > 0) {
+          const res = (g === 'day')
+            ? spanVisibleWeeksAsDays(columns, wkStart, 1)
+            : (function () {
+              const YW = idxToISODay(wkStart);
+              const k = { t: 'w', year: YW.year, week: YW.week };
+              const idx = columns.findIndex(c => c.type === 'bin' && JSON.stringify(c.key) === JSON.stringify(k));
+              return (idx >= 0) ? { colStartIdx: idx, span: 1 } : null;
+            })();
+
+          if (res) {
+            const { colStartIdx, span } = res;
             const { year, week } = idxToISODay(wkStart);
             const wkHdr = document.createElement('div'); wkHdr.className = 'wlabel wlabel--weekband';
-            const inner = document.createElement('div'); inner.className = 'wlabel__inner wlabel__inner--weekband'; inner.textContent = `Week ${String(week).padStart(2, '0')}`; wkHdr.appendChild(inner);
-            wkHdr.style.gridRow = '1 / 2'; wkHdr.style.gridColumn = `${colStart} / ${colStart + spanCols}`; wkHdr.dataset.year = String(year);
+            const inner = document.createElement('div'); inner.className = 'inner'; inner.textContent = `Week ${String(week).padStart(2, '0')}`;
+            wkHdr.appendChild(inner);
+            wkHdr.style.gridRow = '1 / 2';
+            wkHdr.style.gridColumn = `${2 + colStartIdx} / ${2 + colStartIdx + span}`;
+            wkHdr.dataset.year = String(year);
             grid.appendChild(wkHdr);
           }
           wkStart += 7;
         }
       }
 
-      // Precompute ranges for outside shading
-      const tlRanges = computeTimelineRanges(timelines);
+      // ===== Precompute ranges =====
+      const tlRanges = computeTimelineRanges(timelinesForRender, minIdx, maxIdx);
 
-      // Left names column + background cells
-      timelines.forEach((tl, r) => {
+      // ===== Left names + background cells =====
+      timelinesForRender.forEach((tl, r) => {
         const gridRow = 3 + r;
-        const name = buildTimelineHeaderEl({ title: tl.title, imageName: tl.imageName, preferredGranularity: tl.preferredGranularity }, g);
+        const name = buildTimelineHeaderEl(tl, g);
         name.style.gridRow = `${gridRow} / ${gridRow + 1}`; name.style.gridColumn = '1 / 2'; grid.appendChild(name);
 
         columns.forEach((col, c) => {
           const bg = document.createElement('div');
-          bg.className = 'cell' + (col.type === 'seasonal' ? ' cell--seasonal' : '');
+          bg.className = 'cell';
           bg.style.gridRow = `${gridRow} / ${gridRow + 1}`; bg.style.gridColumn = `${2 + c} / ${3 + c}`;
           const range = tlRanges[r];
-          const sample = keySampleDayIdx(col.key || { t:'d', dayIdx: col?.data?.dayIdx ?? minIdx });
+          const sample = keySampleDayIdx(col.key || { t: 'd', dayIdx: minIdx });
           if (isOutsideBuffered(range, sample, 1)) bg.classList.add('outside');
           grid.appendChild(bg);
         });
       });
 
-      // Classification rules
-      const YEAR_MICRO_MAX_DAYS = 30;
+      // ===== chip test =====
       function isChip(ev) {
-        if (g === 'day') return !!(ev.isSlice && ev.durationDays === 1);
-        const first = keyOf(ev.startIdx, g);
-        const last  = keyOf(ev.startIdx + ev.durationDays - 1, g);
-        const bins = countKeysInclusive(first, last);
-        if (g === 'week') {
-          return (bins === 1 && ev.durationDays < 7);
-        }
-        if (g === 'year') {
-          return (bins === 1 && ev.durationDays < YEAR_MICRO_MAX_DAYS);
-        }
-        return false;
+        if (g === 'year') return ev.kind !== 'year'; // only year bars; others bundle
+        if (g === 'week') return ev.kind === 'day';  // only week bars; day bundle
+        return !!(ev.isSlice && ev.durationDays === 1); // in day view chips are slices ('.')
       }
 
-      // Build map of chips per row/bin
-      const chipsByRowBin = timelines.map(() => new Map()); // row -> Map(JSON(key) -> [ev])
+      const chipsByRowBin = timelinesForRender.map(() => new Map());
 
-      // ---- Collect chips into their bin for each row ----
-      for (let r = 0; r < timelines.length; r++) {
-        const tl = timelines[r];
+      for (let r = 0; r < timelinesForRender.length; r++) {
+        const tl = timelinesForRender[r];
         const binMap = chipsByRowBin[r];
 
         for (const ev of tl.events) {
           if (!isChip(ev)) continue;
-
-          // Drop the chip into the bin that contains its start
           const binKey = (g === 'day') ? { t: 'd', dayIdx: ev.startIdx } : keyOf(ev.startIdx, g);
           const keyStr = JSON.stringify(binKey);
-
-          // If this bin wasn’t rendered due to collapse (very unlikely), skip gracefully
           if (!columns.some(col => col.type === 'bin' && JSON.stringify(col.key) === keyStr)) continue;
-
           if (!binMap.has(keyStr)) binMap.set(keyStr, []);
           binMap.get(keyStr).push(ev);
         }
       }
 
-      // ---------- PLACEMENT ----------
+      // ===== Bars & Bundles placement =====
       if (g === 'day') {
-        // === ORIGINAL DAY PATH (unchanged) ===
-
-        for (let r = 0; r < timelines.length; r++) {
-          const tl = timelines[r];
+        for (let r = 0; r < timelinesForRender.length; r++) {
+          const tl = timelinesForRender[r];
           const gridRow = 3 + r;
 
-          // Bars placement (day view uses real spanning)
           const bars = tl.events.filter(ev => !isChip(ev));
-          const { laneOfEv, lanesCount } = assignBarLanes(bars, g); // harmless in day
+          const { laneOfEv } = assignBarLanes(bars, g);
 
-          for (const ev of tl.events) {
-            if (isChip(ev)) continue;
+          for (const ev of bars) {
+            let colStartIdx = -1, span = 0;
 
-            const startIdx = ev.startIdx;
-            const endExclusive = ev.startIdx + ev.durationDays;
-            const aKey = keyOf(startIdx, g);
-            const bKey = keyOf(endExclusive - 1, g);
-
-            // find first/last visible day columns
-            let firstVis = null, lastVis = null;
-            for (const col of columns) {
-              if (col.type !== 'bin') continue;
-              if (keyCmp(col.key, aKey) < 0) continue;
-              if (keyCmp(col.key, bKey) > 0) break;
-              if (!firstVis) firstVis = col.key; lastVis = col.key;
-            }
-            if (!firstVis || !lastVis) continue;
-
-            // span = number of visible day columns between firstVis..lastVis inclusive
-            let span = 0; let colStartIdx = -1;
-            for (let c = 0; c < columns.length; c++) {
-              const col = columns[c];
-              if (col.type !== 'bin') continue;
-              if (keyCmp(col.key, firstVis) >= 0 && keyCmp(col.key, lastVis) <= 0) {
-                if (colStartIdx === -1) colStartIdx = c;
-                span++;
+            if (ev.kind === 'year') {
+              const startYear = idxToISODay(ev.startIdx).year;
+              let res = spanVisibleYears(columns, startYear, ev._units || 1);
+              // Fallback: compute span across day columns by year in case the helper can't find the first column
+              if (!res) {
+                const yearsCount = Math.max(1, ev._units || 1);
+                const endYear = startYear + yearsCount - 1;
+                const idxA = columns.findIndex(c => c.type === 'bin' && idxToISODay(keySampleDayIdx(c.key)).year === startYear);
+                let idxB = idxA;
+                while (idxB + 1 < columns.length) {
+                  const yN = idxToISODay(keySampleDayIdx(columns[idxB + 1].key)).year;
+                  if (yN > endYear) break;
+                  idxB++;
+                }
+                if (idxA >= 0 && idxB >= idxA) res = { colStartIdx: idxA, span: (idxB - idxA + 1) };
               }
+              if (res) { colStartIdx = res.colStartIdx; span = res.span; }
+            } else if (ev.kind === 'week') {
+              const res = spanVisibleWeeksAsDays(columns, ev.startIdx, ev._units || 1);
+              if (res) { colStartIdx = res.colStartIdx; span = res.span; }
+            } else {
+              // continuous day bar from visible start to visible end
+              const aKey = keyOf(ev.startIdx, g);
+              const bKey = keyOf(ev.startIdx + ev.durationDays - 1, g);
+              const aCol = columns.findIndex(col => col.type === 'bin' && keyEq(col.key, aKey));
+              const bCol = columns.findIndex(col => col.type === 'bin' && keyEq(col.key, bKey));
+              if (aCol >= 0 && bCol >= 0) { colStartIdx = Math.min(aCol, bCol); span = Math.abs(bCol - aCol) + 1; }
             }
-            if (span <= 0 || colStartIdx < 0) continue;
-            const gridColStart = 2 + colStartIdx;
 
-            const el = buildEventEl(ev, /*inBundle=*/false, gridRow, gridColStart, span, tl.preferredGranularity);
-            const lane = laneOfEv.get(ev) || 0;
-            el.style.setProperty('--lane', lane);
-            el.style.setProperty('--lanes', lanesCount);
-            grid.appendChild(el);
+            if (colStartIdx >= 0 && span > 0) {
+              const el = buildEventEl(ev, false, gridRow, 2 + colStartIdx, span, tl.preferredGranularity);
+              grid.appendChild(el);
+            }
           }
 
-          // Chip bundles per day-bin (your existing bundle UI)
+          // bundles
           for (let c = 0; c < columns.length; c++) {
             const col = columns[c];
             if (col.type !== 'bin') continue;
@@ -1623,13 +2012,69 @@
             const list = chipsByRowBin[r].get(keyStr);
             if (!list || list.length === 0) continue;
 
-            list.sort((a,b)=> a.startIdx - b.startIdx);
+            list.sort((a, b) => a.startIdx - b.startIdx);
+            const host = document.createElement('div');
+            host.className = `bundle-host bundle-host--${g}`;
+            host.style.gridRow = `${gridRow} / ${gridRow + 1}`;
+            host.style.gridColumn = `${2 + c} / ${3 + c}`;
+            const cap = settingsState?.ui?.maxChipsPerBin ?? 5;
+            const toShow = list.slice(0, cap);
+            const remain = list.length - toShow.length;
+            for (const ev of toShow) host.appendChild(buildEventEl(ev, /*inBundle=*/true, null, null, null, tl.preferredGranularity));
+            if (remain > 0) {
+              const more = document.createElement('div');
+              more.className = 'event event--micro event--more';
+              const inner = document.createElement('div'); inner.className = 'event-sticky';
+              const title = document.createElement('div'); title.className = 'desc'; title.textContent = `+${remain} more`;
+              inner.appendChild(title); more.appendChild(inner); host.appendChild(more);
+            }
+            grid.appendChild(host);
+          }
+        }
+      } else if (g === 'week') {
+        for (let r = 0; r < timelinesForRender.length; r++) {
+          const tl = timelinesForRender[r];
+          const gridRow = 3 + r;
+
+          // bars: year + week
+          const bars = tl.events.filter(ev => !isChip(ev));
+          const { laneOfEv } = assignBarLanes(bars, g);
+
+          for (const ev of bars) {
+            let colStartIdx = -1, span = 0;
+
+            if (ev.kind === 'year') {
+              const startYear = idxToISODay(ev.startIdx).year;
+              const res = spanVisibleYears(columns, startYear, ev._units || 1);
+              if (res) { colStartIdx = res.colStartIdx; span = res.span; }
+            } else {
+              const startKey = keyOf(ev.startIdx, g);
+              const endKey = keyOf(ev.startIdx + ev.durationDays - 1, g);
+              const aCol = columns.findIndex(col => col.type === 'bin' && keyEq(col.key, startKey));
+              const bCol = columns.findIndex(col => col.type === 'bin' && keyEq(col.key, endKey));
+              if (aCol >= 0 && bCol >= 0) { colStartIdx = Math.min(aCol, bCol); span = Math.abs(bCol - aCol) + 1; }
+            }
+
+            if (colStartIdx >= 0 && span > 0) {
+              const el = buildEventEl(ev, false, gridRow, 2 + colStartIdx, span, tl.preferredGranularity);
+              grid.appendChild(el);
+            }
+          }
+
+          // bundles (day events)
+          for (let c = 0; c < columns.length; c++) {
+            const col = columns[c];
+            if (col.type !== 'bin') continue;
+            const keyStr = JSON.stringify(col.key);
+            const list = chipsByRowBin[r].get(keyStr);
+            if (!list || list.length === 0) continue;
 
             const host = document.createElement('div');
             host.className = `bundle-host bundle-host--${g}`;
             host.style.gridRow = `${gridRow} / ${gridRow + 1}`;
             host.style.gridColumn = `${2 + c} / ${3 + c}`;
 
+            list.sort((a, b) => a.startIdx - b.startIdx);
             const cap = settingsState?.ui?.maxChipsPerBin ?? 5;
             const toShow = list.slice(0, cap);
             const remain = list.length - toShow.length;
@@ -1645,183 +2090,87 @@
             grid.appendChild(host);
           }
         }
-      } else {
-        // === NEW SEGMENTED BIN PATH FOR WEEK/YEAR ===
-
-        for (let r = 0; r < timelines.length; r++) {
-          const tl = timelines[r];
+      } else { // g === 'year'
+        for (let r = 0; r < timelinesForRender.length; r++) {
+          const tl = timelinesForRender[r];
           const gridRow = 3 + r;
 
-          // SPECIAL-CASE: In Week view, show year-pref timelines as spanning bars (not segmented)
-          if (g === 'week' && (tl.preferredGranularity === 'year')) {
-            // 1) Bars: span across visible week columns
-            const bars = tl.events.filter(ev => !isChip(ev));
-            const { laneOfEv, lanesCount } = assignBarLanes(bars, g);
+          // bars: YEAR only (week/day bundle)
+          const bars = tl.events.filter(ev => ev.kind === 'year');
+          const { laneOfEv } = assignBarLanes(bars, g);
 
-            for (const ev of bars) {
-              const aKey = keyOf(ev.startIdx, g);
-              const bKey = keyOf(ev.startIdx + ev.durationDays - 1, g);
-
-              let firstVis = null, lastVis = null;
-              let span = 0, colStartIdx = -1;
-              for (let c = 0; c < columns.length; c++) {
-                const col = columns[c];
-                if (col.type !== 'bin') continue;
-                if (keyCmp(col.key, aKey) < 0) continue;
-                if (keyCmp(col.key, bKey) > 0) break;
-                if (!firstVis) firstVis = col.key;
-                lastVis = col.key;
-                if (colStartIdx === -1) colStartIdx = c;
-                span++;
-              }
-              if (span > 0 && colStartIdx >= 0) {
-                const gridColStart = 2 + colStartIdx;
-                const el = buildEventEl(ev, /*inBundle=*/false, gridRow, gridColStart, span, tl.preferredGranularity);
-                const lane = laneOfEv.get(ev) || 0;
-                el.style.setProperty('--lane', lane);
-                el.style.setProperty('--lanes', lanesCount);
-                grid.appendChild(el);
-              }
+          for (const ev of bars) {
+            const startYear = idxToISODay(ev.startIdx).year;
+            const res = spanVisibleYears(columns, startYear, ev._units || 1);
+            if (res && res.span > 0) {
+              const el = buildEventEl(ev, false, gridRow, 2 + res.colStartIdx, res.span, tl.preferredGranularity);
+              grid.appendChild(el);
             }
-
-            // 2) Chips: bundle in each week bin (use the existing chipsByRowBin map)
-            for (let c = 0; c < columns.length; c++) {
-              const col = columns[c];
-              if (col.type !== 'bin') continue;
-              const keyStr = JSON.stringify(col.key);
-              const list = chipsByRowBin[r].get(keyStr);
-              if (!list || !list.length) continue;
-
-              list.sort((a,b)=> a.startIdx - b.startIdx);
-              const host = document.createElement('div');
-              host.className = `bundle-host bundle-host--${g}`;
-              host.style.gridRow = `${gridRow} / ${gridRow + 1}`;
-              host.style.gridColumn = `${2 + c} / ${3 + c}`;
-
-              const cap = settingsState?.ui?.maxChipsPerBin ?? 5;
-              const toShow = list.slice(0, cap);
-              const remain = list.length - toShow.length;
-              for (const ev of toShow) {
-                host.appendChild(buildEventEl(ev, /*inBundle=*/true, null, null, null, tl.preferredGranularity));
-              }
-              if (remain > 0) {
-                const more = document.createElement('div');
-                more.className = 'event event--micro event--more';
-                const inner = document.createElement('div'); inner.className = 'event-sticky';
-                const title = document.createElement('div'); title.className = 'desc'; title.textContent = `+${remain} more`;
-                inner.appendChild(title); more.appendChild(inner); host.appendChild(more);
-              }
-              grid.appendChild(host);
-            }
-            continue; // skip segmented path for this row
           }
 
-          // Track slot continuity across bins for bars
-          let prevSlots = new Map(); // ev -> slot index
-
+          // bundles: week/day events inside the owning year bin (already in chipsByRowBin)
           for (let c = 0; c < columns.length; c++) {
             const col = columns[c];
             if (col.type !== 'bin') continue;
+            const keyStr = JSON.stringify(col.key);
+            const list = chipsByRowBin[r].get(keyStr);
+            if (!list || list.length === 0) continue;
 
-            // Build current bin’s items list
-            const items = [];
-            for (const ev of tl.events) {
-              if (isChip(ev)) {
-                // chip belongs only to its start bin
-                const k = keyOf(ev.startIdx, g);
-                if (keyEq(k, col.key)) items.push({ ev, kind: 'chip' });
-              } else {
-                const a = keyOf(ev.startIdx, g);
-                const b = keyOf(ev.startIdx + ev.durationDays - 1, g);
-                if (keyCmp(a, col.key) <= 0 && keyCmp(col.key, b) <= 0) {
-                  items.push({ ev, kind: 'bar' });
-                }
-              }
-            }
-            if (!items.length) { prevSlots = new Map(); continue; }
-
-            // Stable slotting: keep same slot from previous bin when possible
-            const slots = new Map();  // ev -> slot
-            const used = [];
-
-            for (const it of items) {
-              const prev = prevSlots.get(it.ev);
-              if (prev != null && !used[prev]) { slots.set(it.ev, prev); used[prev] = true; }
-            }
-            let sIdx = 0;
-            for (const it of items) {
-              if (slots.has(it.ev)) continue;
-              while (used[sIdx]) sIdx++;
-              slots.set(it.ev, sIdx); used[sIdx] = true;
-            }
-            const slotsCount = used.length || 1;
-
-            // Host for this bin
             const host = document.createElement('div');
-            host.className = `bin-host bin-host--${g}`;
+            host.className = `bundle-host bundle-host--${g}`;
             host.style.gridRow = `${gridRow} / ${gridRow + 1}`;
             host.style.gridColumn = `${2 + c} / ${3 + c}`;
-            host.style.setProperty('--slots', slotsCount);
-            grid.appendChild(host);
 
-            // Render fragments in their slots
-            for (const it of items) {
-              const el = buildEventEl(it.ev, /*inBundle=*/true, null, null, null, tl.preferredGranularity);
-              el.classList.add(it.kind === 'bar' ? 'bar-frag' : 'chip-frag');
-              const pref = tl.preferredGranularity || '';
-              if (pref) el.classList.add(`granularity-pref-${pref}`);
-              el.style.setProperty('--slot', slots.get(it.ev) || 0);
+            list.sort((a, b) => a.startIdx - b.startIdx);
+            const cap = settingsState?.ui?.maxChipsPerBin ?? 5;
+            const toShow = list.slice(0, cap);
+            const remain = list.length - toShow.length;
 
-              if (it.kind === 'bar') {
-                const pos = fragPosition(it.ev, col.key, g); // 'single' | 'start' | 'middle' | 'end'
-                if (pos) el.classList.add(`frag--${pos}`);
-                // (optional) quick debug:
-                // el.dataset.pos = pos;
-              }
-
-              host.appendChild(el);
+            for (const ev of toShow) host.appendChild(buildEventEl(ev, /*inBundle=*/true, null, null, null, tl.preferredGranularity));
+            if (remain > 0) {
+              const more = document.createElement('div');
+              more.className = 'event event--micro event--more';
+              const inner = document.createElement('div'); inner.className = 'event-sticky';
+              const title = document.createElement('div'); title.className = 'desc'; title.textContent = `+${remain} more`;
+              inner.appendChild(title); more.appendChild(inner); host.appendChild(more);
             }
-
-
-            // Carry forward only bars (chips end in this bin)
-            const nextPrev = new Map();
-            for (const it of items) if (it.kind === 'bar') nextPrev.set(it.ev, slots.get(it.ev));
-            prevSlots = nextPrev;
+            grid.appendChild(host);
           }
         }
       }
 
-
-      // Meta + year tracker
-      const firstL = (function(){const {year,week,day}=idxToISODay(minIdx); return `${year}-W${String(week).padStart(2,'0')}-${day}`})();
-      const lastL  = (function(){const {year,week,day}=idxToISODay(maxIdx-1); return `${year}-W${String(week).padStart(2,'0')}-${day}`})();
-      setText('meta', `Timelines: ${timelines.length} • Days: ${totalDays} • Range: ${firstL} → ${lastL}`);
-      setupCornerYearTrackerHorizontal(grid, corner);
+      // ===== Meta =====
+      const firstL = (function () { const { year, week, day } = idxToISODay(minIdx); return `${year}-W${String(week).padStart(2, '0')}-${day}`; })();
+      const lastL = (function () { const { year, week, day } = idxToISODay(maxIdx - 1); return `${year}-W${String(week).padStart(2, '0')}-${day}`; })();
+      setText('meta', `Timelines: ${timelinesForRender.length} • Days: ${totalDays} • Range: ${firstL} – ${lastL}`);
     }
+
 
     function buildEventEl(ev, inBundle, gridRow, gridColStart, span, prefGran) {
       const el = document.createElement('div');
       el.className = 'event';
+      if (ev._weType) el.classList.add(ev._weType === 'recurring' ? 'we-recurring' : 'we-oneoff'); // <-- add class
       if (prefGran) el.classList.add(`granularity-pref-${prefGran}`);
 
-      const catId   = toCatId(ev.categoryId);
+
+      const catId = toCatId(ev.categoryId);
       const catName = getCatName(catId);
-      const catColor= getCatColor(catId);
+      const catColor = getCatColor(catId);
       const catText = getCatText(catId);
 
-      el.dataset.catId    = String(catId || 0);
+      el.dataset.catId = String(catId || 0);
       el.dataset.catTitle = catName || '';
       el.dataset.catColor = catColor || '';
       el.style.setProperty('--jcolor', catColor || 'transparent');
-      el.style.setProperty('--jtext',  catText  || 'black');
+      el.style.setProperty('--jtext', catText || 'black');
 
       if (!inBundle) {
-        el.style.gridRow    = `${gridRow} / ${gridRow + 1}`;
+        el.style.gridRow = `${gridRow} / ${gridRow + 1}`;
         el.style.gridColumn = `${gridColStart} / ${gridColStart + span}`;
       }
 
       const { year, week, day } = idxToISODay(ev.startIdx);
-      const labelStart = `${year}-${String(week).padStart(2,'0')}-${day}`;
+      const labelStart = `${year}-${String(week).padStart(2, '0')}-${day}`;
 
       const topline = document.createElement('div');
       topline.className = 'topline';
@@ -1900,7 +2249,7 @@
       const yearFromHeader = (h) => {
         if (!h) return '';
         if (h.dataset.year) return h.dataset.year;
-        const dIdx = parseInt(h.dataset.sampleDayIdx||'', 10);
+        const dIdx = parseInt(h.dataset.sampleDayIdx || '', 10);
         if (Number.isFinite(dIdx)) return String(idxToISODay(dIdx).year);
         return '';
       };
@@ -1927,10 +2276,10 @@
         const disk = await tryLoadJSON();
         if (disk) {
           settingsState = disk.settings || DEFAULT_SETTINGS;
-          editorState   = normalizeEditorState({ timelines: disk.timelines || [], seasonal: disk.seasonal || [] });
+          editorState = normalizeEditorState({ timelines: disk.timelines || [], seasonal: disk.seasonal || [] });
         } else {
           settingsState = DEFAULT_SETTINGS;
-          editorState   = normalizeEditorState({ timelines: [], seasonal: [] });
+          editorState = normalizeEditorState({ timelines: [], seasonal: [] });
         }
 
         applyUIFromSettings();
@@ -1946,9 +2295,9 @@
         const btnTheme = document.getElementById('btn-theme'); if (btnTheme) btnTheme.onclick = toggleTheme;
 
         // Granularity segmented buttons
-        const gDay = document.getElementById('btn-gran-day');  if (gDay)  gDay.onclick  = () => setGranularity('day');
-        const gWeek= document.getElementById('btn-gran-week'); if (gWeek) gWeek.onclick = () => setGranularity('week');
-        const gYear= document.getElementById('btn-gran-year'); if (gYear) gYear.onclick = () => setGranularity('year');
+        const gDay = document.getElementById('btn-gran-day'); if (gDay) gDay.onclick = () => setGranularity('day');
+        const gWeek = document.getElementById('btn-gran-week'); if (gWeek) gWeek.onclick = () => setGranularity('week');
+        const gYear = document.getElementById('btn-gran-year'); if (gYear) gYear.onclick = () => setGranularity('year');
 
         // Initial label sync
         syncHeaderControlsFromSettings();
@@ -1956,4 +2305,5 @@
     })();
   </script>
 </body>
+
 </html>
