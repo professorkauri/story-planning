@@ -90,7 +90,6 @@
 
     <!-- Timeline Grid -->
     <section class="viewport">
-      <div id="timeline-toggles" class="toggles"></div>
       <div id="grid" class="year-grid" role="grid" aria-label="Year timelines grid"></div>
     </section>
   </main>
@@ -119,11 +118,21 @@
       selectedTimelineId: null,
       theme: 'light',
       hiddenTimelineIds: new Set(),
+      showDescriptions: true,
+      showImages: true,
     };
 
     /**********************
      * Utility / Parsing  *
      **********************/
+    // Wrap parenthetical parts of a title in <span>(...)</span> safely.
+    function formatTitleWithParens(title) {
+      if (!title) return '';
+      const safe = escapeHtml(String(title));
+      // Turn (...) → <span>(...)</span> (supports multiple sets)
+      return safe.replace(/\(([^)]+)\)/g, (_m, inner) => `<span>(${inner})</span>`);
+    }
+
     function parseYearToken(str) {
       if (typeof str !== 'string') throw new Error('Year must be a string');
       const s = str.trim().toLowerCase();
@@ -157,6 +166,43 @@
       if (s.startsWith('/')) return s;           // absolute site path
       return `images/${s}`;                      // slug/subpath → images/<path>
     }
+
+    /** Simple, safe-ish markdown → HTML for chips.
+ * Supports: links [text](https://...), **bold**, *italic*, `code`, and line breaks.
+ * Intentionally conservative to avoid XSS and layout surprises.
+ */
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+    function markdownToHtml(md) {
+      if (!md) return '';
+      let s = escapeHtml(String(md).replace(/\r\n/g, '\n'));
+
+      // Inline code first to protect contents
+      s = s.replace(/`([^`]+)`/g, (_m, code) => `<code>${code}</code>`);
+
+      // Links: [label](https://example.com) — only allow http/https
+      s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, (_m, label, url) => {
+        const safeLabel = escapeHtml(label);
+        const safeUrl = escapeHtml(url);
+        return `<a href="${safeUrl}" target="_blank" rel="noopener">${safeLabel}</a>`;
+      });
+
+      // Bold, then italics (simple, non-greedy)
+      s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+      s = s.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+
+      // Line breaks
+      s = s.replace(/\n/g, '<br>');
+
+      return s;
+    }
+
 
     /*****************
      * Theme toggle  *
@@ -299,50 +345,99 @@
 
 
     function renderToggleBar() {
-      // Ensure we have a toggles container just before the grid
+      // Ensure we have a container just before the grid
       const viewport = document.querySelector('.viewport');
-      let bar = document.getElementById('timeline-toggles');
-      if (!bar) {
-        bar = document.createElement('div');
-        bar.id = 'timeline-toggles';
-        bar.className = 'toggles';
-        viewport.insertBefore(bar, document.getElementById('grid'));
-      }
-      bar.innerHTML = '';
+      const gridEl = document.getElementById('grid');
 
-      // Build one checkbox per timeline (checked if NOT hidden)
-      for (const tl of state.timelines) {
-        const id = `tgl_${tl.id}`;
-        const wrap = document.createElement('label');
-        wrap.className = 'toggle';
-        wrap.style.setProperty('--tlCol', tl.color || '#8aa');
+      let container = viewport.querySelector('.toggles-container');
+      if (!container) {
+        container = document.createElement('div');
+        container.className = 'toggles-container';
+        viewport.insertBefore(container, gridEl);
+      }
+      container.innerHTML = '';
+
+      // --- Timeline toggles (existing behaviour) ---
+      let tlBar = container.querySelector('.timeline-toggles');
+      if (!tlBar) {
+        tlBar = document.createElement('div');
+        tlBar.className = 'timeline-toggles';
+        container.appendChild(tlBar);
+      }
+      tlBar.innerHTML = '';
+
+      if (!state.timelines.length) {
+        tlBar.innerHTML = '<span class="muted small">No timelines yet.</span>';
+      } else {
+        for (const tl of state.timelines) {
+          const id = `tgl_${tl.id}`;
+          const wrap = document.createElement('label');
+          wrap.className = 'toggle';
+          wrap.style.setProperty('--tlCol', tl.color || '#8aa');
+
+          const cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.id = id;
+          cb.checked = !state.hiddenTimelineIds.has(tl.id);
+          cb.onchange = () => {
+            if (cb.checked) state.hiddenTimelineIds.delete(tl.id);
+            else state.hiddenTimelineIds.add(tl.id);
+            renderYearGrid();
+          };
+
+          const txt = document.createElement('span');
+          txt.className = 'label';
+          txt.textContent = tl.title || '(Untitled)';
+
+          wrap.appendChild(cb);
+          wrap.appendChild(txt);
+          tlBar.appendChild(wrap);
+        }
+      }
+
+      // --- Content toggles (NEW) ---
+      let contentBar = container.querySelector('.content-toggles');
+      if (!contentBar) {
+        contentBar = document.createElement('div');
+        contentBar.className = 'content-toggles';
+        container.appendChild(contentBar);
+      }
+      contentBar.innerHTML = '';
+
+      // helper to build a switch
+      const mkSwitch = (labelText, checked, onChange) => {
+        const lbl = document.createElement('label');
+        lbl.className = 'toggle content-toggle';
 
         const cb = document.createElement('input');
         cb.type = 'checkbox';
-        cb.id = id;
-        cb.checked = !state.hiddenTimelineIds.has(tl.id);
-        cb.onchange = () => {
-          if (cb.checked) state.hiddenTimelineIds.delete(tl.id);
-          else state.hiddenTimelineIds.add(tl.id);
-          renderYearGrid(); // re-render grid using current filters
-        };
+        cb.checked = checked;
+        cb.onchange = () => { onChange(cb.checked); };
 
-        const swatch = document.createElement('span');
-        swatch.className = 'swatch';
+        const text = document.createElement('span');
+        text.className = 'label';
+        text.textContent = labelText;
 
-        const txt = document.createElement('span');
-        txt.className = 'label';
-        txt.textContent = tl.title || '(Untitled)';
+        lbl.appendChild(cb);
+        lbl.appendChild(text);
+        return lbl;
+      };
 
-        wrap.appendChild(cb);
-        wrap.appendChild(swatch);
-        wrap.appendChild(txt);
-        bar.appendChild(wrap);
-      }
+      // Descriptions
+      contentBar.appendChild(
+        mkSwitch('Descriptions', state.showDescriptions, (v) => {
+          state.showDescriptions = v;
+          renderYearGrid();
+        })
+      );
 
-      if (!state.timelines.length) {
-        bar.innerHTML = '<span class="muted small">No timelines yet.</span>';
-      }
+      // Images
+      contentBar.appendChild(
+        mkSwitch('Images', state.showImages, (v) => {
+          state.showImages = v;
+          renderYearGrid();
+        })
+      );
     }
 
     function renderApp() {
@@ -471,7 +566,16 @@
       const chip = document.createElement('div');
       chip.className = 'event chip';
 
-      if (ev.image) {
+      // determine visibility flags up front
+      const hasImg = !!ev.image && state.showImages;
+      const hasDesc = !!(ev.desc && String(ev.desc).trim()) && state.showDescriptions;
+
+      // set modifier classes for styling
+      chip.classList.toggle('no-img', !hasImg);
+      chip.classList.toggle('no-desc', !hasDesc);
+
+      // Image
+      if (hasImg) {
         const img = document.createElement('img');
         img.loading = 'lazy';
         img.decoding = 'async';
@@ -486,19 +590,20 @@
 
       const title = document.createElement('div');
       title.className = 'chip-title';
-      title.textContent = ev.title || '';
+      title.innerHTML = formatTitleWithParens(ev.title || '');
       content.appendChild(title);
 
-      if (ev.desc) {
+      if (hasDesc) {
         const desc = document.createElement('div');
         desc.className = 'chip-desc';
-        desc.textContent = ev.desc;
+        desc.innerHTML = markdownToHtml(ev.desc);
         content.appendChild(desc);
       }
 
       chip.appendChild(content);
       return chip;
     }
+
 
     /********************
      * Editor / Admin   *
@@ -623,17 +728,29 @@
         }, 150);
         tdTitle.appendChild(inTitle);
 
-        // Desc
+        // Desc (now multiline + markdown)
         const tdDesc = document.createElement('td');
-        const inDesc = document.createElement('input');
-        inDesc.type = 'text';
-        inDesc.placeholder = 'Description (optional)';
+        const inDesc = document.createElement('textarea');
+        inDesc.placeholder = 'Description (Markdown supported)';
         inDesc.value = ev.desc || '';
+        inDesc.rows = Math.max(3, Math.min(10, (inDesc.value.split('\n').length || 1)));
+        inDesc.style.width = '300px';
+        inDesc.addEventListener('input', () => {
+          // auto-height (simple)
+          inDesc.style.height = 'auto';
+          inDesc.style.height = (inDesc.scrollHeight) + 'px';
+        });
         inDesc.oninput = debounce(() => {
-          ev.desc = inDesc.value.trim();
+          ev.desc = inDesc.value;
           renderYearGrid();
         }, 150);
+        requestAnimationFrame(() => {
+          inDesc.style.height = 'auto';
+          inDesc.style.height = (inDesc.scrollHeight) + 'px';
+        });
+
         tdDesc.appendChild(inDesc);
+
 
         // Image
         const tdImg = document.createElement('td');

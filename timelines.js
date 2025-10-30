@@ -2,40 +2,9 @@
 window.TIMELINES_DEFAULT = {
   timelines: [
   {
-    "id": "tl_personal",
-    "title": "Personal Milestones",
-    "color": "#ff006e",
-    "events": [
-      {
-        "year": "1994",
-        "title": "Born",
-        "desc": "",
-        "image": "pkmn/1.webp"
-      },
-      {
-        "year": "2012",
-        "title": "Graduated",
-        "desc": "High school",
-        "image": "pkmn/2.webp"
-      },
-      {
-        "year": "2016",
-        "title": "First Job",
-        "desc": "Junior developer",
-        "image": "pkmn/3.webp"
-      },
-      {
-        "year": "2025",
-        "title": "New Project",
-        "desc": "Years-only timelines launched!",
-        "image": "pkmn/3M.webp"
-      }
-    ]
-  },
-  {
     "id": "tl_447i6p",
     "title": "Mainline Games",
-    "color": "#8aa",
+    "color": "#91b1b1",
     "events": [
       {
         "year": "1996",
@@ -162,12 +131,109 @@ window.TIMELINES_DEFAULT = {
         "title": "Legends Z-A",
         "desc": "",
         "image": "games/legends-za.webp"
+      }
+    ]
+  },
+  {
+    "id": "tl_mp8ytr",
+    "title": "Pokedex Entries",
+    "color": "#f0aa33",
+    "events": [
+      {
+        "year": "100000000bc",
+        "title": "Relicanth",
+        "desc": "*RUBY* RELICANTH is a POKéMON species that existed for **a hundred million years** without ever changing its form.",
+        "image": "pkmn/369.webp"
       },
       {
-        "year": "3000000bc",
-        "title": "Creation...",
-        "desc": "",
-        "image": "pkmn/493.webp"
+        "year": "300000000bc",
+        "title": "Kabuto",
+        "desc": "*CRYSTAL* **Three hundred million years ago**, it hid on the sea floor. It also has eyes on its back that glow.",
+        "image": "pkmn/140.webp"
+      },
+      {
+        "year": "100000000bc",
+        "title": "Lileep (Extinction)",
+        "desc": "*RUBY* LILEEP became extinct approximately **a hundred million years ago.** This ancient POKéMON attaches itself to a rock on the seafloor and catches approaching prey using tentacles shaped like flower petals.",
+        "image": "pkmn/345.webp"
+      },
+      {
+        "year": "1960",
+        "title": "Elgyem (Discovered)",
+        "desc": "*WHITE* This Pokémon had never been seen until it appeared from far in the desert **50 years ago.**\n*BLACK 2* Rumors of its origin are linked to a UFO crash site in the desert **50 years ago.**",
+        "image": "pkmn/605.webp"
+      },
+      {
+        "year": "100000000bc",
+        "title": "Cranidos",
+        "desc": "*Diamond* It lived in jungles around **100 million years ago**. Its skull is as hard as iron.",
+        "image": "pkmn/408.webp"
+      },
+      {
+        "year": "1996",
+        "title": "Proygon (Creation)",
+        "desc": "*Sun* Roughly **20 years ago**, it was artificially created, utilizing the latest technology of the time.",
+        "image": "pkmn/137.webp"
+      },
+      {
+        "year": "10000bc",
+        "title": "Mamoswine (Extinction)",
+        "desc": "*Heart Gold* A frozen MAMOSWINE was dug from ice **dating back 10,000 years**. This Pokémon has been around a long, long, long time.",
+        "image": "pkmn/473.webp"
+      },
+      {
+        "year": "7981bc",
+        "title": "Registeel (Emerged)",
+        "desc": "*Shield* It’s rumored that this Pokémon was born deep underground in the planet’s mantle and that it emerged onto the surface **10,000 years ago**.",
+        "image": "pkmn/379.webp"
+      },
+      {
+        "year": "17998bc",
+        "title": "Claydol",
+        "desc": "*Sapphire* CLAYDOL is an enigma that appeared from a clay statue made by an ancient civilization dating back **20,000 years**. This POKéMON shoots beams from both its hands.",
+        "image": "pkmn/344.webp"
+      },
+      {
+        "year": "300000000bc",
+        "title": "Genesect",
+        "desc": "*Black* Over **300 million years ago**, it was feared as the strongest of hunters. It has been modified by Team Plasma.",
+        "image": "pkmn/649.webp"
+      },
+      {
+        "year": "1964",
+        "title": "Lunatone (Discovered)",
+        "desc": "*Emerald* It becomes very active on the night of a full moon. This POKéMON was first discovered **40 years ago** at the site of a meteor strike.",
+        "image": "pkmn/337.webp"
+      },
+      {
+        "year": "1516",
+        "title": "Magearna (Built)",
+        "desc": "*Ultra Sun* Built roughly **500 years ago** by a scientist, the part called the Soul-Heart is the actual life-form.",
+        "image": "pkmn/801.webp"
+      },
+      {
+        "year": "1910",
+        "title": "Roggenrola (Discovered)",
+        "desc": "*White* They were discovered **a hundred years ago** in an earthquake fissure. Inside each one is an energy core.",
+        "image": "pkmn/524.webp"
+      },
+      {
+        "year": "100000000bc",
+        "title": "Tyrantrum",
+        "desc": "*Y* Nothing could stop this Pokémon **100 million years ago**, so it behaved like a king.",
+        "image": "pkmn/697.webp"
+      },
+      {
+        "year": "100000000bc",
+        "title": "Tirtouga",
+        "desc": "*White* About 100 million years ago, these Pokémon swam in oceans. It is thought they also went on land to attack prey.",
+        "image": "pkmn/564.webp"
+      },
+      {
+        "year": "16",
+        "title": "Conkeldurr (Taught humans to make concrete)",
+        "desc": "*Black* It is thought that Conkeldurr taught humans how to make concrete more than **2,000 years ago.**",
+        "image": "pkmn/534.webp"
       }
     ]
   }
