@@ -744,7 +744,7 @@ window.TIMELINES_DEFAULT = {
       },
       {
         "year": "1939",
-        "title": "Price was born (estimate)",
+        "title": "Pryce was born (estimate)",
         "desc": "*Heart Gold | Line 26991* Pryce is a veteran who has trained Pokémon for some **50 years.** As you'll find, his attacks will make you shiver in this freezing Gym. Are you ready to be frozen solid? I mean--keep up a hot fighting spirit against ice!\n(assuming he got his first pokemon at 10 years old. Estimated 60 years old at this point)",
         "image": ""
       },
