@@ -125,6 +125,19 @@
     /**********************
      * Utility / Parsing  *
      **********************/
+    // Add this helper (or replace your existing one if present)
+    function formatWithCommas(x) {
+      // Inserts commas every 3 digits, e.g. 1234567 -> 1,234,567
+      return String(x).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+
+    // Replace your current formatYearSigned with this version
+    function formatYearSigned(y) {
+      const abs = Math.abs(y);
+      const numStr = abs >= 10000 ? formatWithCommas(abs) : String(abs);
+      return y < 0 ? `${numStr}bc` : numStr;
+    }
+
     // Wrap parenthetical parts of a title in <span>(...)</span> safely.
     function formatTitleWithParens(title) {
       if (!title) return '';
@@ -141,9 +154,6 @@
       const n = parseInt(s.replace('bc', ''), 10);
       if (Number.isNaN(n)) throw new Error('Invalid year number: ' + str);
       return { year: isBC ? -n : n, isBC };
-    }
-    function formatYearSigned(y) {
-      return y < 0 ? Math.abs(y) + 'bc' : '' + y;
     }
     const sortEventsByYear = (a, b) => {
       const ay = parseYearToken(a.year).year;
