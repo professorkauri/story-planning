@@ -118,7 +118,7 @@
       selectedTimelineId: null,
       theme: 'light',
       hiddenTimelineIds: new Set(),
-      showDescriptions: true,
+      showDescriptions: false,
       showImages: true,
     };
 
@@ -149,11 +149,27 @@
     function parseYearToken(str) {
       if (typeof str !== 'string') throw new Error('Year must be a string');
       const s = str.trim().toLowerCase();
-      if (!/^\d+(bc)?$/.test(s)) throw new Error('Invalid year token: ' + str);
-      const isBC = s.endsWith('bc');
-      const n = parseInt(s.replace('bc', ''), 10);
+
+      // Match: digits with optional suffix "bc" or "ya"
+      const m = s.match(/^(\d+)(bc|ya)?$/);
+      if (!m) throw new Error('Invalid year token: ' + str);
+
+      const n = parseInt(m[1], 10);
       if (Number.isNaN(n)) throw new Error('Invalid year number: ' + str);
-      return { year: isBC ? -n : n, isBC };
+
+      const suffix = m[2] || '';  // '', 'bc', or 'ya'
+      const BASE_YEAR = 2000;     // <-- years-ago anchor
+
+      let year;
+      if (suffix === 'bc') {
+        year = -n;                // e.g., 1942bc -> -1942
+      } else if (suffix === 'ya') {
+        year = BASE_YEAR - n;     // e.g., 1942ya -> 2000 - 1942 = 58
+      } else {
+        year = n;                 // e.g., 1942 -> 1942
+      }
+
+      return { year, isBC: year < 0 };
     }
     const sortEventsByYear = (a, b) => {
       const ay = parseYearToken(a.year).year;
