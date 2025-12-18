@@ -502,6 +502,18 @@ small, .small { font-size: 12px; color: var(--muted); }
   background-color:color-mix(in srgb, var(--tlCol, var(--g-bar)) 5%, var(--background) 100%);
 }
 
+#desc-tooltip .chip-desc {
+  --tcol:var(--ink);
+  background-color:white;
+  max-width: 360px;
+  border:1px solid color-mix(in srgb, var(--background) 100%, var(--ink) 30%);
+  border-radius:3px;
+  padding:0.2em 1em 0.5em 1em;
+}
+#desc-tooltip .chip-desc * {
+  color:var(--ink);
+}
+
 .event.chip.no-img {
   padding-left:0.1em;
   margin:0 auto;

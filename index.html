@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="utf-8" />
-  <title>Year Timelines</title>
+  <title>Pokemon Timelines</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <!-- Reuse your existing styles; this file only provides structure. -->
   <link rel="stylesheet" href="styles.css" />
@@ -12,7 +12,7 @@
 <body data-theme="light">
   <header class="app-header">
     <div class="left">
-      <h1 class="app-title">Year Timelines</h1>
+      <h1 class="app-title">Pokemon Timelines</h1>
     </div>
     <div class="right controls">
       <button id="btn-theme" class="btn">Toggle Theme</button>
@@ -66,6 +66,8 @@
               <label>Color (optional)
                 <input id="tl-color" type="color" />
               </label>
+
+              <button id="btn-sort-events" class="btn">Sort</button>
             </div>
 
             <table class="events-table">
@@ -192,6 +194,57 @@
       if (s.startsWith('/')) return s;           // absolute site path
       return `images/${s}`;                      // slug/subpath → images/<path>
     }
+
+    let descTooltipEl = null;
+
+    function ensureDescTooltip() {
+      if (descTooltipEl) return descTooltipEl;
+
+      const el = document.createElement('div');
+      el.id = 'desc-tooltip';
+      el.style.position = 'fixed';
+      el.style.zIndex = '9999';
+      el.style.pointerEvents = 'none';
+      el.style.display = 'none';
+
+      document.body.appendChild(el);
+      descTooltipEl = el;
+
+      // Hide tooltip on scroll / click / escape
+      window.addEventListener('scroll', hideDescTooltip, true);
+      window.addEventListener('pointerdown', hideDescTooltip, true);
+      window.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideDescTooltip(); });
+
+      return el;
+    }
+
+    function showDescTooltip(html, clientX, clientY) {
+      const el = ensureDescTooltip();
+      el.innerHTML = html;
+
+      // show first so we can measure
+      el.style.display = 'block';
+
+      const pad = 12;
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const rect = el.getBoundingClientRect();
+
+      let x = clientX + pad;
+      let y = clientY + pad;
+
+      if (x + rect.width + pad > vw) x = Math.max(pad, vw - rect.width - pad);
+      if (y + rect.height + pad > vh) y = Math.max(pad, vh - rect.height - pad);
+
+      el.style.left = `${x}px`;
+      el.style.top = `${y}px`;
+    }
+
+    function hideDescTooltip() {
+      if (!descTooltipEl) return;
+      descTooltipEl.style.display = 'none';
+    }
+
 
     /** Simple, safe-ish markdown → HTML for chips.
  * Supports: links [text](https://...), **bold**, *italic*, `code`, and line breaks.
@@ -596,6 +649,20 @@
       const hasImg = !!ev.image && state.showImages;
       const hasDesc = !!(ev.desc && String(ev.desc).trim()) && state.showDescriptions;
 
+      const hasHiddenDesc = !!(ev.desc && String(ev.desc).trim()) && !state.showDescriptions;
+
+      if (hasHiddenDesc) {
+        chip.addEventListener('pointerenter', (e) => {
+          showDescTooltip(`<div class="chip-desc">${markdownToHtml(ev.desc)}</div>`, e.clientX, e.clientY);
+        });
+        chip.addEventListener('pointermove', (e) => {
+          // keep it tracking the pointer
+          showDescTooltip(`<div class="chip-desc">${markdownToHtml(ev.desc)}</div>`, e.clientX, e.clientY);
+        });
+        chip.addEventListener('pointerleave', hideDescTooltip);
+      }
+
+
       // set modifier classes for styling
       chip.classList.toggle('no-img', !hasImg);
       chip.classList.toggle('no-desc', !hasDesc);
@@ -686,11 +753,55 @@
       return state.timelines.find(t => t.id === state.selectedTimelineId) || null;
     }
 
+    function sortTimelineEvents(tl) {
+      if (!tl || !Array.isArray(tl.events)) return;
+
+      const safeYear = (ev) => {
+        try {
+          return { ok: true, year: parseYearToken(ev.year).year };
+        } catch {
+          return { ok: false, year: Number.POSITIVE_INFINITY };
+        }
+      };
+
+      tl.events = tl.events
+        .map((ev, idx) => ({ ev, idx }))
+        .sort((A, B) => {
+          const ay = safeYear(A.ev);
+          const by = safeYear(B.ev);
+
+          // 1) Year (invalid years sort last)
+          if (ay.year !== by.year) return ay.year - by.year;
+
+          // 2) Title (case-insensitive, empty titles last-ish)
+          const at = String(A.ev.title || '').trim().toLowerCase();
+          const bt = String(B.ev.title || '').trim().toLowerCase();
+
+          if (at !== bt) return at.localeCompare(bt);
+
+          // 3) Stable fallback to original order
+          return A.idx - B.idx;
+        })
+        .map(x => x.ev);
+    }
+
+
     function renderTimelineEditor() {
       const tl = getSelectedTimeline();
       const titleEl = document.getElementById('tl-title');
       const colorEl = document.getElementById('tl-color');
       const tbody = document.getElementById('events-body');
+      const sortBtn = document.getElementById('btn-sort-events');
+
+      if (sortBtn) {
+        sortBtn.disabled = !tl;
+        sortBtn.onclick = () => {
+          if (!tl) return;
+          sortTimelineEvents(tl);
+          renderTimelineEditor();
+          renderYearGrid();
+        };
+      }
 
       if (!tl) {
         titleEl.value = '';
