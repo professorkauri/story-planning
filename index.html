@@ -58,14 +58,29 @@
           </div>
           <div class="timeline-editor-body">
 
-            <div class="row between">
+            <div class="column between">
+              <div>
               <label>Title
                 <input id="tl-title" type="text" placeholder="Timeline title" />
               </label>
-
+              
+              <label>Anchor Year
+                <input id="tl-year" type="text" step="1" placeholder="2000 | 5aKANTO" />
+              </label>
+              
               <label>Color (optional)
                 <input id="tl-color" type="color" />
               </label>
+            </div>
+            <div>
+              <label style="flex:1 1 100%;">Timeline Description
+                <textarea id="tl-desc" rows="3" placeholder="Shown on the anchor event (Markdown supported)"></textarea>
+              </label>
+              
+              <label style="flex:1 1 100%;">Timeline Image (slug/subpath/url)
+                <input id="tl-image" type="text" placeholder="slug.webp | folder/slug.webp | https://…" />
+              </label>
+            </div>
 
               <button id="btn-sort-events" class="btn">Sort</button>
             </div>
@@ -124,6 +139,70 @@
       showImages: true,
     };
 
+    function moveTimeline(fromIndex, toIndex) {
+      if (fromIndex === toIndex) return;
+      if (fromIndex < 0 || toIndex < 0) return;
+      if (fromIndex >= state.timelines.length || toIndex >= state.timelines.length) return;
+
+      const [item] = state.timelines.splice(fromIndex, 1);
+      state.timelines.splice(toIndex, 0, item);
+    }
+
+    function indexOfTimelineId(id) {
+      return state.timelines.findIndex(t => t.id === id);
+    }
+
+    function normalizeTimelineKey(name) {
+      return String(name || '').trim().toLowerCase();
+    }
+
+    function getTimelineByName(name, timelines) {
+      const key = normalizeTimelineKey(name);
+      return (timelines || []).find(t => normalizeTimelineKey(t.title) === key) || null;
+    }
+
+    /**
+     * Resolve a timeline's anchor year to an absolute numeric year.
+     * Supports:
+     *  - 1999
+     *  - "1999"
+     *  - "5aKANTO" (relative to another timeline anchor)
+     */
+    function resolveTimelineAnchorYear(tl, ctx) {
+      const timelines = ctx?.timelines || (typeof state !== 'undefined' ? state.timelines : []) || [];
+      const cache = ctx?.cache || null;
+      const stack = ctx?.stack || [];
+
+      if (!tl) return 2000;
+
+      if (cache && cache.has(tl.id)) return cache.get(tl.id);
+
+      // Cycle protection
+      if (stack.includes(tl.id)) {
+        throw new Error(`Circular anchor reference detected: ${stack.join(' -> ')} -> ${tl.id}`);
+      }
+      stack.push(tl.id);
+
+      const raw = tl.year;
+
+      let out;
+      if (typeof raw === 'number' && Number.isFinite(raw)) {
+        out = raw;
+      } else if (typeof raw === 'string' && raw.trim() !== '') {
+        // Note: baseYear is irrelevant for absolute years,
+        // but parseYearToken also handles "ya" if someone ever uses it in anchor years.
+        out = parseYearToken(raw, 2000, { timelines, cache, stack }).year;
+      } else {
+        out = 2000;
+      }
+
+      stack.pop();
+      if (cache) cache.set(tl.id, out);
+      return out;
+    }
+
+
+
     /**********************
      * Utility / Parsing  *
      **********************/
@@ -148,45 +227,101 @@
       return safe.replace(/\(([^)]+)\)/g, (_m, inner) => `<span>(${inner})</span>`);
     }
 
-    function parseYearToken(str) {
+    function getAnchorEvent(tl) {
+      if (!tl) return null;
+
+      // We store tl.year as a token string now ("2000" or "5aKANTO")
+      // The grid uses resolveTimelineAnchorYear() to place it.
+      return {
+        year: String(tl.year || '2000'),   // token, not forced numeric
+        title: tl.title || '(Untitled)',
+        desc: tl.description || '',
+        image: tl.image || '',
+        __isAnchor: true,
+      };
+    }
+
+
+    // Replace your current parseYearToken with this version
+    function parseYearToken(str, baseYear = 2000, ctx = null) {
       if (typeof str !== 'string') throw new Error('Year must be a string');
-      const s = str.trim().toLowerCase();
+      const s = str.trim();
 
-      // Match: digits with optional suffix "bc" or "ya"
-      const m = s.match(/^(\d+)(bc|ya)?$/);
-      if (!m) throw new Error('Invalid year token: ' + str);
+      const timelines =
+        ctx?.timelines ||
+        (typeof state !== 'undefined' ? state.timelines : []) ||
+        [];
 
-      const n = parseInt(m[1], 10);
-      if (Number.isNaN(n)) throw new Error('Invalid year number: ' + str);
+      // 1) Plain numeric / BC / YA: 1999 | 300bc | 20ya
+      {
+        const m = s.toLowerCase().match(/^(\d+)(bc|ya)?$/);
+        if (m) {
+          const n = parseInt(m[1], 10);
+          if (Number.isNaN(n)) throw new Error('Invalid year number: ' + str);
 
-      const suffix = m[2] || '';  // '', 'bc', or 'ya'
-      const BASE_YEAR = 2000;     // <-- years-ago anchor
+          const suffix = m[2] || '';
+          const anchor = Number.isFinite(+baseYear) ? +baseYear : 2000;
 
-      let year;
-      if (suffix === 'bc') {
-        year = -n;                // e.g., 1942bc -> -1942
-      } else if (suffix === 'ya') {
-        year = BASE_YEAR - n;     // e.g., 1942ya -> 2000 - 1942 = 58
-      } else {
-        year = n;                 // e.g., 1942 -> 1942
+          let year;
+          if (suffix === 'bc') year = -n;
+          else if (suffix === 'ya') year = anchor - n;
+          else year = n;
+
+          return { year, isBC: year < 0 };
+        }
       }
 
-      return { year, isBC: year < 0 };
+      // 2) "After another anchor": 5aKANTO  (years after timeline "Kanto" anchor year)
+      // Allow letters/numbers/spaces/hyphens/underscores in name (everything after the 'a').
+      {
+        const m = s.match(/^(\d+)\s*a\s*(.+)$/i);
+        if (m) {
+          const offset = parseInt(m[1], 10);
+          const name = m[2].trim();
+          if (!name) throw new Error('Invalid anchor reference (missing name): ' + str);
+
+          const ref = getTimelineByName(name, timelines);
+          if (!ref) throw new Error(`Unknown anchor timeline "${name}" in token: ${str}`);
+
+          // Resolve referenced timeline anchor year (supports chaining)
+          const localCtx = ctx || { timelines, cache: new Map(), stack: [] };
+          const refAnchorYear = resolveTimelineAnchorYear(ref, localCtx);
+
+          const year = refAnchorYear + offset;
+          return { year, isBC: year < 0 };
+        }
+      }
+
+      throw new Error('Invalid year token: ' + str);
     }
+
+
     const sortEventsByYear = (a, b) => {
       const ay = parseYearToken(a.year).year;
       const by = parseYearToken(b.year).year;
       return ay - by;
     };
+
     function collectAllYears(timelines) {
       const set = new Set();
+      const ctx = { timelines, cache: new Map(), stack: [] };
+
       for (const tl of timelines) {
+        const anchorYear = resolveTimelineAnchorYear(tl, ctx);
+
+        // include anchor year
+        set.add(anchorYear);
+
+        // include events (ya is relative to *this* timeline's resolved anchor year)
         for (const ev of tl.events || []) {
-          set.add(parseYearToken(ev.year).year);
+          set.add(parseYearToken(ev.year, anchorYear, ctx).year);
         }
       }
+
       return Array.from(set).sort((a, b) => a - b);
     }
+
+
     function resolveImageSrc(input) {
       if (!input) return '';
       const s = String(input).trim();
@@ -332,35 +467,114 @@
     }
 
 
-    function renderTimelineList() {
-      const list = document.getElementById('timeline-list');
-      list.innerHTML = '';
+  function renderTimelineList() {
+    const list = document.getElementById('timeline-list');
+    list.innerHTML = '';
 
-      // Build options
-      for (const tl of state.timelines) {
-        const isSelected = tl.id === state.selectedTimelineId;
-        const opt = document.createElement('div');
-        opt.className = 'option';
-        opt.setAttribute('role', 'option');
-        opt.setAttribute('data-id', tl.id);
-        opt.setAttribute('aria-selected', isSelected ? 'true' : 'false');
-        opt.setAttribute('tabindex', isSelected ? '0' : '-1');
-        opt.setAttribute('data-state', 'default'); // or "active" if you want different styling later
-        opt.style.setProperty('--tlCol', tl.color || '#8aa');
-        opt.textContent = tl.title || '(Untitled)';
+    // Track current drag state locally
+    let dragId = null;
 
-        opt.addEventListener('click', () => selectTimeline(tl.id));
-        opt.addEventListener('keydown', (e) => handleListboxKey(e, opt));
+    const clearDragClasses = () => {
+      list.querySelectorAll('.option').forEach(el => {
+        el.classList.remove('dragging', 'drag-over');
+      });
+    };
 
-        list.appendChild(opt);
+    const onDropReorder = (dropId) => {
+      if (!dragId || dragId === dropId) return;
+
+      const from = indexOfTimelineId(dragId);
+      const to = indexOfTimelineId(dropId);
+      if (from < 0 || to < 0) return;
+
+      moveTimeline(from, to);
+
+      // Re-render everything that depends on order
+      renderTimelineList();
+      renderToggleBar();
+      renderYearGrid();
+
+      // Keep selection stable
+      if (state.selectedTimelineId) {
+        const selectedEl = list.querySelector(`.option[data-id="${state.selectedTimelineId}"]`);
+        if (selectedEl) selectedEl.setAttribute('aria-selected', 'true');
       }
+    };
 
-      // Ensure at least one is tabbable for keyboard users
-      const focusable = list.querySelector('[tabindex="0"]') || list.querySelector('.option');
-      if (focusable && document.activeElement.closest('#timeline-list')) {
-        focusable.focus();
-      }
+    // Build options
+    for (const tl of state.timelines) {
+      const isSelected = tl.id === state.selectedTimelineId;
+
+      const opt = document.createElement('div');
+      opt.className = 'option';
+      opt.setAttribute('role', 'option');
+      opt.setAttribute('data-id', tl.id);
+      opt.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+      opt.setAttribute('tabindex', isSelected ? '0' : '-1');
+      opt.setAttribute('data-state', 'default');
+      opt.style.setProperty('--tlCol', tl.color || '#8aa');
+      opt.textContent = tl.title || '(Untitled)';
+
+      // Click + keyboard behaviour (your existing behaviour)
+      opt.addEventListener('click', () => selectTimeline(tl.id));
+      opt.addEventListener('keydown', (e) => handleListboxKey(e, opt));
+
+      // --- Drag & Drop reordering ---
+      opt.draggable = true;
+
+      opt.addEventListener('dragstart', (e) => {
+        dragId = tl.id;
+        opt.classList.add('dragging');
+
+        // Some browsers need data set for DnD to work
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', tl.id);
+      });
+
+      opt.addEventListener('dragend', () => {
+        dragId = null;
+        clearDragClasses();
+      });
+
+      opt.addEventListener('dragenter', (e) => {
+        e.preventDefault();
+        if (!dragId || dragId === tl.id) return;
+        opt.classList.add('drag-over');
+      });
+
+      opt.addEventListener('dragleave', () => {
+        opt.classList.remove('drag-over');
+      });
+
+      opt.addEventListener('dragover', (e) => {
+        // Must prevent default to allow drop
+        e.preventDefault();
+        if (!dragId || dragId === tl.id) return;
+        e.dataTransfer.dropEffect = 'move';
+      });
+
+      opt.addEventListener('drop', (e) => {
+        e.preventDefault();
+
+        // Prefer the stored dragId, but also read transfer data (safety)
+        const droppedOnId = tl.id;
+        const fromId = dragId || e.dataTransfer.getData('text/plain');
+
+        dragId = fromId;
+        onDropReorder(droppedOnId);
+        clearDragClasses();
+      });
+
+      list.appendChild(opt);
     }
+
+    // Ensure at least one is tabbable for keyboard users
+    const focusable = list.querySelector('[tabindex="0"]') || list.querySelector('.option');
+    if (focusable && document.activeElement.closest('#timeline-list')) {
+      focusable.focus();
+    }
+  }
+
 
     function selectTimeline(id) {
       state.selectedTimelineId = id;
@@ -592,17 +806,33 @@
     }
 
     function renderTimelineRow(grid, timeline, columns) {
+      const tlCol = timeline.color || '#8aa';
+      const ctx = { timelines: state.timelines, cache: new Map(), stack: [] };
+      const anchorYear = resolveTimelineAnchorYear(timeline, ctx);
+
       // Map: year -> events[]
       const byYear = new Map();
-      for (const ev of (timeline.events || []).slice().sort(sortEventsByYear)) {
-        const y = parseYearToken(ev.year).year;
+
+      // 1) Add the anchor event
+      const anchorEv = getAnchorEvent(timeline);
+      if (anchorEv) {
+        const y = parseYearToken(anchorEv.year, anchorYear, ctx).year; // (year is absolute anyway)
+        if (!byYear.has(y)) byYear.set(y, []);
+        byYear.get(y).push(anchorEv);
+      }
+
+      // 2) Add the timeline’s normal events, resolving "ya" against anchorYear
+      for (const ev of (timeline.events || []).slice().sort((a, b) => {
+        const ay = parseYearToken(a.year, anchorYear, ctx).year;
+        const by = parseYearToken(b.year, anchorYear,ctx).year;
+        return ay - by;
+      })) {
+        const y = parseYearToken(ev.year, anchorYear, ctx).year;
         if (!byYear.has(y)) byYear.set(y, []);
         byYear.get(y).push(ev);
       }
 
-      const tlCol = timeline.color || '#8aa';
-
-      // Label cell (sticky via CSS) — set both --tlCol for compatibility
+      // Label cell
       const label = document.createElement('div');
       label.className = 'cell label-cell';
       const labelinner = document.createElement('div');
@@ -619,7 +849,7 @@
         if (col.type === 'gap') {
           const cell = document.createElement('div');
           cell.className = 'cell gap-body';
-          cell.style.setProperty('--tlCol', tlCol);   // <-- colour on gap cell
+          cell.style.setProperty('--tlCol', tlCol);
           const marker = document.createElement('div');
           marker.className = 'event collapse';
           marker.textContent = '~';
@@ -631,15 +861,17 @@
         const y = col.year;
         const cell = document.createElement('div');
         cell.className = 'cell year-body';
-        cell.style.setProperty('--tlCol', tlCol);     // <-- colour on year cell
+        cell.style.setProperty('--tlCol', tlCol);
 
         const eventsHere = byYear.get(y) || [];
         for (const ev of eventsHere) {
           cell.appendChild(renderEventChip(ev));
         }
+
         grid.appendChild(cell);
       }
     }
+
 
     function renderEventChip(ev) {
       const chip = document.createElement('div');
@@ -788,7 +1020,12 @@
 
     function renderTimelineEditor() {
       const tl = getSelectedTimeline();
+
       const titleEl = document.getElementById('tl-title');
+      const yearEl  = document.getElementById('tl-year');
+      const descEl  = document.getElementById('tl-desc');
+      const imageEl = document.getElementById('tl-image');
+
       const colorEl = document.getElementById('tl-color');
       const tbody = document.getElementById('events-body');
       const sortBtn = document.getElementById('btn-sort-events');
@@ -805,30 +1042,63 @@
 
       if (!tl) {
         titleEl.value = '';
+        if (yearEl) yearEl.value = '';
+        if (descEl) descEl.value = '';
+        if (imageEl) imageEl.value = '';
         colorEl.value = '#cccccc';
         tbody.innerHTML = '<tr><td colspan="5" class="muted">No timeline selected</td></tr>';
         return;
       }
 
+      // Ensure fields exist (backwards compatible)
+      tl.year = (tl.year === undefined || tl.year === null || String(tl.year).trim() === '')
+        ? '2000'
+        : String(tl.year).trim();
+      tl.description = String(tl.description || '');
+      tl.image = String(tl.image || '');
+
       titleEl.value = tl.title || '';
+      if (yearEl)  yearEl.value = String(tl.year);
+      if (descEl)  descEl.value = tl.description;
+      if (imageEl) imageEl.value = tl.image;
       colorEl.value = tl.color || '#cccccc';
-
-
-
 
       titleEl.oninput = debounce(() => {
         tl.title = titleEl.value.trim();
-        renderTimelineList();   // NEW
-        renderYearGrid();
-      }, 150);
-
-      colorEl.oninput = debounce(() => {
-        tl.color = colorEl.value;
-        renderTimelineList();   // NEW
+        renderTimelineList();
         renderToggleBar();
         renderYearGrid();
       }, 150);
 
+      if (yearEl) {
+        yearEl.oninput = debounce(() => {
+          tl.year = yearEl.value.trim();
+          renderYearGrid();
+        }, 150);
+      }
+
+      if (descEl) {
+        descEl.oninput = debounce(() => {
+          tl.description = descEl.value;
+          renderYearGrid();
+        }, 150);
+      }
+
+      if (imageEl) {
+        imageEl.oninput = debounce(() => {
+          tl.image = imageEl.value.trim();
+          renderYearGrid();
+        }, 150);
+      }
+
+      colorEl.oninput = debounce(() => {
+        tl.color = colorEl.value;
+        renderTimelineList();
+        renderToggleBar();
+        renderYearGrid();
+      }, 150);
+
+      // --- Events table (unchanged from your current code) ---
       tbody.innerHTML = '';
       for (let i = 0; i < tl.events.length; i++) {
         const ev = tl.events[i];
@@ -839,12 +1109,16 @@
         const tdYear = document.createElement('td');
         const inYear = document.createElement('input');
         inYear.type = 'text';
-        inYear.placeholder = '1994 or 3000000bc';
+        inYear.placeholder = '1994 | 3000000bc | 20ya';
         inYear.value = ev.year || '';
         inYear.oninput = debounce(() => {
           ev.year = inYear.value.trim();
           try {
-            parseYearToken(ev.year);
+            // IMPORTANT: validate against this timeline's anchor year
+            const ctx = { timelines: state.timelines, cache: new Map(), stack: [] };
+            const anchorYear = resolveTimelineAnchorYear(tl, ctx);
+
+            parseYearToken(ev.year, anchorYear, ctx);
             inYear.classList.remove('invalid');
             renderYearGrid();
           } catch {
@@ -865,7 +1139,7 @@
         }, 150);
         tdTitle.appendChild(inTitle);
 
-        // Desc (now multiline + markdown)
+        // Desc
         const tdDesc = document.createElement('td');
         const inDesc = document.createElement('textarea');
         inDesc.placeholder = 'Description (Markdown supported)';
@@ -873,7 +1147,6 @@
         inDesc.rows = Math.max(3, Math.min(10, (inDesc.value.split('\n').length || 1)));
         inDesc.style.width = '300px';
         inDesc.addEventListener('input', () => {
-          // auto-height (simple)
           inDesc.style.height = 'auto';
           inDesc.style.height = (inDesc.scrollHeight) + 'px';
         });
@@ -885,9 +1158,7 @@
           inDesc.style.height = 'auto';
           inDesc.style.height = (inDesc.scrollHeight) + 'px';
         });
-
         tdDesc.appendChild(inDesc);
-
 
         // Image
         const tdImg = document.createElement('td');
@@ -914,7 +1185,7 @@
         wrap.appendChild(imgPreview);
         tdImg.appendChild(wrap);
 
-        // Delete (two-stage)
+        // Delete
         const tdDel = document.createElement('td');
         const btnDel = document.createElement('button');
         btnDel.className = 'btn danger';
@@ -925,7 +1196,6 @@
           renderYearGrid();
         }, { idleText: 'Delete', confirmText: 'Confirm' });
         tdDel.appendChild(btnDel);
-
 
         tr.appendChild(tdYear);
         tr.appendChild(tdTitle);
@@ -948,7 +1218,7 @@
 
     function onAddTimeline() {
       const id = 'tl_' + Math.random().toString(36).slice(2, 8);
-      const tl = { id, title: 'New Timeline', color: '#8aa', events: [] };
+      const tl = { id, title: 'New Timeline', color: '#8aa', year: 2000, description: '', image: '', events: [] };
       state.timelines.push(tl);
       state.selectedTimelineId = id;
       renderTimelineList();     // NEW
@@ -1047,16 +1317,36 @@
 
     function normalizeTimelines(arr) {
       const timelines = Array.isArray(arr) ? arr : [];
+
       for (const tl of timelines) {
         tl.id ||= 'tl_' + Math.random().toString(36).slice(2, 8);
         tl.title ||= '(Untitled)';
+        tl.color ||= '#8aa';
+
+        tl.description = String(tl.description || '');
+        tl.image = String(tl.image || '');
+
+        // IMPORTANT: keep year as a token string
+        // Accept numbers by converting to string, but don't coerce expressions to 2000.
+        if (tl.year === undefined || tl.year === null || String(tl.year).trim() === '') {
+          tl.year = '2000';
+        } else {
+          tl.year = String(tl.year).trim();
+        }
+
         tl.events = Array.isArray(tl.events) ? tl.events : [];
         for (const ev of tl.events) {
           ev.year = String(ev.year || '').trim();
+          ev.title = String(ev.title || '');
+          ev.desc = String(ev.desc || '');
+          ev.image = String(ev.image || '');
         }
       }
+
       return timelines;
     }
+
+
 
     /************
      * Boot     *

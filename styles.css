@@ -269,7 +269,7 @@ small, .small { font-size: 12px; color: var(--muted); }
   padding: 6px;
   position: relative;
   min-width: 0; /* allow inner content to shrink */
-  flex-direction: column;
+  flex-direction: row;
   gap: 0.5em;
 }
 
@@ -432,7 +432,7 @@ small, .small { font-size: 12px; color: var(--muted); }
   margin: 0 auto 0 var(--image-width-half);
   padding: 0px 0 0 var(--image-width-half);
   z-index:2;
-  width: calc(100% - var(--image-width-half));
+  /* width: calc(100% - var(--image-width-half));*/
 }
 
 /* Optional image on left */
@@ -600,7 +600,7 @@ small, .small { font-size: 12px; color: var(--muted); }
 .listbox {
   display: grid;
   gap: .4rem;
-  max-height: 16rem;            /* similar to size="6" */
+  /* max-height: 16rem;            similar to size="6" */
   overflow: auto;
   padding: 1em;
   border: 0px solid var(--border, #ddd);
@@ -801,4 +801,14 @@ textarea {
 .viewport::-webkit-scrollbar-track,
 #timeline-editor::-webkit-scrollbar-track {
   background: transparent;
+}
+
+
+#timeline-list .option.dragging {
+  opacity: 0.6;
+}
+
+#timeline-list .option.drag-over {
+  outline: 2px dashed rgba(0,0,0,0.35);
+  outline-offset: 2px;
 }

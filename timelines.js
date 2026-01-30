@@ -2,155 +2,13 @@
 window.TIMELINES_DEFAULT = {
   timelines: [
   {
-    "id": "tl_447i6p",
-    "title": "Mainline Games",
-    "color": "#91b1b1",
+    "id": "tl_0zc8fx",
+    "title": "Kanto",
+    "color": "#c23838",
+    "year": "1996",
+    "description": "Red, Blue, Green, Yellow, Fire Red, Leaf Green, Let's Go Pikachu/Eevee",
+    "image": "games/red.webp",
     "events": [
-      {
-        "year": "1871",
-        "title": "Legends Arceus",
-        "desc": "",
-        "image": "games/legends-arceus.webp"
-      },
-      {
-        "year": "1996",
-        "title": "Fire Red / Leaf Green",
-        "desc": "",
-        "image": "games/leaf-green.webp"
-      },
-      {
-        "year": "1996",
-        "title": "Red / Blue",
-        "desc": "Team Rocket forces pokemon to evolve with radio waves.",
-        "image": "games/red.webp"
-      },
-      {
-        "year": "1998",
-        "title": "Yellow",
-        "desc": "",
-        "image": "games/yellow.webp"
-      },
-      {
-        "year": "1999",
-        "title": "Gold / Silver",
-        "desc": "",
-        "image": "games/gold.webp"
-      },
-      {
-        "year": "1999",
-        "title": "Heart Gold / Soul Silver",
-        "desc": "",
-        "image": "games/soul-silver.webp"
-      },
-      {
-        "year": "2000",
-        "title": "Crystal",
-        "desc": "",
-        "image": "games/crystal.webp"
-      },
-      {
-        "year": "2002",
-        "title": "Omega Rub / Alpha Sapphire",
-        "desc": "",
-        "image": "games/alpha-sapphire.webp"
-      },
-      {
-        "year": "2002",
-        "title": "Ruby / Sapphire",
-        "desc": "",
-        "image": "games/ruby.webp"
-      },
-      {
-        "year": "2004",
-        "title": "Emerald",
-        "desc": "",
-        "image": "games/emerald.webp"
-      },
-      {
-        "year": "2006",
-        "title": "Brilliant Diamond / Shining Pearl",
-        "desc": "",
-        "image": "games/shining-pearl.webp"
-      },
-      {
-        "year": "2006",
-        "title": "Diamond / Pearl",
-        "desc": "",
-        "image": "games/diamond.webp"
-      },
-      {
-        "year": "2008",
-        "title": "Platinum",
-        "desc": "",
-        "image": "games/platinum.webp"
-      },
-      {
-        "year": "2010",
-        "title": "Black / White",
-        "desc": "",
-        "image": "games/black.webp"
-      },
-      {
-        "year": "2012",
-        "title": "Black 2 / White 2",
-        "desc": "",
-        "image": "games/white-2.webp"
-      },
-      {
-        "year": "2013",
-        "title": "X / Y",
-        "desc": "",
-        "image": "games/x.webp"
-      },
-      {
-        "year": "2016",
-        "title": "Sun / Moon",
-        "desc": "",
-        "image": "games/sun.webp"
-      },
-      {
-        "year": "2017",
-        "title": "Ultra Sun / Ultra Moon",
-        "desc": "",
-        "image": "games/ultra-moon.webp"
-      },
-      {
-        "year": "2018",
-        "title": "Legends Z-A",
-        "desc": "*Legends ZA | Line 3638* That incident caused by Team Flare **five years ago** set a lot of things in motion here in Lumiose.\n*Legends ZA | Line 3688* Huh. I just remembered that huge blackout we had **five years ago.**",
-        "image": "games/legends-za.webp"
-      },
-      {
-        "year": "2019",
-        "title": "Sword / Shield",
-        "desc": "",
-        "image": "games/sword.webp"
-      },
-      {
-        "year": "2022",
-        "title": "Scarlet / Violet",
-        "desc": "",
-        "image": "games/scarlet.webp"
-      }
-    ]
-  },
-  {
-    "id": "tl_mp8ytr",
-    "title": "Pokemon Lore",
-    "color": "#f0aa33",
-    "events": [
-      {
-        "year": "1000000000bc",
-        "title": "Scream Tail",
-        "desc": "*Violet* It resembles a mysterious Pokémon described in a paranormal magazine as a Jigglypuff from **one billion years ago.**",
-        "image": "pkmn/985.webp"
-      },
-      {
-        "year": "300000000bc",
-        "title": "Genesect",
-        "desc": "*Black* Over **300 million years ago**, it was feared as the strongest of hunters. It has been modified by Team Plasma.",
-        "image": "pkmn/649.webp"
-      },
       {
         "year": "300000000bc",
         "title": "Kabuto",
@@ -158,34 +16,132 @@ window.TIMELINES_DEFAULT = {
         "image": "pkmn/140.webp"
       },
       {
-        "year": "200000000bc",
-        "title": "Carbink (minimum)",
-        "desc": "*Y* It has slept underground for **hundreds of millions of years** since its birth. It’s occasionally found during the excavation of caves.",
-        "image": "pkmn/703.webp"
+        "year": "10000ya",
+        "title": "Wartortle",
+        "desc": "*Diamond* It is said to live **10,000 years.** Its furry tail is popular as a symbol of longevity.",
+        "image": "pkmn/8.webp"
       },
       {
-        "year": "100000000bc",
-        "title": "Amaura",
-        "desc": "*X* This ancient Pokémon was restored from part of its body that had been frozen in ice for over **100 million years**.",
-        "image": "pkmn/698.webp"
+        "year": "1500ya",
+        "title": "The Tanoby Ruins",
+        "desc": "*Fire Red | Line 1925* The TANOBY RUINS date back at least **1,500 years.** But it's a baffling mystery as to why it was built in the first place.",
+        "image": ""
       },
+      {
+        "year": "1000ya",
+        "title": "Ninetales (minimum)",
+        "desc": "*Diamond* Its nine tails are said to be imbued with a mystic power. It can live for **a thousand years.**",
+        "image": "pkmn/38.webp"
+      },
+      {
+        "year": "400ya",
+        "title": "Slowpoke (minimum)",
+        "desc": "*Heart Gold | Line 26062* SLOWPOKE Well Also known as the Rainmaker Well. Locals believe that a SLOWPOKE's yawn summons the rain. Records show that a SLOWPOKE's yawn ended a drought **400 years ago.**",
+        "image": "pkmn/79.webp"
+      },
+      {
+        "year": "400ya",
+        "title": "TM27 Toxic - Family Heirloom",
+        "desc": "*Let's Go Pikachu | Line 6008* Sealed within that TM27 lies the move Toxic! It is an ancient move, passed down through my family for **400 years.**",
+        "image": ""
+      }
+    ]
+  },
+  {
+    "id": "tl_wf5ixq",
+    "title": "Johto",
+    "color": "#c13e97",
+    "year": "3aKANTO",
+    "description": "Gold, Silver, Crystal, Heart Gold, Soul Silver\n*Gold* \"Yeah, TEAM ROCKET was broken up **three years ago.** But we continued our activities underground. Now you can have fun watching us stir up trouble!\"\n*Gold* This is the office of our leader, GIOVANNI. Since disbanding TEAM ROCKET **three years ago,** he has been in training.\"",
+    "image": "games/soul-silver.webp",
+    "events": [
+      {
+        "year": "10000ya",
+        "title": "Magcargo (minimum)",
+        "desc": "*Emerald* The shell on its back is made of hardened magma. **Tens of thousands of years** spent living in volcanic craters have turned MAGCARGO’s bodies into magma.",
+        "image": "pkmn/219.webp"
+      },
+      {
+        "year": "2000ya",
+        "title": "Regice (minimum)",
+        "desc": "*Heart Gold* It is said to have slept in a glacier for **thousands of years.** Its body can’t be melted, even by magma.",
+        "image": "pkmn/378.webp"
+      },
+      {
+        "year": "1500ya",
+        "title": "Ruins of Alph",
+        "desc": "*Heart Gold | Line 5049* The ruins are about **1,500 years old.** That's all we know about them. But it's not known why they were built...or by whom.",
+        "image": ""
+      },
+      {
+        "year": "1500ya",
+        "title": "Unown (minimum)",
+        "desc": "*Heart Gold | Line 5049* The ruins are about **1,500 years old.** That's all we know about them. But it's not known why they were built...or by whom.",
+        "image": "pkmn/201.webp"
+      },
+      {
+        "year": "500ya",
+        "title": "The Cianwood City Pharmacy (established)",
+        "desc": "*Heart Gold | Line 21443* This Pharmacy has been in business for **500 years,** can you believe it? For **500 years,** they've been doing the same business!\n*Heart Gold | Line 26164* Cianwood City Pharmacy **500 Years** of Tradition We Await Your Medicinal Queries",
+        "image": ""
+      },
+      {
+        "year": "400ya",
+        "title": "Slowpoke Well (estimate)",
+        "desc": "*Heart Gold | Line 26062* SLOWPOKE Well Also known as the Rainmaker Well. Locals believe that a SLOWPOKE's yawn summons the rain. Records show that a SLOWPOKE's yawn ended a drought **400 years ago.**",
+        "image": ""
+      },
+      {
+        "year": "200ya",
+        "title": "Sinjoh Ruins (minimum)",
+        "desc": "*Heart Gold | Line 6797* Cynthia: What is now the Sinjoh Ruins was built to honor ARCEUS by the Sinnoh people... It's an icebound temple that has been waiting for ARCEUS for **hundreds of years...**",
+        "image": ""
+      },
+      {
+        "year": "60ya",
+        "title": "Pryce was born (estimate)",
+        "desc": "*Heart Gold | Line 26991* Pryce is a veteran who has trained Pokémon for some **50 years.** As you'll find, his attacks will make you shiver in this freezing Gym. Are you ready to be frozen solid? I mean--keep up a hot fighting spirit against ice!\n(assuming he got his first pokemon at 10 years old. Estimated 60 years old at this point)",
+        "image": ""
+      },
+      {
+        "year": "10ya",
+        "title": "Eusine started chasing Suicune",
+        "desc": "*Heart Gold | Line 4692* Eusine: Did you see it? SUICUNE raced by like a blur, right in front of my eyes! I have been chasing SUICUNE for almost **ten years,** but I have never been this close! I'm all choked up!",
+        "image": ""
+      },
+      {
+        "year": "3ya",
+        "title": "Sabrina predicted the protagonist",
+        "desc": "*Heart Gold | Line 25384* Sabrina: I knew you were coming... **Three years ago** I had a vision of your arrival. You're after my Badge. I don't enjoy battling, but it's my duty as a Gym Leader to confer Badges on anyone who has proven him- or herself worthy. Since you wish it, I will show you my psychic powers!",
+        "image": ""
+      },
+      {
+        "year": "150ya",
+        "title": "Brass Tower struck by lightning",
+        "desc": "*Crystal* \"However… About **150 years ago,** a lightning bolt struck one of the TOWERS. It was engulfed in flames that raged for three days.\"",
+        "image": ""
+      },
+      {
+        "year": "700ya",
+        "title": "Brass and Tin Towers built",
+        "desc": "*Crystal* \"The two TOWERS are said to have been built to foster friendship and hope between POKé-MON and people. That was **700 years ago,** but the ideal still remains important today.\"",
+        "image": ""
+      }
+    ]
+  },
+  {
+    "id": "tl_qh7xz8",
+    "title": "Hoenn",
+    "color": "#ac49d0",
+    "year": "1997",
+    "description": "Ruby, Sapphire, Emerald, Omega Ruby, Alpha Sapphire",
+    "image": "games/alpha-sapphire.webp",
+    "events": [
       {
         "year": "100000000bc",
         "title": "Anorith",
         "desc": "*Sword* This Pokémon was restored from a fossil. Anorith lived in the ocean about **100,000,000 years ago**, hunting with its pair of claws.",
         "image": "pkmn/347.webp"
-      },
-      {
-        "year": "100000000bc",
-        "title": "Bastiodon",
-        "desc": "*Ultra Moon* This Pokémon is from roughly **100 million years ago**. Its terrifyingly tough face is harder than steel.",
-        "image": "pkmn/411.webp"
-      },
-      {
-        "year": "100000000bc",
-        "title": "Cranidos",
-        "desc": "*Diamond* It lived in jungles around **100 million years ago**. Its skull is as hard as iron.",
-        "image": "pkmn/408.webp"
       },
       {
         "year": "100000000bc",
@@ -200,82 +156,40 @@ window.TIMELINES_DEFAULT = {
         "image": "pkmn/369.webp"
       },
       {
-        "year": "100000000bc",
-        "title": "Shieldon",
-        "desc": "*Diamond* A Pokémon that lived in jungles around **100 million years ago.** Its facial hide is extremely hard.",
-        "image": "pkmn/410.webp"
-      },
-      {
-        "year": "100000000bc",
-        "title": "Tirtouga",
-        "desc": "*White* About 100 million years ago, these Pokémon swam in oceans. It is thought they also went on land to attack prey.",
-        "image": "pkmn/564.webp"
-      },
-      {
-        "year": "100000000bc",
-        "title": "Tyrantrum",
-        "desc": "*Y* Nothing could stop this Pokémon **100 million years ago**, so it behaved like a king.",
-        "image": "pkmn/697.webp"
-      },
-      {
-        "year": "100000000bc",
-        "title": "Tyrunt",
-        "desc": "*Y* Its immense jaws have enough destructive force that it can chew up an automobile. It lived **100 million years ago.**",
-        "image": "pkmn/696.webp"
-      },
-      {
         "year": "20000ya",
         "title": "Claydol",
         "desc": "*Sapphire* CLAYDOL is an enigma that appeared from a clay statue made by an ancient civilization dating back **20,000 years**. This POKéMON shoots beams from both its hands.",
         "image": "pkmn/344.webp"
       },
       {
-        "year": "20000ya",
-        "title": "Eternatus",
-        "desc": "*Shield* It was inside a meteorite that fell **20,000 years ago.** There seems to be a connection between this Pokémon and the Dynamax phenomenon.",
-        "image": "pkmn/890.webp"
-      },
-      {
         "year": "10000ya",
-        "title": "Magcargo (minimum)",
-        "desc": "*Emerald* The shell on its back is made of hardened magma. **Tens of thousands of years** spent living in volcanic craters have turned MAGCARGO’s bodies into magma.",
-        "image": "pkmn/219.webp"
-      },
-      {
-        "year": "10000ya",
-        "title": "Mamoswine (Extinction)",
-        "desc": "*Heart Gold* A frozen MAMOSWINE was dug from ice **dating back 10,000 years**. This Pokémon has been around a long, long, long time.",
-        "image": "pkmn/473.webp"
-      },
-      {
-        "year": "10000ya",
-        "title": "Sandy Shocks (debatable)",
-        "desc": "*Violet* It slightly resembles a Magneton that lived for **10,000 years** and was featured in an article in a paranormal magazine.\n*Scarlet | Line 4756* Some scientists claim that this mysterious being is a Magneton that **has lived for 10 thousand years.** It has been sighted numerous times in Paldea’s more arid regions, but there are no reports of it ever having been caught.",
-        "image": "pkmn/989.webp"
-      },
-      {
-        "year": "10000ya",
-        "title": "Wartortle (minimum)",
-        "desc": "*Diamond* It is said to live **10,000 years.** Its furry tail is popular as a symbol of longevity.",
-        "image": "pkmn/8.webp"
-      },
-      {
-        "year": "5000ya",
-        "title": "Gogoat (minimum)",
-        "desc": "*Legends ZA | Line 4797* Historians say that Gogoat have been laboring for humans for **five thousand years,** at least.",
-        "image": "pkmn/673.webp"
+        "title": "Registeel (Emerged)",
+        "desc": "*Shield* It’s rumored that this Pokémon was born deep underground in the planet’s mantle and that it emerged onto the surface **10,000 years ago**.",
+        "image": "pkmn/379.webp"
       },
       {
         "year": "3000ya",
-        "title": "Melmetal (Fell asleep)",
-        "desc": "*Let's Go Pikachu* Revered long ago for its capacity to create iron from nothing, for some reason it has come back to life after **3,000 years.**",
-        "image": "pkmn/809.webp"
+        "title": "Draconids Tale: The Primal Age",
+        "desc": "*Omega Ruby | Line 6092* Thousands of years ago, in the primal age long lost, the world was overflowing with natural energy. Primal Groudon and Primal Kyogre fought over that energy in endless, furious clashes.\n*Omega Ruby | Line 6002* It was in such a time that a great many meteoroids poured from the darkness of space, from a place higher even than the heavens. And the meteoroids fell in their multitude upon a waterfall that had long been home to a tribe of Dragon-type-Pokémon users...\n*Omega Ruby | Line 6102* Rayquaza’s power overwhelmed that of the two Primal Pokémon, and peace returned to the world. The people of Hoenn revered Rayquaza as a true savior.",
+        "image": ""
+      },
+      {
+        "year": "3000ya",
+        "title": "Draconids (minimum)",
+        "desc": "*Omega Ruby | Line 6091* Look... The paintings that cover the walls of this tower... See, these are the history of humanity, of Pokémon, and of nature itself. They’re the tales that have been passed down by my ancestors, the Draconids, for **thousands of years.** And now...I will pass that history and lore on to you.",
+        "image": ""
       },
       {
         "year": "2000ya",
-        "title": "Regice (minimum)",
-        "desc": "*Heart Gold* It is said to have slept in a glacier for **thousands of years.** Its body can’t be melted, even by magma.",
-        "image": "pkmn/378.webp"
+        "title": "Draconids Tale: The Sootopolis Meteor",
+        "desc": "*Omega Ruby | Line 6013* **A thousand years after this time,** the meteoroids once again fell. A huge meteoroid, far greater than any before, struck the planet, boring deep into the ocean and leaving behind it a crater larger than any other. The land born of this event later become known as Sootopolis.\n*Omega Ruby | Line 6107* The great meteoroid was the first of many disasters to befall humanity. When it punched into the planet, the land cracked beneath it, and a great welling of natural energy poured from beneath Hoenn. Thirsting for that energy, Primal Kyogre and Primal Groudon once again woke.\n*Omega Ruby | Line 6112* Rayquaza once again confronted Primal Groudon and Primal Kyogre. The golden filaments that sprang from its body covered the sky. An emerald brilliance illuminated the area. A terrible wind rose.",
+        "image": ""
+      },
+      {
+        "year": "2000ya",
+        "title": "Granite Cave wall paintings (minimum)",
+        "desc": "*Omega Ruby | Line 901* By the way, have you been to Granite Cave? It’s located to the north of this town. It’s full of fascinating stuff, like rare stones and wall paintings **thousands of years old.**",
+        "image": ""
       },
       {
         "year": "2000ya",
@@ -284,58 +198,92 @@ window.TIMELINES_DEFAULT = {
         "image": "pkmn/275.webp"
       },
       {
-        "year": "1500ya",
-        "title": "Gimmighoul",
-        "desc": "*Scarlet* This Pokémon was born inside a treasure chest about **1,500 years ago.** It sucks the life-force out of scoundrels who try to steal the treasure.",
-        "image": "pkmn/999.webp"
-      },
-      {
-        "year": "1500ya",
-        "title": "Unown (minimum)",
-        "desc": "*Heart Gold | Line 5049* The ruins are about **1,500 years old.** That's all we know about them. But it's not known why they were built...or by whom.",
-        "image": "pkmn/201.webp"
+        "year": "1000ya",
+        "title": "Draconids Tale: 1000 Years of Peace",
+        "desc": "*Omega Ruby | Line 6117* **A thousand years **of peace followed after that disastrous time. But the Draconid people, learning from their long history’s cyclical nature, foretold that the meteoroids would fall on this land again. The meteoroid to come, they prophesized, would be far greater than those that had come before it. This meteoroid would be great enough to break the world forever...",
+        "image": ""
       },
       {
         "year": "1000ya",
-        "title": "Conkeldurr (Taught humans to make concrete)",
-        "desc": "*Black* It is thought that Conkeldurr taught humans how to make concrete more than **2,000 years ago.**",
-        "image": "pkmn/534.webp"
+        "title": "Draconids Tale: Rayquaza and the Meteor",
+        "desc": "*Omega Ruby | Line 6002* The Meteorites that should lie within Rayquaza’s great body...aren’t enough? Have these **thousand years** drained them of their power?",
+        "image": ""
       },
       {
-        "year": "1000ya",
-        "title": "Ninetales (minimum)",
-        "desc": "*Diamond* Its nine tails are said to be imbued with a mystic power. It can live for **a thousand years.**",
-        "image": "pkmn/38.webp"
+        "year": "40ya",
+        "title": "Lunatone (Discovered)",
+        "desc": "*Emerald* It becomes very active on the night of a full moon. This POKéMON was first discovered **40 years ago** at the site of a meteor strike.",
+        "image": "pkmn/337.webp"
       },
       {
-        "year": "1000ya",
-        "title": "Registeel (Emerged)",
-        "desc": "*Shield* It’s rumored that this Pokémon was born deep underground in the planet’s mantle and that it emerged onto the surface **10,000 years ago**.",
-        "image": "pkmn/379.webp"
+        "year": "11ya",
+        "title": "Litlenoid Meteor Shower (previous event)",
+        "desc": "*Omaga Ruby | Line 5374* The Litleonids, hmm? I remember going to see them with your dad **11 years ago** when they last passed by!",
+        "image": ""
       },
       {
-        "year": "1000ya",
-        "title": "Reshiram (minimum)",
-        "desc": "*Black 2 | Line 3021* Reshiram and Zekrom have lived for **thousands of years.**",
-        "image": "pkmn/643.webp"
+        "year": "0ya",
+        "title": "Litlenoid Meteor Shower",
+        "desc": "*Omaga Ruby | Line 5372* Newscaster: At last the Litleonid meteor shower returns to illuminate Hoenn’s night sky! The star show held at the Mossdeep Space Center will provide the best view of the shooting stars from the center’s lofty viewing deck! We hope you all will take the chance to join...",
+        "image": ""
       },
       {
-        "year": "1000ya",
-        "title": "Yveltal (minimum)",
-        "desc": "*X | Line 419* Apparently, this Pokémon will absorb energy. Its life span is said to be **1,000 years.** When it reaches the end of its life, it steals all of the spirits around it.",
-        "image": "pkmn/717.webp"
+        "year": "0ya",
+        "title": "Faller: Anabel in Hoenn",
+        "desc": "\"My name is ANABEL.\nI am the SALON MAIDEN, and I am in\ncharge of running the BATTLE TOWER…\"",
+        "image": ""
       },
       {
-        "year": "1000ya",
-        "title": "Zekrom (minimum)",
-        "desc": "*Black 2 | Line 3021* Reshiram and Zekrom have lived for **thousands of years.**",
-        "image": "pkmn/644.webp"
+        "year": "35ya",
+        "title": "Professor Birch born",
+        "desc": "*Omega Ruby* \"This is an HNN special report.[WAIT 5] Professor Birch, **aged 35,** the[WAIT 5]\nleading figure in Pokémon research\"",
+        "image": ""
       },
       {
-        "year": "500ya",
-        "title": "Magearna (Built)",
-        "desc": "*Ultra Sun* Built roughly **500 years ago** by a scientist, the part called the Soul-Heart is the actual life-form.",
-        "image": "pkmn/801.webp"
+        "year": "3000ya",
+        "title": "Prof. Birch estimates more habitable Hoenn",
+        "desc": "*Omega Ruby* \" we can say with some[WAIT 5] certainty that Hoenn’s Pokémon[WAIT 5] population was more diverse over[WAIT 5] 1,000—no, **3,000—[WAIT 5] years ago** than it is today.[WAIT 5] It seems that the Hoenn region[WAIT 5] was a more hospitable environment[WAIT 5] for Pokémon long ago.”[WAIT 30]\"",
+        "image": ""
+      }
+    ]
+  },
+  {
+    "id": "tl_6krp4h",
+    "title": "Sinnoh",
+    "color": "#513bbf",
+    "year": "2000",
+    "description": "Diamond, Pearl, Platinum, Brilliant Diamond, Shining Pearl",
+    "image": "games/platinum.webp",
+    "events": [
+      {
+        "year": "100000000bc",
+        "title": "Bastiodon",
+        "desc": "*Ultra Moon* This Pokémon is from roughly **100 million years ago**. Its terrifyingly tough face is harder than steel.",
+        "image": "pkmn/411.webp"
+      },
+      {
+        "year": "100000000bc",
+        "title": "Cranidos",
+        "desc": "*Diamond* It lived in jungles around **100 million years ago**. Its skull is as hard as iron.",
+        "image": "pkmn/408.webp"
+      },
+      {
+        "year": "100000000bc",
+        "title": "Shieldon",
+        "desc": "*Diamond* A Pokémon that lived in jungles around **100 million years ago.** Its facial hide is extremely hard.",
+        "image": "pkmn/410.webp"
+      },
+      {
+        "year": "10000ya",
+        "title": "Mamoswine (Extinction)",
+        "desc": "*Heart Gold* A frozen MAMOSWINE was dug from ice **dating back 10,000 years**. This Pokémon has been around a long, long, long time.",
+        "image": "pkmn/473.webp"
+      },
+      {
+        "year": "3000ya",
+        "title": "Ancient Civilisation",
+        "desc": "Items obtainable in *Brilliant Diamond*:\nA copper coin used by an ancient civilization about three thousand years ago.\n- A silver coin and gold coin used by an ancient civilization about three thousand years ago.\n- A fragile vase, a heavy bracelet, a stone figurine, and a heavy crown made by an ancient civilization about three thousand years ago.",
+        "image": ""
       },
       {
         "year": "500ya",
@@ -344,22 +292,156 @@ window.TIMELINES_DEFAULT = {
         "image": "pkmn/442.webp"
       },
       {
-        "year": "400ya",
-        "title": "Rolycoly (Discovered)",
-        "desc": "*Sword* Most of its body has the same composition as coal. Fittingly, this Pokémon was first discovered in coal mines about **400 years ago.**",
-        "image": "pkmn/837.webp"
+        "year": "60ya",
+        "title": "Professor Rowan was born",
+        "desc": "*Diamond | Line 19417* Rowan: When you walked up Route 201 with your Pokémon, what did you feel? I've lived for **60 long years.** Even now, I get a thrill when I'm with a Pokémon.",
+        "image": ""
       },
       {
-        "year": "400ya",
-        "title": "Slowpoke (minimum)",
-        "desc": "*Heart Gold | Line 26062* SLOWPOKE Well Also known as the Rainmaker Well. Locals believe that a SLOWPOKE's yawn summons the rain. Records show that a SLOWPOKE's yawn ended a drought **400 years ago.**",
-        "image": "pkmn/79.webp"
+        "year": "50ya",
+        "title": "Locked Inn Canalave City - Darkrai Event (last inhabited)",
+        "desc": "*Diamond | Line 2841* You've been asleep for a long, long time... What happened to you? And what were you doing here? No one's lived here for **fifty years.**\n*Diamond | Line 11198* A card needed for entering the inn in Canalave City. Oddly, the last date marked on it was **50 years ago.**",
+        "image": ""
+      },
+      {
+        "year": "27ya",
+        "title": "Cyrus was born",
+        "desc": "*Platinum | Line 7733* Looker: So, that was Cyrus, the boss of the Team Galactic. Quite the performance, no? Mesmerizing for one only **27 years old.** ...But to make a world for Team Galactic and none other? It is preposterous.",
+        "image": ""
+      },
+      {
+        "year": "5ya",
+        "title": "Team Galactic forms (minimum)",
+        "desc": "*Diamond | Line 6079* I've been with Team Galactic for **five years.** I haven't gotten a promotion yet...",
+        "image": ""
+      },
+      {
+        "year": "4ya",
+        "title": "Professor Rowan Left Sinnoh",
+        "desc": "*Diamond | Line 6117* Lucas: Professor, you've been gone for **four years now.** How are you enjoying being back in Sinnoh?",
+        "image": ""
+      },
+      {
+        "year": "0ya",
+        "title": "Professor Rowan Returns to Sinnoh",
+        "desc": "*Diamond | Line 6116* Dawn: Professor, how are you enjoying being back in Sinnoh? After being away for **four years,** it must be exciting again?",
+        "image": ""
+      },
+      {
+        "year": "85ya",
+        "title": "Veteren trainer started their journey",
+        "desc": "*Diamond* \"My career as a Trainer dates back\n**75 years.** You think you can win?\"",
+        "image": ""
+      }
+    ]
+  },
+  {
+    "id": "tl_q4dlt6",
+    "title": "Hisui",
+    "color": "#5271cb",
+    "year": "1869",
+    "description": "Legends: Arceus",
+    "image": "games/legends-arceus.webp",
+    "events": [
+      {
+        "year": "2ya",
+        "title": "Jubilife Village Built",
+        "desc": "*Legends Arceus | Line 491* \"The village was built scarcely **two years ago...** There’s much to do yet and not many to do it.\"",
+        "image": ""
+      },
+      {
+        "year": "5ya",
+        "title": "Coastlands lord lost",
+        "desc": "*Legends Arceus* \"Irida: We did have a lord in the coastlands...until **a few years ago.** A tragedy took him from us.\"",
+        "image": ""
+      },
+      {
+        "year": "200ya",
+        "title": "Spiritomb",
+        "desc": "*Legends Arceus* \"Vessa: **Hundreds of years ago**, a being that brought calamity to this region was sealed away by someone using the power of a strange magic. But now, for some unknown reason, the magic has come undone and the seal is broken.\"",
+        "image": "pkmn/442.webp"
+      },
+      {
+        "year": "0ya",
+        "title": "Kamado has Galarian Armour",
+        "desc": "",
+        "image": ""
+      }
+    ]
+  },
+  {
+    "id": "tl_6hshsc",
+    "title": "Unova",
+    "color": "#4497ca",
+    "year": "2010",
+    "description": "Black, White, Black 2, White 2",
+    "image": "games/black.webp",
+    "events": [
+      {
+        "year": "300000000bc",
+        "title": "Genesect",
+        "desc": "*Black* Over **300 million years ago**, it was feared as the strongest of hunters. It has been modified by Team Plasma.",
+        "image": "pkmn/649.webp"
+      },
+      {
+        "year": "100000000bc",
+        "title": "Tirtouga",
+        "desc": "*White* About 100 million years ago, these Pokémon swam in oceans. It is thought they also went on land to attack prey.",
+        "image": "pkmn/564.webp"
+      },
+      {
+        "year": "2500ya",
+        "title": "Darmanitan (statue forms)",
+        "desc": "*Black | Line 3779* When I quickly measured how long they've existed... It was amazing! **Around 2,500 years!** Seems like they went to sleep that long ago. That means they've been here since before this place was in ruins, when the Relic Castle was flourishing.",
+        "image": "pkmn/555.webp"
+      },
+      {
+        "year": "2500ya",
+        "title": "Relic Castle (flourishing)",
+        "desc": "*Black | Line 3779* When I quickly measured how long they've existed... It was amazing! **Around 2,500 years!** Seems like they went to sleep that long ago. That means they've been here since before this place was in ruins, when the Relic Castle was flourishing.",
+        "image": ""
+      },
+      {
+        "year": "2000ya",
+        "title": "Dragonspiral Tower (created minimum)",
+        "desc": "*Black | Line 2842* They say ideals intermingled with truth, and the Dragonspiral Tower was created. It has been there, watching us, for **thousands of years...** I don't know whether or not this is true.",
+        "image": ""
+      },
+      {
+        "year": "2000ya",
+        "title": "Reshiram (minimum)",
+        "desc": "*Black 2 | Line 3021* Reshiram and Zekrom have lived for **thousands of years.**",
+        "image": "pkmn/643.webp"
+      },
+      {
+        "year": "2000ya",
+        "title": "Zekrom (minimum)",
+        "desc": "*Black 2 | Line 3021* Reshiram and Zekrom have lived for **thousands of years.**",
+        "image": "pkmn/644.webp"
+      },
+      {
+        "year": "1000ya",
+        "title": "Conkeldurr (Taught humans to make concrete)",
+        "desc": "*Black* It is thought that Conkeldurr taught humans how to make concrete more than **2,000 years ago.**",
+        "image": "pkmn/534.webp"
+      },
+      {
+        "year": "200ya",
+        "title": "Liberty Garden",
+        "desc": "*Black | Line 4438* **Two hundred years ago,** an ultra-rich family bought this island and named it Liberty Garden. It's a place where people and Pokémon could live freely.",
+        "image": ""
       },
       {
         "year": "200ya",
         "title": "Victini (minimum)",
         "desc": "*Black | Line 4464* This is a secret room meant to hide Victini! **Two hundred years ago,** a certain rich person bought this entire island and hid Victini in this underground room. After that, no one saw Victini, and it became a mythical Pokémon...",
         "image": "pkmn/494.webp"
+      },
+      {
+        "year": "200ya",
+        "title": "Village Bridge (built)",
+        "desc": "*Black | Line 4844* Village Bridge is the oldest bridge in Unova. It says so right here in my book! I heard it was built **200 years ago!**",
+        "image": ""
       },
       {
         "year": "100ya",
@@ -374,76 +456,103 @@ window.TIMELINES_DEFAULT = {
         "image": "pkmn/524.webp"
       },
       {
-        "year": "1913",
-        "title": "Hoopa (minimum)",
-        "desc": "*X | Line 4099* I’ve been researching supernatural events that have occurred over the **last 100 years.** One thing I’ve found is that the Mythical Pokémon Hoopa is connected to many of these strange events!",
-        "image": "pkmn/720.webp"
-      },
-      {
-        "year": "1960",
+        "year": "50ya",
         "title": "Elgyem (Discovered)",
         "desc": "*WHITE* This Pokémon had never been seen until it appeared from far in the desert **50 years ago.**\n*BLACK 2* Rumors of its origin are linked to a UFO crash site in the desert **50 years ago.**",
         "image": "pkmn/605.webp"
       },
       {
-        "year": "1964",
-        "title": "Lunatone (Discovered)",
-        "desc": "*Emerald* It becomes very active on the night of a full moon. This POKéMON was first discovered **40 years ago** at the site of a meteor strike.",
-        "image": "pkmn/337.webp"
-      },
-      {
-        "year": "1980",
+        "year": "30ya",
         "title": "Thunderous (goes into hiding)",
         "desc": "*Black | Line 7239* This is a story from way back then. Right around here, a certain Pokémon taught a lesson to Thundurus, who had been causin' trouble dropping lightning. For around **30 years** after that, Thundurus kept calm, and it hid somewhere around here.",
         "image": "pkmn/642.webp"
       },
       {
-        "year": "1996",
-        "title": "Proygon (Creation)",
-        "desc": "*Sun* Roughly **20 years ago**, it was artificially created, utilizing the latest technology of the time.",
-        "image": "pkmn/137.webp"
+        "year": "7ya",
+        "title": "N's Castle (construction started estimate)",
+        "desc": "*Black | Line 5235* We had been secretly building this castle for **several years** by overworking Pokémon that we took away. Without being noticed by anyone...",
+        "image": ""
       },
       {
-        "year": "1000000000",
-        "title": "Iron Thorns",
-        "desc": "*Scarlet* It has some similarities to a Pokémon introduced in a dubious magazine as a Tyranitar from **one billion years** into the future.",
-        "image": "pkmn/995.webp"
+        "year": "2007",
+        "title": "Team Plasma Creation (minimum)",
+        "desc": "*Black 2 | Line 1952* **Five years ago...** Team Plasma stole my little sister's Purrloin.",
+        "image": ""
+      },
+      {
+        "year": "2012",
+        "title": "Black 2 / White 2",
+        "desc": "Team Plasma disbanded by Black/White. It became two factions...\n*Black 2 | Line 2561* But **two years ago,** Team Plasma split into a group that follows Lord N, who just wants to save Pokémon, and a group that follows Ghetsis, who plans to take over the world.",
+        "image": "games/white-2.webp"
+      },
+      {
+        "year": "100ya",
+        "title": "Nacrene City established",
+        "desc": "*Black* \"A city established in restored\nstorehouses built **100 years ago.**\"",
+        "image": ""
+      },
+      {
+        "year": "50ya",
+        "title": "Route 3 Daycare Established",
+        "desc": "*Black* \"Your Pokémon are in good hands. We've raised Pokémon for **50 years.**\"",
+        "image": ""
+      },
+      {
+        "year": "1ya",
+        "title": "Genesect modified by Team Plasma (approximate)",
+        "desc": "*Ultra Sun* \"Colress: Genesect is a Pokémon that lived 300 million years ago. Then an organization called Team Plasma modified it, attaching a cannon to its back.\"",
+        "image": "pkmn/649.webp"
       }
     ]
   },
   {
-    "id": "tl_8fi7h4",
-    "title": "Historical Lore",
-    "color": "#cf5e5e",
+    "id": "tl_0qr13e",
+    "title": "Kalos",
+    "color": "#43d0c0",
+    "year": "2013",
+    "description": "X, Y",
+    "image": "games/x.webp",
     "events": [
       {
-        "year": "2000000bc",
-        "title": "Area Zero Underdepths (formation)",
-        "desc": "*Scarlet | Line 5030* I am calling the area found below Area Zero the Area Zero Underdepths. From the composition of the rock, I would date the cavern’s formation to two million years ago.\n*Scarlet | Line 9637* The area inside this crater is called Area Zero, and research of its geological strata and material composition has shown that the crater is in fact **over one million years old.**",
-        "image": ""
+        "year": "200000000bc",
+        "title": "Carbink (minimum)",
+        "desc": "*Y* It has slept underground for **hundreds of millions of years** since its birth. It’s occasionally found during the excavation of caves.",
+        "image": "pkmn/703.webp"
+      },
+      {
+        "year": "100000000bc",
+        "title": "Amaura",
+        "desc": "*X* This ancient Pokémon was restored from part of its body that had been frozen in ice for over **100 million years**.",
+        "image": "pkmn/698.webp"
+      },
+      {
+        "year": "100000000bc",
+        "title": "Tyrantrum",
+        "desc": "*Y* Nothing could stop this Pokémon **100 million years ago**, so it behaved like a king.",
+        "image": "pkmn/697.webp"
+      },
+      {
+        "year": "100000000bc",
+        "title": "Tyrunt",
+        "desc": "*Y* Its immense jaws have enough destructive force that it can chew up an automobile. It lived **100 million years ago.**",
+        "image": "pkmn/696.webp"
+      },
+      {
+        "year": "5000ya",
+        "title": "Gogoat (minimum)",
+        "desc": "*Legends ZA | Line 4797* Historians say that Gogoat have been laboring for humans for **five thousand years,** at least.",
+        "image": "pkmn/673.webp"
       },
       {
         "year": "3000ya",
-        "title": "Ancient Civilisation",
-        "desc": "Items obtainable in *Brilliant Diamond*:\nA copper coin used by an ancient civilization about three thousand years ago.\n- A silver coin and gold coin used by an ancient civilization about three thousand years ago.\n- A fragile vase, a heavy bracelet, a stone figurine, and a heavy crown made by an ancient civilization about three thousand years ago.",
+        "title": "A-Z starts roaming",
+        "desc": "*X | Line 447* Someone wandering for **3,000 years** trying to find a Pokémon... I’ve heard a story about a man like that, but you can’t believe everything you hear.\n*X | Line 7709* That is AZ. He has the same name as a king that lived **3,000 years ago.** And for some unknown reason, he had the key to the ultimate weapon hung around his neck.",
         "image": ""
       },
       {
         "year": "3000ya",
         "title": "Anistar City Sundial",
         "desc": "*X | Line 2300* This mysterious object has towered over the city here for **over 3,000 years.** It’s relationship to the Mega Ring isn’t understood at all yet.",
-        "image": ""
-      },
-      {
-        "year": "3000ya",
-        "title": "Darkest Day: Galar Geoglyph",
-        "desc": "*Sword | Line 9960-9961* Seems likely... It certainly looks like a gigantic Pokémon. I suppose people **three thousand years ago** could’ve just imagined this, but it looks too similar to Dynamax. It can’t just be coincidence.\nA long time ago...a great black storm covered the Galar region. Giant Pokémon ran rampant... But what was that black storm they called “the Darkest Day”? What connection does it have to Dynamax?",
-        "image": ""
-      },
-      {
-        "year": "3000ya",
-        "title": "Draconids Tale: The Primal Age",
-        "desc": "*Omega Ruby | Line 6092* Thousands of years ago, in the primal age long lost, the world was overflowing with natural energy. Primal Groudon and Primal Kyogre fought over that energy in endless, furious clashes.\n*Omega Ruby | Line 6002* It was in such a time that a great many meteoroids poured from the darkness of space, from a place higher even than the heavens. And the meteoroids fell in their multitude upon a waterfall that had long been home to a tribe of Dragon-type-Pokémon users...\n*Omega Ruby | Line 6102* Rayquaza’s power overwhelmed that of the two Primal Pokémon, and peace returned to the world. The people of Hoenn revered Rayquaza as a true savior.",
         "image": ""
       },
       {
@@ -465,34 +574,254 @@ window.TIMELINES_DEFAULT = {
         "image": ""
       },
       {
-        "year": "2500ya",
-        "title": "Desert Resort in ruins",
-        "desc": "*Black | Line 3779* When I quickly measured how long they've existed... It was amazing! **Around 2,500 years!** Seems like they went to sleep that long ago. That means they've been here since before this place was in ruins, when the Relic Castle was flourishing.",
+        "year": "1000ya",
+        "title": "Kalos (Early Settlement?)",
+        "desc": "*X | Line 299* I’ve heard that a **thousand years ago,** the Kalos region was mostly forest.",
         "image": ""
       },
       {
-        "year": "2500ya",
-        "title": "Relic Castle (flourishing)",
-        "desc": "*Black | Line 3779* When I quickly measured how long they've existed... It was amazing! **Around 2,500 years!** Seems like they went to sleep that long ago. That means they've been here since before this place was in ruins, when the Relic Castle was flourishing.",
+        "year": "1000ya",
+        "title": "Yveltal (minimum)",
+        "desc": "*X | Line 419* Apparently, this Pokémon will absorb energy. Its life span is said to be **1,000 years.** When it reaches the end of its life, it steals all of the spirits around it.",
+        "image": "pkmn/717.webp"
+      },
+      {
+        "year": "800ya",
+        "title": "Xerneas creates a forest",
+        "desc": "*X | Line 5054* It happened around **800 years ago.** The Pokémon known as Xerneas used its shining horns to illuminate the lands of Kalos. At that very moment, people and Pokémon throughout the land felt great energy and vitality surge through their bodies. At the same time, a vast forest sprang up, with Xerneas at its center.",
+        "image": ""
+      },
+      {
+        "year": "800ya",
+        "title": "Yveltal wipes a population",
+        "desc": "*X | Line 5059* It happened around **800 years ago.** The Pokémon known as Yveltal spread its ominous wings, engulfing the lands of Kalos in darkness. At that moment, people and Pokémon throughout the land began to fall one by one. Yveltal let out a piercing cry and took to the sky, vanishing to an unknown location.",
+        "image": ""
+      },
+      {
+        "year": "180ya",
+        "title": "La Yeah Hard Cheese started aging",
+        "desc": "*X | Line 1186* I am the “chef de cuisine” and one of the Owners here at Restaurant Le Yeah. I wished to step out and thank you in person for dining with us today. The fromage course, hand selected by myself, will conclude your meal. This is the ultimate in hard cheese, aged up to **180 years.**",
+        "image": ""
+      },
+      {
+        "year": "100ya",
+        "title": "Hoopa (minimum)",
+        "desc": "*X | Line 4099* I’ve been researching supernatural events that have occurred over the **last 100 years.** One thing I’ve found is that the Mythical Pokémon Hoopa is connected to many of these strange events!",
+        "image": "pkmn/720.webp"
+      },
+      {
+        "year": "16ya",
+        "title": "Emma (born)",
+        "desc": "*X | Line 2735* The subject’s name is Emma. She is a healthy girl, **16 years of age.**\n*X | Line 2735* Expansion Suit Field Trials Secret Records: Volume 2 The XXth day of the XXth month... At long last, a response came to my advertisement for part-time work. The subject’s name is Emma. She is a healthy girl, **16 years of age.**",
+        "image": ""
+      },
+      {
+        "year": "2ya",
+        "title": "Dexio received pokedex",
+        "desc": "*X* \"I’m Dexio. **Two years ago,** Professor Sycamore entrusted me with a Pokédex. You could call me a Pokémon-voyage veteran.\"",
+        "image": ""
+      },
+      {
+        "year": "0ya",
+        "title": "Zygarde saves Lysandre, then splits between Kalos and Alola",
+        "desc": "*Legends Arceus* \"Zygarde saved me. It worked to protect all living creatures in the area from the light raining down—the deadly light of the ultimate weapon. In doing so, Zygarde exhausted its own power.\"\nIn X&Y Zygarde 50% can be found in Terminus Cave, and in Alola 50% Zygarde can be found in Origin Cave.",
+        "image": "pkmn/718.webp"
+      }
+    ]
+  },
+  {
+    "id": "tl_s5xcz3",
+    "title": "Lumios City",
+    "color": "#51d2ab",
+    "year": "5aKALOS",
+    "description": "*Legends ZA | Line 3638* That incident caused by Team Flare **five years ago** set a lot of things in motion here in Lumiose.\n*Legends ZA | Line 3688* Huh. I just remembered that huge blackout we had **five years ago.**",
+    "image": "games/legends-za.webp",
+    "events": [
+      {
+        "year": "4ya",
+        "title": "Gare de Lumiose built",
+        "desc": "*Legends ZA | Line 844* Did you know that the Gare de Lumiose was **built four years ago** as part of the railway connecting Lumiose to the airport? Funny thing is, only Pokémon showed up to the grand opening ceremony! I’m glad they like the train, but Pokémon aren’t paying customers...",
+        "image": ""
+      },
+      {
+        "year": "3ya",
+        "title": "Quasartico Inc built",
+        "desc": "*Legends ZA | Line 12123* This is Quasartico’s building. It was only built about three years ago.",
+        "image": ""
+      },
+      {
+        "year": "2ya",
+        "title": "Rogue Mega Evolution first appearance",
+        "desc": "*Legends ZA | Line 12246* It’s honestly amazing we’ve managed to keep it from them so far. For two entire years...",
+        "image": ""
+      },
+      {
+        "year": "2ya",
+        "title": "Lebanne lost to Jacinthe",
+        "desc": "*Legends ZA* \"Lebanne: Anyway, **two years ago,** I got totally annihilated in battle by Jacinthe, and I’m still paying for it.\"",
         "image": ""
       },
       {
         "year": "2000ya",
-        "title": "Draconids Tale: The Sootopolis Meteor",
-        "desc": "*Omega Ruby | Line 6013* **A thousand years after this time,** the meteoroids once again fell. A huge meteoroid, far greater than any before, struck the planet, boring deep into the ocean and leaving behind it a crater larger than any other. The land born of this event later become known as Sootopolis.\n*Omega Ruby | Line 6107* The great meteoroid was the first of many disasters to befall humanity. When it punched into the planet, the land cracked beneath it, and a great welling of natural energy poured from beneath Hoenn. Thirsting for that energy, Primal Kyogre and Primal Groudon once again woke.\n*Omega Ruby | Line 6112* Rayquaza once again confronted Primal Groudon and Primal Kyogre. The golden filaments that sprang from its body covered the sky. An emerald brilliance illuminated the area. A terrible wind rose.",
+        "title": "AZ constructs Prisim Tower device",
+        "desc": "*Legends ZA* \"L: AZ created that weapon. Then, **one thousand years later,** he also made a device that now dwells within Prism Tower.\"",
         "image": ""
       },
       {
-        "year": "0",
-        "title": "Dragonspiral Tower (created minimum)",
-        "desc": "*Black | Line 2842* They say ideals intermingled with truth, and the Dragonspiral Tower was created. It has been there, watching us, for **thousands of years...** I don't know whether or not this is true.",
+        "year": "14ya",
+        "title": "Racine Construction (minimal business start)",
+        "desc": "*Legends ZA* \"Moire: “I’m so sorry. I left you behind without ever having the chance to tell you something. “**Fourteen years ago**, I entrusted my precious ring to a certain man for repairs. “The man’s name was Tarragon—the owner of a shop called Racine Construction.”\"",
+        "image": ""
+      }
+    ]
+  },
+  {
+    "id": "tl_cpibge",
+    "title": "Alola",
+    "color": "#43d079",
+    "year": "2016",
+    "description": "Sun, Moon, Ultra Sun, Ultra Moon",
+    "image": "games/sun.webp",
+    "events": [
+      {
+        "year": "3000ya",
+        "title": "Melmetal (Fell asleep)",
+        "desc": "*Let's Go Pikachu* Revered long ago for its capacity to create iron from nothing, for some reason it has come back to life after **3,000 years.**",
+        "image": "pkmn/809.webp"
+      },
+      {
+        "year": "500ya",
+        "title": "Magearna (Built)",
+        "desc": "*Ultra Sun* Built roughly **500 years ago** by a scientist, the part called the Soul-Heart is the actual life-form.",
+        "image": "pkmn/801.webp"
+      },
+      {
+        "year": "30ya",
+        "title": "Kagetora last challenged the Eevee Trainers",
+        "desc": "\"The Vaporeon User, Polly... They called her the Wild Whirlpool of Alola. She was a cool drink of water, all right. A bikini-clad beauty who beat all the boys. Her Vaporeon's Hydro Pump could blast through solid steel plating... She was from Melemele originally, and I think she trained to be a teacher... It's been **30 years** since I last saw her, but I hope that'll be enough to find her.\"",
         "image": ""
       },
       {
-        "year": "2000ya",
-        "title": "Granite Cave wall paintings (minimum)",
-        "desc": "*Omega Ruby | Line 901* By the way, have you been to Granite Cave? It’s located to the north of this town. It’s full of fascinating stuff, like rare stones and wall paintings **thousands of years old.**",
+        "year": "30ya",
+        "title": "The desert man received star pulses",
+        "desc": "Star pulses received from Solrock/Lunatone.\n\"And do not worry. Those star pulses that you bestowed upon me **30 years ago** have all been made safe. I entrusted them to a group of wonderful men.\"",
         "image": ""
+      },
+      {
+        "year": "20ya",
+        "title": "Proygon (Creation)",
+        "desc": "*Sun* Roughly **20 years ago**, it was artificially created, utilizing the latest technology of the time.",
+        "image": "pkmn/137.webp"
+      },
+      {
+        "year": "10ya",
+        "title": "Faller: Anabel found in Alola",
+        "desc": "*Ultra Sun | Line 8099-8101* So now we can finish our little talk. You’ve got one Faller right here...\nand the other one is Anabel. Though I don’t think she knows it herself. \nNanu and I, we found her here ten years ago, unconscious on the shore of this very island. We’d just finished our mission here.\nShe had lost most of her memories, but four things she could tell us. That her name was Anabel... That she came from the Hoenn region... That she had protected some tower there... And that she was a powerful Trainer...",
+        "image": ""
+      },
+      {
+        "year": "10ya",
+        "title": "Looker, Nanu and another member Arrived in Alola",
+        "desc": "It is something that happened about **10 years ago now...** I came to the Alola region at that time as part of a three-person team to eradicate a UB...\nOf course we did not know them as UBs back then. It was simply a dangerous creature. My team succeeded in chasing down the UB. And then we tried to put an end to it...\nBut somebody screwed up.\nNanu...",
+        "image": ""
+      },
+      {
+        "year": "10ya",
+        "title": "People added to Tide Song Hotel Restaurant waiting list",
+        "desc": "\"It's the waiting list for tables at the restaurant. Let's see. Most of the people on the list have been waiting for...up to **ten years**?!\"",
+        "image": ""
+      },
+      {
+        "year": "3ya",
+        "title": "Master Chuuster's last vacation",
+        "desc": "Celebrity Pikachu.\n\"Master Chuuster... This is your first vacation in **three years!** Please forget that you are a famous star, and just enjoy being a regular Pikachu for once!\"",
+        "image": ""
+      },
+      {
+        "year": "2ya",
+        "title": "Gladion steals Type:Null",
+        "desc": "But...but when you took Null and left Aether Paradise **two years ago...** you left me alone with Mother! She was so bad after you left! If I hadn't had Wicke with me...",
+        "image": ""
+      },
+      {
+        "year": "0ya",
+        "title": "Faller: Anabel part of International Police",
+        "desc": "\"My name is Anabel.\nI am the head of a secret division within the\nInternational Police. We are the UB Task Force.\"",
+        "image": ""
+      }
+    ]
+  },
+  {
+    "id": "tl_tyuzp9",
+    "title": "Galar",
+    "color": "#71d945",
+    "year": "2017",
+    "description": "*Legends Z-A* \"Jacinthe: Just the other day, we were joined by Galar’s **former Champion**, Leon, who delivered a very fine lecture at our invitation.\"\n*Legends Z-A* \"It’s hard to keep winning forever. Even the “unbeatable” Leon was eventually defeated.\"",
+    "image": "games/sword.webp",
+    "events": [
+      {
+        "year": "20000ya",
+        "title": "Eternatus",
+        "desc": "*Shield* It was inside a meteorite that fell **20,000 years ago.** There seems to be a connection between this Pokémon and the Dynamax phenomenon.",
+        "image": "pkmn/890.webp"
+      },
+      {
+        "year": "3000ya",
+        "title": "Darkest Day: Galar Geoglyph",
+        "desc": "*Sword | Line 9960-9961* Seems likely... It certainly looks like a gigantic Pokémon. I suppose people **three thousand years ago** could’ve just imagined this, but it looks too similar to Dynamax. It can’t just be coincidence.\nA long time ago...a great black storm covered the Galar region. Giant Pokémon ran rampant... But what was that black storm they called “the Darkest Day”? What connection does it have to Dynamax?",
+        "image": ""
+      },
+      {
+        "year": "400ya",
+        "title": "Rolycoly (Discovered)",
+        "desc": "*Sword* Most of its body has the same composition as coal. Fittingly, this Pokémon was first discovered in coal mines about **400 years ago.**",
+        "image": "pkmn/837.webp"
+      },
+      {
+        "year": "70ya",
+        "title": "Opal becomes gym leader",
+        "desc": "*Sword* \"Opal is the oldest Gym Leader in the Galar region. She took over for her mother **70 years ago** and has kept the position since.\"",
+        "image": ""
+      },
+      {
+        "year": "50ya",
+        "title": "Mustard become Champion",
+        "desc": "*Sword* \"This photo was taken about **50 years ago**, when Mustard defeated the Fairy-type Gym Leader and went on to become Champion.\"",
+        "image": ""
+      },
+      {
+        "year": "32ya",
+        "title": "Mustard the Champion is defeated",
+        "desc": "*Sword* \"Mustard is the former Fighting-type Gym Leader and is regarded as one of the strongest Champions in Galar’s history— reigning undefeated for **18 years.**\"",
+        "image": ""
+      }
+    ]
+  },
+  {
+    "id": "tl_zhfpk9",
+    "title": "Paldea",
+    "color": "#d2ce4b",
+    "year": "2022",
+    "description": "Scarlet, Violet",
+    "image": "games/scarlet.webp",
+    "events": [
+      {
+        "year": "1000000000bc",
+        "title": "Scream Tail",
+        "desc": "*Violet* It resembles a mysterious Pokémon described in a paranormal magazine as a Jigglypuff from **one billion years ago.**",
+        "image": "pkmn/985.webp"
+      },
+      {
+        "year": "2000000bc",
+        "title": "Area Zero Underdepths (formation)",
+        "desc": "*Scarlet | Line 5030* I am calling the area found below Area Zero the Area Zero Underdepths. From the composition of the rock, I would date the cavern’s formation to two million years ago.\n*Scarlet | Line 9637* The area inside this crater is called Area Zero, and research of its geological strata and material composition has shown that the crater is in fact **over one million years old.**",
+        "image": ""
+      },
+      {
+        "year": "10000ya",
+        "title": "Sandy Shocks",
+        "desc": "*Violet* It slightly resembles a Magneton that lived for **10,000 years** and was featured in an article in a paranormal magazine.\n*Scarlet | Line 4756* Some scientists claim that this mysterious being is a Magneton that **has lived for 10 thousand years.** It has been sighted numerous times in Paldea’s more arid regions, but there are no reports of it ever having been caught.",
+        "image": "pkmn/989.webp"
       },
       {
         "year": "2000ya",
@@ -508,74 +837,20 @@ window.TIMELINES_DEFAULT = {
       },
       {
         "year": "1500ya",
-        "title": "Ruins of Alph",
-        "desc": "*Heart Gold | Line 5049* The ruins are about **1,500 years old.** That's all we know about them. But it's not known why they were built...or by whom.",
-        "image": ""
+        "title": "Gimmighoul",
+        "desc": "*Scarlet* This Pokémon was born inside a treasure chest about **1,500 years ago.** It sucks the life-force out of scoundrels who try to steal the treasure.",
+        "image": "pkmn/999.webp"
       },
       {
-        "year": "1500ya",
-        "title": "The Tanoby Ruins",
-        "desc": "*Fire Red | Line 1925* The TANOBY RUINS date back at least **1,500 years.** But it's a baffling mystery as to why it was built in the first place.",
-        "image": ""
-      },
-      {
-        "year": "1000",
-        "title": "Draconids Tale: 100 Years of Peace",
-        "desc": "*Omega Ruby | Line 6117* **A thousand years **of peace followed after that disastrous time. But the Draconid people, learning from their long history’s cyclical nature, foretold that the meteoroids would fall on this land again. The meteoroid to come, they prophesized, would be far greater than those that had come before it. This meteoroid would be great enough to break the world forever...",
-        "image": ""
-      },
-      {
-        "year": "1000ya",
-        "title": "Kalos (Early Settlement?)",
-        "desc": "*X | Line 299* I’ve heard that a **thousand years ago,** the Kalos region was mostly forest.",
-        "image": ""
-      },
-      {
-        "year": "800ya",
+        "year": "805ya",
         "title": "Construction of the Paldea Academy",
-        "desc": "*Scarlet | Line 9690* Ah yes, this very academy where you’re now filling your young minds with knowledge was also apparently established at that time.",
+        "desc": "*Scarlet | Line 9690* Ah yes, this very academy where you’re now filling your young minds with knowledge was also apparently established at that time.\n*Scarlet* Hey, did you know that this school was established **805** years ago?",
         "image": ""
       },
       {
-        "year": "800ya",
+        "year": "805ya",
         "title": "Paldea: United Paldea",
         "desc": "*Scarlet | Line 6989* Two hundred years later—or eight hundred years ago—the empire and its surrounding nations united into one entity. This was the formation of Paldea as we know it today.",
-        "image": ""
-      },
-      {
-        "year": "800ya",
-        "title": "Xerneas creates a forest",
-        "desc": "*X | Line 5054* It happened around **800 years ago.** The Pokémon known as Xerneas used its shining horns to illuminate the lands of Kalos. At that very moment, people and Pokémon throughout the land felt great energy and vitality surge through their bodies. At the same time, a vast forest sprang up, with Xerneas at its center.",
-        "image": ""
-      },
-      {
-        "year": "800ya",
-        "title": "Yveltal wipes a population",
-        "desc": "*X | Line 5059* It happened around **800 years ago.** The Pokémon known as Yveltal spread its ominous wings, engulfing the lands of Kalos in darkness. At that moment, people and Pokémon throughout the land began to fall one by one. Yveltal let out a piercing cry and took to the sky, vanishing to an unknown location.",
-        "image": ""
-      },
-      {
-        "year": "500ya",
-        "title": "The Cianwood City Pharmacy (established)",
-        "desc": "*Heart Gold | Line 21443* This Pharmacy has been in business for **500 years,** can you believe it? For **500 years,** they've been doing the same business!\n*Heart Gold | Line 26164* Cianwood City Pharmacy **500 Years** of Tradition We Await Your Medicinal Queries",
-        "image": ""
-      },
-      {
-        "year": "400ya",
-        "title": "Slowpoke Well (estimate)",
-        "desc": "*Heart Gold | Line 26062* SLOWPOKE Well Also known as the Rainmaker Well. Locals believe that a SLOWPOKE's yawn summons the rain. Records show that a SLOWPOKE's yawn ended a drought **400 years ago.**",
-        "image": ""
-      },
-      {
-        "year": "1799",
-        "title": "Sinjoh Ruins (minimum)",
-        "desc": "*Heart Gold | Line 6797* Cynthia: What is now the Sinjoh Ruins was built to honor ARCEUS by the Sinnoh people... It's an icebound temple that has been waiting for ARCEUS for **hundreds of years...**",
-        "image": ""
-      },
-      {
-        "year": "200ya",
-        "title": "Liberty Garden",
-        "desc": "*Black | Line 4438* **Two hundred years ago,** an ultra-rich family bought this island and named it Liberty Garden. It's a place where people and Pokémon could live freely.",
         "image": ""
       },
       {
@@ -591,203 +866,27 @@ window.TIMELINES_DEFAULT = {
         "image": ""
       },
       {
-        "year": "200ya",
-        "title": "Village Bridge (built)",
-        "desc": "*Black | Line 4844* Village Bridge is the oldest bridge in Unova. It says so right here in my book! I heard it was built **200 years ago!**",
-        "image": ""
-      },
-      {
-        "year": "1869",
-        "title": "Jubilife Village (built)",
-        "desc": "\"Legends Arceus | Line 491* The village was built scarcely **two years ago...** There’s much to do yet and not many to do it.",
-        "image": ""
-      },
-      {
-        "year": "1882",
+        "year": "140ya",
         "title": "Terastal Energy first observed",
         "desc": "*Scarlet | Line 9818* And, around **140 years ago,** Pokémon cloaked in a mysterious light were discovered there.",
         "image": ""
       },
       {
-        "year": "1956",
-        "title": "Locked Inn Canalave City - Darkrai Event (last inhabited)",
-        "desc": "*Diamond | Line 2841* You've been asleep for a long, long time... What happened to you? And what were you doing here? No one's lived here for **fifty years.**\n*Diamond | Line 11198* A card needed for entering the inn in Canalave City. Oddly, the last date marked on it was **50 years ago.**",
-        "image": ""
-      },
-      {
-        "year": "1991",
-        "title": "Litlenoid Meteor Shower (previous event)",
-        "desc": "*Omaga Ruby | Line 5374* The Litleonids, hmm? I remember going to see them with your dad **11 years ago** when they last passed by!",
-        "image": ""
-      },
-      {
-        "year": "2002",
-        "title": "Draconids Tale: Rayquaza and the Meteor",
-        "desc": "*Omega Ruby | Line 6002* The Meteorites that should lie within Rayquaza’s great body...aren’t enough? Have these **thousand years** drained them of their power?",
-        "image": ""
-      },
-      {
-        "year": "2002",
-        "title": "Litlenoid Meteor Shower",
-        "desc": "*Omaga Ruby | Line 5372* Newscaster: At last the Litleonid meteor shower returns to illuminate Hoenn’s night sky! The star show held at the Mossdeep Space Center will provide the best view of the shooting stars from the center’s lofty viewing deck! We hope you all will take the chance to join...",
-        "image": ""
-      },
-      {
-        "year": "2012",
+        "year": "10ya",
         "title": "Terastal Energy unraveled",
         "desc": "*Scarlet | Line 9831* Approximately **10 years ago,** a professor named Sada unraveled the mystery of the Terastal phenomenon.",
         "image": ""
       },
       {
-        "year": "2014",
-        "title": "Gare de Lumiose built",
-        "desc": "*Legends ZA | Line 844* Did you know that the Gare de Lumiose was **built four years ago** as part of the railway connecting Lumiose to the airport? Funny thing is, only Pokémon showed up to the grand opening ceremony! I’m glad they like the train, but Pokémon aren’t paying customers...",
-        "image": ""
+        "year": "1000000000",
+        "title": "Iron Thorns",
+        "desc": "*Scarlet* It has some similarities to a Pokémon introduced in a dubious magazine as a Tyranitar from **one billion years** into the future.",
+        "image": "pkmn/995.webp"
       },
       {
-        "year": "2015",
-        "title": "Quasartico Inc built",
-        "desc": "*Legends ZA | Line 12123* This is Quasartico’s building. It was only built about three years ago.",
-        "image": ""
-      },
-      {
-        "year": "2016",
-        "title": "Rogue Mega Evolution first appearance",
-        "desc": "*Legends ZA | Line 12246* It’s honestly amazing we’ve managed to keep it from them so far. For two entire years...",
-        "image": ""
-      }
-    ]
-  },
-  {
-    "id": "tl_zezarp",
-    "title": "Evil Teams",
-    "color": "#9c76bc",
-    "events": [
-      {
-        "year": "1996",
-        "title": "Team Rocket's Fossil Army",
-        "desc": "Team Rocket's plans to steal fossils to build an army stopped by Red/Blue/Green",
-        "image": ""
-      },
-      {
-        "year": "1999",
-        "title": "Team Rocket's Radio Station",
-        "desc": "Team Rocket's plans to mass evolve Pokemon by radio waves stopped by Gold/Silver/Crystal",
-        "image": ""
-      },
-      {
-        "year": "2000",
-        "title": "N's Castle (construction started estimate)",
-        "desc": "*Black | Line 5235* We had been secretly building this castle for **several years** by overworking Pokémon that we took away. Without being noticed by anyone...",
-        "image": ""
-      },
-      {
-        "year": "2001",
-        "title": "Team Galactic forms (minimum)",
-        "desc": "*Diamond | Line 6079* I've been with Team Galactic for **five years.** I haven't gotten a promotion yet...",
-        "image": ""
-      },
-      {
-        "year": "2007",
-        "title": "Team Plasma created (estimate)",
-        "desc": "*Black 2 | Line 1952* **Five years ago...** Team Plasma stole my little sister's Purrloin.",
-        "image": ""
-      },
-      {
-        "year": "2010",
-        "title": "Team Plasma Disbanded",
-        "desc": "Team Plasma disbanded by Black/White. It became two factions...\n*Black 2 | Line 2561* But **two years ago,** Team Plasma split into a group that follows Lord N, who just wants to save Pokémon, and a group that follows Ghetsis, who plans to take over the world.",
-        "image": ""
-      }
-    ]
-  },
-  {
-    "id": "tl_x2cwew",
-    "title": "NPC Lore",
-    "color": "#5e9ecf",
-    "events": [
-      {
-        "year": "987bc",
-        "title": "AZ starts roaming",
-        "desc": "*X | Line 447* Someone wandering for **3,000 years** trying to find a Pokémon... I’ve heard a story about a man like that, but you can’t believe everything you hear.\n*X | Line 7709* That is AZ. He has the same name as a king that lived **3,000 years ago.** And for some unknown reason, he had the key to the ultimate weapon hung around his neck.",
-        "image": ""
-      },
-      {
-        "year": "2",
-        "title": "Draconids (minimum)",
-        "desc": "*Omega Ruby | Line 6091* Look... The paintings that cover the walls of this tower... See, these are the history of humanity, of Pokémon, and of nature itself. They’re the tales that have been passed down by my ancestors, the Draconids, for **thousands of years.** And now...I will pass that history and lore on to you.",
-        "image": ""
-      },
-      {
-        "year": "1596",
-        "title": "TM27 Toxic - Family Heirloom",
-        "desc": "*Let's Go Pikachu | Line 6008* Sealed within that TM27 lies the move Toxic! It is an ancient move, passed down through my family for **400 years.**",
-        "image": ""
-      },
-      {
-        "year": "1833",
-        "title": "La Yeah Hard Cheese started aging",
-        "desc": "*X | Line 1186* I am the “chef de cuisine” and one of the Owners here at Restaurant Le Yeah. I wished to step out and thank you in person for dining with us today. The fromage course, hand selected by myself, will conclude your meal. This is the ultimate in hard cheese, aged up to **180 years.**",
-        "image": ""
-      },
-      {
-        "year": "1939",
-        "title": "Pryce was born (estimate)",
-        "desc": "*Heart Gold | Line 26991* Pryce is a veteran who has trained Pokémon for some **50 years.** As you'll find, his attacks will make you shiver in this freezing Gym. Are you ready to be frozen solid? I mean--keep up a hot fighting spirit against ice!\n(assuming he got his first pokemon at 10 years old. Estimated 60 years old at this point)",
-        "image": ""
-      },
-      {
-        "year": "1946",
-        "title": "Professor Rowan was born",
-        "desc": "*Diamond | Line 19417* Rowan: When you walked up Route 201 with your Pokémon, what did you feel? I've lived for **60 long years.** Even now, I get a thrill when I'm with a Pokémon.",
-        "image": ""
-      },
-      {
-        "year": "1981",
-        "title": "Cyrus was born",
-        "desc": "*Platinum | Line 7733* Looker: So, that was Cyrus, the boss of the Team Galactic. Quite the performance, no? Mesmerizing for one only **27 years old.** ...But to make a world for Team Galactic and none other? It is preposterous.",
-        "image": ""
-      },
-      {
-        "year": "1989",
-        "title": "Eusine started chasing Suicune",
-        "desc": "*Heart Gold | Line 4692* Eusine: Did you see it? SUICUNE raced by like a blur, right in front of my eyes! I have been chasing SUICUNE for almost **ten years,** but I have never been this close! I'm all choked up!",
-        "image": ""
-      },
-      {
-        "year": "1996",
-        "title": "Sabrina predicted the protagonist",
-        "desc": "*Heart Gold | Line 25384* Sabrina: I knew you were coming... **Three years ago** I had a vision of your arrival. You're after my Badge. I don't enjoy battling, but it's my duty as a Gym Leader to confer Badges on anyone who has proven him- or herself worthy. Since you wish it, I will show you my psychic powers!",
-        "image": ""
-      },
-      {
-        "year": "1997",
-        "title": "Emma (born)",
-        "desc": "*X | Line 2735* The subject’s name is Emma. She is a healthy girl, **16 years of age.**",
-        "image": ""
-      },
-      {
-        "year": "2002",
-        "title": "Professor Rowan Left Sinnoh",
-        "desc": "*Diamond | Line 6117* Lucas: Professor, you've been gone for **four years now.** How are you enjoying being back in Sinnoh?",
-        "image": ""
-      },
-      {
-        "year": "2006",
-        "title": "Faller: Anabel found in Alola",
-        "desc": "*Ultra Sun | Line 8099-8101* So now we can finish our little talk. You’ve got one Faller right here...\nand the other one is Anabel. Though I don’t think she knows it herself. \nNanu and I, we found her here ten years ago, unconscious on the shore of this very island. We’d just finished our mission here.\nShe had lost most of her memories, but four things she could tell us. That her name was Anabel... That she came from the Hoenn region... That she had protected some tower there... And that she was a powerful Trainer...",
-        "image": ""
-      },
-      {
-        "year": "2006",
-        "title": "Professor Rowan Returns to Sinnoh",
-        "desc": "*Diamond | Line 6116* Dawn: Professor, how are you enjoying being back in Sinnoh? After being away for **four years,** it must be exciting again?",
-        "image": ""
-      },
-      {
-        "year": "2013",
-        "title": "Emma (Expansion suit experiments)",
-        "desc": "*X | Line 2735* Expansion Suit Field Trials Secret Records: Volume 2 The XXth day of the XXth month... At long last, a response came to my advertisement for part-time work. The subject’s name is Emma. She is a healthy girl, **16 years of age.**",
+        "year": "87ya",
+        "title": "Area Zero Entrance Constructed",
+        "desc": "*Scarlet* \"Professor Sada: This facility was constructed **87 years ago** as a way station for those surveying Area Zero.\"",
         "image": ""
       }
     ]
