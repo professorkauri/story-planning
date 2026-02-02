@@ -642,7 +642,13 @@ window.TIMELINES_DEFAULT = {
       {
         "year": "0ya",
         "title": "Zygarde saves Lysandre, then splits between Kalos and Alola",
-        "desc": "*Legends Arceus* \"Zygarde saved me. It worked to protect all living creatures in the area from the light raining down—the deadly light of the ultimate weapon. In doing so, Zygarde exhausted its own power.\"\nIn X&Y Zygarde 50% can be found in Terminus Cave, and in Alola 50% Zygarde can be found in Origin Cave.",
+        "desc": "*Legends Arceus* \"Zygarde saved me. It worked to protect all living creatures in the area from the light raining down—the deadly light of the ultimate weapon. In doing so, Zygarde exhausted its own power.\"",
+        "image": "pkmn/718.webp"
+      },
+      {
+        "year": "0ya",
+        "title": "50% Zygarde",
+        "desc": "50% Zygarde found in Terminus Cave",
         "image": "pkmn/718.webp"
       }
     ]
@@ -690,6 +696,12 @@ window.TIMELINES_DEFAULT = {
         "title": "Racine Construction (minimal business start)",
         "desc": "*Legends ZA* \"Moire: “I’m so sorry. I left you behind without ever having the chance to tell you something. “**Fourteen years ago**, I entrusted my precious ring to a certain man for repairs. “The man’s name was Tarragon—the owner of a shop called Racine Construction.”\"",
         "image": ""
+      },
+      {
+        "year": "0ya",
+        "title": "100% Zygarde Obtained",
+        "desc": "The two halves of Zygarde reunite.\n\n*Legends ZA | 17398* When Zygarde used up its strength protecting Pokémon from the light of the ultimate weapon... its parts scattered to far-off places, **absorbing the power of those lands** and seeking humans who would give it aid. And now that I think of it... The moves that Zygarde used when it Mega Evolved—they **reminded me of Z-Moves**, like those used in the **Alola** region. But perhaps I am reading too much into it.",
+        "image": "pkmn/718.webp"
       }
     ]
   },
@@ -766,6 +778,12 @@ window.TIMELINES_DEFAULT = {
         "title": "Faller: Anabel part of International Police",
         "desc": "\"My name is Anabel.\nI am the head of a secret division within the\nInternational Police. We are the UB Task Force.\"",
         "image": ""
+      },
+      {
+        "year": "0ya",
+        "title": "50% Zygarde",
+        "desc": "50% Zygarde found in Origin Cave",
+        "image": "pkmn/718.webp"
       }
     ]
   },
