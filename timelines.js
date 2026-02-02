@@ -80,6 +80,12 @@ window.TIMELINES_DEFAULT = {
         "image": "pkmn/201.webp"
       },
       {
+        "year": "700ya",
+        "title": "Brass and Tin Towers (built)",
+        "desc": "*Crystal* \"The two TOWERS are said to have been built to foster friendship and hope between POKé-MON and people. That was **700 years ago,** but the ideal still remains important today.\"",
+        "image": ""
+      },
+      {
         "year": "500ya",
         "title": "The Cianwood City Pharmacy (established)",
         "desc": "*Heart Gold | Line 21443* This Pharmacy has been in business for **500 years,** can you believe it? For **500 years,** they've been doing the same business!\n*Heart Gold | Line 26164* Cianwood City Pharmacy **500 Years** of Tradition We Await Your Medicinal Queries",
@@ -98,6 +104,12 @@ window.TIMELINES_DEFAULT = {
         "image": ""
       },
       {
+        "year": "150ya",
+        "title": "Brass Tower (struck by lightning)",
+        "desc": "*Crystal* \"However… About **150 years ago,** a lightning bolt struck one of the TOWERS. It was engulfed in flames that raged for three days.\"",
+        "image": ""
+      },
+      {
         "year": "60ya",
         "title": "Pryce was born (estimate)",
         "desc": "*Heart Gold | Line 26991* Pryce is a veteran who has trained Pokémon for some **50 years.** As you'll find, his attacks will make you shiver in this freezing Gym. Are you ready to be frozen solid? I mean--keep up a hot fighting spirit against ice!\n(assuming he got his first pokemon at 10 years old. Estimated 60 years old at this point)",
@@ -113,18 +125,6 @@ window.TIMELINES_DEFAULT = {
         "year": "3ya",
         "title": "Sabrina predicted the protagonist",
         "desc": "*Heart Gold | Line 25384* Sabrina: I knew you were coming... **Three years ago** I had a vision of your arrival. You're after my Badge. I don't enjoy battling, but it's my duty as a Gym Leader to confer Badges on anyone who has proven him- or herself worthy. Since you wish it, I will show you my psychic powers!",
-        "image": ""
-      },
-      {
-        "year": "150ya",
-        "title": "Brass Tower struck by lightning",
-        "desc": "*Crystal* \"However… About **150 years ago,** a lightning bolt struck one of the TOWERS. It was engulfed in flames that raged for three days.\"",
-        "image": ""
-      },
-      {
-        "year": "700ya",
-        "title": "Brass and Tin Towers built",
-        "desc": "*Crystal* \"The two TOWERS are said to have been built to foster friendship and hope between POKé-MON and people. That was **700 years ago,** but the ideal still remains important today.\"",
         "image": ""
       }
     ]
@@ -794,6 +794,12 @@ window.TIMELINES_DEFAULT = {
         "title": "Mustard the Champion is defeated",
         "desc": "*Sword* \"Mustard is the former Fighting-type Gym Leader and is regarded as one of the strongest Champions in Galar’s history— reigning undefeated for **18 years.**\"",
         "image": ""
+      },
+      {
+        "year": "3000ya",
+        "title": "A-Z Witnesses the Darkest Day",
+        "desc": "Legends Z-A: (AZ's Letter) \"I remember when that dark day fell over Galar...\"",
+        "image": ""
       }
     ]
   },
@@ -816,6 +822,12 @@ window.TIMELINES_DEFAULT = {
         "title": "Area Zero Underdepths (formation)",
         "desc": "*Scarlet | Line 5030* I am calling the area found below Area Zero the Area Zero Underdepths. From the composition of the rock, I would date the cavern’s formation to two million years ago.\n*Scarlet | Line 9637* The area inside this crater is called Area Zero, and research of its geological strata and material composition has shown that the crater is in fact **over one million years old.**",
         "image": ""
+      },
+      {
+        "year": "10000ya",
+        "title": "Cyclizar",
+        "desc": "Apparently Cyclizar has been allowing people to ride on its back since ancient times. Depictions of this have been found in 10,000-year-old murals.",
+        "image": "pkmn/967.webp"
       },
       {
         "year": "10000ya",
@@ -872,6 +884,12 @@ window.TIMELINES_DEFAULT = {
         "image": ""
       },
       {
+        "year": "87ya",
+        "title": "Area Zero Entrance Constructed",
+        "desc": "*Scarlet* \"Professor Sada: This facility was constructed **87 years ago** as a way station for those surveying Area Zero.\"",
+        "image": ""
+      },
+      {
         "year": "10ya",
         "title": "Terastal Energy unraveled",
         "desc": "*Scarlet | Line 9831* Approximately **10 years ago,** a professor named Sada unraveled the mystery of the Terastal phenomenon.",
@@ -882,12 +900,6 @@ window.TIMELINES_DEFAULT = {
         "title": "Iron Thorns",
         "desc": "*Scarlet* It has some similarities to a Pokémon introduced in a dubious magazine as a Tyranitar from **one billion years** into the future.",
         "image": "pkmn/995.webp"
-      },
-      {
-        "year": "87ya",
-        "title": "Area Zero Entrance Constructed",
-        "desc": "*Scarlet* \"Professor Sada: This facility was constructed **87 years ago** as a way station for those surveying Area Zero.\"",
-        "image": ""
       }
     ]
   }

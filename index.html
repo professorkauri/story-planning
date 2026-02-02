@@ -109,6 +109,15 @@
     <section class="viewport">
       <div id="grid" class="year-grid" role="grid" aria-label="Year timelines grid"></div>
     </section>
+
+    <section class="explanation">
+      <h2>About This Timeline</h2>
+      <p>This tool helps you visualize multiple timelines of events, such as the various regions and story arcs
+        within the Pokémon universe. You can add timelines, define their anchor years, and populate them with events.
+        The grid view allows you to see how these timelines align chronologically.</p>
+      <p>Timelines anchor dates can be connected to other timelines. For example, "3aKANTO" means 3 years after the KANTO timeline's anchor year.</p>
+      <p>Events within a timeline can be given an explicit year (eg: 1996 or 2000bc), or a "years ago" date (eg: 50ya) which places the event relative to the timeline's anchor year when the YA date is less than 1000, and places it relative to the year 2000 if the YA date is 1000 or more.</p>
+    </section>
   </main>
 
   <!-- Your data file as a classic script (global) -->
@@ -260,12 +269,22 @@
           if (Number.isNaN(n)) throw new Error('Invalid year number: ' + str);
 
           const suffix = m[2] || '';
+
+          // baseYear is the timeline's anchor year for events (passed in by the caller)
           const anchor = Number.isFinite(+baseYear) ? +baseYear : 2000;
 
           let year;
-          if (suffix === 'bc') year = -n;
-          else if (suffix === 'ya') year = anchor - n;
-          else year = n;
+          if (suffix === 'bc') {
+            year = -n;
+          } else if (suffix === 'ya') {
+            // NEW RULE:
+            // - If YA < 1000: interpret relative to the event's timeline anchor year (baseYear/anchor)
+            // - Otherwise: interpret relative to the fixed year 2000
+            const yaBase = n < 1000 ? anchor : 2000;
+            year = yaBase - n;
+          } else {
+            year = n;
+          }
 
           return { year, isBC: year < 0 };
         }
@@ -294,7 +313,6 @@
 
       throw new Error('Invalid year token: ' + str);
     }
-
 
     const sortEventsByYear = (a, b) => {
       const ay = parseYearToken(a.year).year;
