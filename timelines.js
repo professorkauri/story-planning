@@ -126,6 +126,24 @@ window.TIMELINES_DEFAULT = {
         "title": "Sabrina predicted the protagonist",
         "desc": "*Heart Gold | Line 25384* Sabrina: I knew you were coming... **Three years ago** I had a vision of your arrival. You're after my Badge. I don't enjoy battling, but it's my duty as a Gym Leader to confer Badges on anyone who has proven him- or herself worthy. Since you wish it, I will show you my psychic powers!",
         "image": ""
+      },
+      {
+        "year": "150ya",
+        "title": "Entei, Suicune, Raikou",
+        "desc": "*Heart Gold | Line 26839* In the distant past... When this tower burned in a fire, three nameless Pokémon perished in it. Then, a rainbow-hued Pokémon descended from the sky and somehow brought them back... The people were afraid of power such as the rainbow-hued Pokémon had shown. They tried to control it by force. The nameless Pokémon made no attempt to fight back. Instead, their great sorrow compelled them to leave.\n*Heart Gold | Line 4688* Because my old friend Eusine is here on the trail of SUICUNE, I decided to investigate the Burned Tower. Ecruteak has a legend about these legendary Pokémon: **SUICUNE, ENTEI, and RAIKOU.**",
+        "image": "pkmn/243.webp"
+      },
+      {
+        "year": "0ya",
+        "title": "Red as canonical hero of Red/Blue",
+        "desc": "*Heart Gold | Line 26117* Kurt: Hi, ___! You handled yourself like a real hero. As I mentioned before, Team Rocket was disbanded by **a boy called Red** three years ago.",
+        "image": ""
+      },
+      {
+        "year": "70ya",
+        "title": "Kurt (born approximate)",
+        "desc": "*Heart Gold | Line 26130* Dad works at Silph where he studies Poké Balls. I have to stay home with Grandpa and SLOWPOKE. That's right! I'll give you my grandpa's number. registered **Kurt** in the Pokégear!",
+        "image": ""
       }
     ]
   },
