@@ -262,6 +262,12 @@ window.TIMELINES_DEFAULT = {
         "title": "Prof. Birch estimates more habitable Hoenn",
         "desc": "*Omega Ruby* \" we can say with some[WAIT 5] certainty that Hoenn’s Pokémon[WAIT 5] population was more diverse over[WAIT 5] 1,000—no, **3,000—[WAIT 5] years ago** than it is today.[WAIT 5] It seems that the Hoenn region[WAIT 5] was a more hospitable environment[WAIT 5] for Pokémon long ago.”[WAIT 30]\"",
         "image": ""
+      },
+      {
+        "year": "25ya",
+        "title": "Steven Stone born",
+        "desc": "Steven Stone: \"My father is... Well, let me just say that I have been his son for **25 years,** and sometimes even I am not sure I understand him fully.\"",
+        "image": ""
       }
     ]
   },
@@ -803,6 +809,12 @@ window.TIMELINES_DEFAULT = {
       },
       {
         "year": "3000ya",
+        "title": "A-Z Witnesses the Darkest Day",
+        "desc": "Legends Z-A: (AZ's Letter) \"I remember when that dark day fell over Galar...\"",
+        "image": ""
+      },
+      {
+        "year": "3000ya",
         "title": "Darkest Day: Galar Geoglyph",
         "desc": "*Sword | Line 9960-9961* Seems likely... It certainly looks like a gigantic Pokémon. I suppose people **three thousand years ago** could’ve just imagined this, but it looks too similar to Dynamax. It can’t just be coincidence.\nA long time ago...a great black storm covered the Galar region. Giant Pokémon ran rampant... But what was that black storm they called “the Darkest Day”? What connection does it have to Dynamax?",
         "image": ""
@@ -812,6 +824,12 @@ window.TIMELINES_DEFAULT = {
         "title": "Rolycoly (Discovered)",
         "desc": "*Sword* Most of its body has the same composition as coal. Fittingly, this Pokémon was first discovered in coal mines about **400 years ago.**",
         "image": "pkmn/837.webp"
+      },
+      {
+        "year": "88ya",
+        "title": "Opal is born",
+        "desc": "Gym questions about her age, she is 88. Meaning she became gym leader at the age of 18.",
+        "image": ""
       },
       {
         "year": "70ya",
@@ -829,12 +847,6 @@ window.TIMELINES_DEFAULT = {
         "year": "32ya",
         "title": "Mustard the Champion is defeated",
         "desc": "*Sword* \"Mustard is the former Fighting-type Gym Leader and is regarded as one of the strongest Champions in Galar’s history— reigning undefeated for **18 years.**\"",
-        "image": ""
-      },
-      {
-        "year": "3000ya",
-        "title": "A-Z Witnesses the Darkest Day",
-        "desc": "Legends Z-A: (AZ's Letter) \"I remember when that dark day fell over Galar...\"",
         "image": ""
       }
     ]
