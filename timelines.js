@@ -268,6 +268,12 @@ window.TIMELINES_DEFAULT = {
         "title": "Prof. Birch estimates more habitable Hoenn",
         "desc": "*Omega Ruby* \" we can say with some[WAIT 5] certainty that Hoenn’s Pokémon[WAIT 5] population was more diverse over[WAIT 5] 1,000—no, **3,000—[WAIT 5] years ago** than it is today.[WAIT 5] It seems that the Hoenn region[WAIT 5] was a more hospitable environment[WAIT 5] for Pokémon long ago.”[WAIT 30]\"",
         "image": ""
+      },
+      {
+        "year": "25ya",
+        "title": "Steven Stone born",
+        "desc": "Steven Stone: \"My father is... Well, let me just say that I have been his son for **25 years,** and sometimes even I am not sure I understand him fully.\"",
+        "image": ""
       }
     ]
   },
@@ -826,6 +832,12 @@ window.TIMELINES_DEFAULT = {
         "image": "pkmn/837.webp"
       },
       {
+        "year": "88ya",
+        "title": "Opal is born",
+        "desc": "Gym questions about her age, she is 88. Meaning she became gym leader at the age of 18.",
+        "image": ""
+      },
+      {
         "year": "70ya",
         "title": "Opal becomes gym leader",
         "desc": "*Sword* \"Opal is the oldest Gym Leader in the Galar region. She took over for her mother **70 years ago** and has kept the position since.\"",
@@ -842,6 +854,7 @@ window.TIMELINES_DEFAULT = {
         "title": "Mustard the Champion is defeated",
         "desc": "*Sword* \"Mustard is the former Fighting-type Gym Leader and is regarded as one of the strongest Champions in Galar’s history— reigning undefeated for **18 years.**\"",
         "image": ""
+<<<<<<< HEAD
       },
       {
         "year": "22ya",
@@ -854,6 +867,8 @@ window.TIMELINES_DEFAULT = {
         "title": "Leon becomes Champion (approx)",
         "desc": "**Assuming Leon is around 22 years old.**\n*Sword* Leon is known far and wide for taking part in the Gym Challenge at the tender age of **10 years old**—and even more so for claiming victory in the Champion Cup on his first attempt.",
         "image": ""
+=======
+>>>>>>> b98477d589e46e08eb0e094887d0e37ceba62592
       }
     ]
   },
