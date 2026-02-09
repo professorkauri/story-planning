@@ -44,6 +44,12 @@ window.TIMELINES_DEFAULT = {
         "title": "TM27 Toxic - Family Heirloom",
         "desc": "*Let's Go Pikachu | Line 6008* Sealed within that TM27 lies the move Toxic! It is an ancient move, passed down through my family for **400 years.**",
         "image": ""
+      },
+      {
+        "year": "400ya",
+        "title": "Koga's Dojo started",
+        "desc": "*Masters EX* My dojo has been training for **400 years** how to be calm at all times!",
+        "image": ""
       }
     ]
   },
@@ -803,6 +809,12 @@ window.TIMELINES_DEFAULT = {
       },
       {
         "year": "3000ya",
+        "title": "A-Z Witnesses the Darkest Day",
+        "desc": "Legends Z-A: (AZ's Letter) \"I remember when that dark day fell over Galar...\"",
+        "image": ""
+      },
+      {
+        "year": "3000ya",
         "title": "Darkest Day: Galar Geoglyph",
         "desc": "*Sword | Line 9960-9961* Seems likely... It certainly looks like a gigantic Pokémon. I suppose people **three thousand years ago** could’ve just imagined this, but it looks too similar to Dynamax. It can’t just be coincidence.\nA long time ago...a great black storm covered the Galar region. Giant Pokémon ran rampant... But what was that black storm they called “the Darkest Day”? What connection does it have to Dynamax?",
         "image": ""
@@ -832,9 +844,15 @@ window.TIMELINES_DEFAULT = {
         "image": ""
       },
       {
-        "year": "3000ya",
-        "title": "A-Z Witnesses the Darkest Day",
-        "desc": "Legends Z-A: (AZ's Letter) \"I remember when that dark day fell over Galar...\"",
+        "year": "22ya",
+        "title": "Leon born (approx)",
+        "desc": "**Assuming Leon is around 22 years old.**\n*Sword* Leon is known far and wide for taking part in the Gym Challenge at the tender age of **10 years old**—and even more so for claiming victory in the Champion Cup on his first attempt.",
+        "image": ""
+      },
+      {
+        "year": "12ya",
+        "title": "Leon becomes Champion (approx)",
+        "desc": "**Assuming Leon is around 22 years old.**\n*Sword* Leon is known far and wide for taking part in the Gym Challenge at the tender age of **10 years old**—and even more so for claiming victory in the Champion Cup on his first attempt.",
         "image": ""
       }
     ]
