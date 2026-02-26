@@ -1,0 +1,937 @@
+/* ==========================================================================
+   YEAR TIMELINES — NEW STRUCTURE, OLD AESTHETIC
+   - Tokens inspired by your previous stylesheet
+   - Works with the new index.html classes
+   - Years-only grid, sticky labels, chip events, gap "~" markers
+   ======================================================================= */
+
+/* ==============
+   1) DESIGN TOKENS
+   ============== */
+
+:root {
+  --year-col-w: auto;         /* width of each year/gap column */
+  --label-col-w: 100px;        /* width of the sticky timeline label column */
+  --chip-min-w: auto;         /* min width of event chips */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --pad-xs: 4px;
+  --pad-sm: 6px;
+  --pad-md: 10px;
+  --pad-lg: 14px;
+}
+
+/* Light/Dark themes echo your prior palette */
+body[data-theme="light"] {
+  --background: #ffffff;
+  --ink: #2a2d30;
+  --muted: #788491;
+
+  --g-outline: #f7f7f7;
+  --g-panel: #fdfdfd;
+  --g-bar: #e1e1e1;
+
+  background: var(--background);
+  color: var(--ink);
+}
+
+body[data-theme="dark"] {
+  --background: #2a2d30;
+  --ink: #ffffff;
+  --muted: #b2b8bd;
+
+  --g-outline: #222427;
+  --g-panel: #313538;
+  --g-bar: #3d4145;
+
+  background: var(--background);
+  color: var(--ink);
+}
+
+/* ==============
+   2) BASE ELEMENTS
+   ============== */
+
+* { box-sizing: border-box; }
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+}
+small, .small { font-size: 12px; color: var(--muted); }
+
+/* ==============
+   3) APP CHROME
+   ============== */
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--g-bar);
+  background: var(--g-outline);
+}
+.app-title {
+  font-size: 18px;
+  margin: 0;
+}
+
+.controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.btn {
+  background: var(--g-panel);
+  color: var(--ink);
+  border: 1px solid var(--g-bar);
+  border-radius: 4px;
+  padding: 0.5em 1em 0.4em 1em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  font-size: 10px;
+  white-space: nowrap;
+  line-height: 1em;
+  text-transform:uppercase;
+}
+.btn:hover {
+  filter: brightness(1.08);
+  background: var(--ink);
+  color: var(--background);
+}
+.btn.primary {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--background);
+}
+.btn.primary:hover {
+  filter: brightness(1.05);
+}
+.btn.danger {
+  border-color: #9c5454;
+  background: #ffeaea;
+  color: #9c5454;
+  text-transform: uppercase;
+}
+.btn.confirm {
+  background: #fff3f3;
+  color: #b00020;
+  border-color: #b00020;
+}
+
+.app-main {
+  display: grid;
+  grid-template-columns: 1fr;
+  min-height: calc(100vh - 56px);
+}
+
+/* ==============
+   4) VIEWPORT & GRID
+   ============== */
+
+.viewport {
+  position: relative;
+  overflow: auto;
+  min-height: 60vh;
+  background: var(--background);
+}
+
+.year-grid {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  min-width: max-content;  /* avoid squashing */
+}
+
+/* Rows inside grid are flex so header and body align naturally */
+.row {
+  display: flex;
+  gap: 1em;
+  align-items: stretch;
+}
+.row.gap {
+  gap:0.5em;
+}
+
+/* Generic column primitive */
+.col {
+  background: var(--g-panel);
+  border: 1px solid var(--g-outline);
+  border-radius: var(--radius-sm);
+  min-width: var(--year-col-w);
+  position: relative;
+}
+
+.explanation {
+  font-size: 0.8rem;
+  color: var(--muted);
+  padding:2em;
+  margin: 0 auto;
+  max-width: 600px;
+}
+
+/* ==============
+   5) YEARS HEADER
+   ============== */
+
+.years-header {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--background);
+  padding-bottom: 4px;
+}
+
+.year-col,
+.gap-col {
+  min-width: var(--year-col-w);
+  text-align: center;
+  padding: 8px 6px;
+  color: var(--muted);
+  white-space: nowrap;
+  font-size: 12px;
+  background: var(--g-panel);
+}
+.year-col {
+  color: var(--ink);
+  font-weight: 600;
+}
+.gap-col {
+  font-weight: 500;
+  font-style: italic;
+  letter-spacing: 1px;
+}
+
+/* ==============
+   6) TIMELINE ROWS
+   ============== */
+
+.timeline-row {
+  /* left label + all columns */
+}
+
+/* Sticky label on the left */
+.label-col {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  min-width: var(--label-col-w);
+  max-width: var(--label-col-w);
+  background: var(--background);
+  border: 1px solid var(--g-bar);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 8px;
+  text-align: center;
+  font-weight: 600;
+  letter-spacing: .2px;
+}
+
+/* Body cells for years and gaps */
+.year-body-col,
+.gap-body-col {
+  min-width: var(--year-col-w);
+  background: var(--g-panel);
+  border: 1px solid var(--g-outline);
+  border-radius: var(--radius-sm);
+  padding: 6px;
+}
+
+/* Add a faint horizontal guide through each year column */
+.year-body-col::before,
+.gap-body-col::before {
+  content: "";
+  position: absolute;
+  left: -1px;
+  top: 50%;
+  width: calc(100% + 2px);
+  height: 1px;
+  background: var(--g-bar);
+  pointer-events: none;
+}
+
+/* ===== Unified grid cells for header + rows ===== */
+.year-grid {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  min-width: max-content;
+  /* JS sets grid-template-columns dynamically to:
+     var(--label-col-w) repeat(N, var(--year-col-w)) */
+  grid-auto-rows: minmax(auto, auto);
+}
+
+.cell {
+  justify-content:start;
+  align-items: center;
+  display: flex;
+  background: var(--g-panel);
+  border: 1px solid var(--g-outline);
+  border-radius: var(--radius-sm);
+  padding: 6px;
+  position: relative;
+  min-width: 0; /* allow inner content to shrink */
+  flex-direction: row;
+  gap: 0.5em;
+}
+
+/* Header cells */
+.cell.header {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+  background: transparent;
+  border: none;
+}
+.cell.header.label-header {
+  background: var(--g-panel);
+  background: linear-gradient(90deg,var(--background) 0%, var(--background) 80%, rgba(237, 221, 83, 0) 100%);
+}
+.cell.header.gap-header {
+  color: var(--muted);
+  font-style: italic;
+  letter-spacing: 1px;
+}
+.cell.gap-body {
+  background:transparent;
+  border:none;
+}
+
+/* Sticky first column (label) for both header and body */
+.label-header,
+.label-cell {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  background: var(--background);            /* sit above scrolling content */
+  background: linear-gradient(90deg,var(--background) 0%, var(--background) 80%, rgba(237, 221, 83, 0) 100%);
+  border: 1px solid var(--g-background);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--label-col-w);
+}
+.label-cell {
+  font-weight: 600;
+  letter-spacing: .2px;
+  text-align: center;
+  padding: 10px 8px;
+}
+.label-inner {
+  width:100%;
+  background:var(--background);
+  border:1px solid var(--tlCol, var(--g-bar));
+  padding: 4px 1.5em 4px 6px;
+  border-radius: 4px;
+  font-weight: normal;
+  color: var(--ink);
+  font-size: 0.6em;
+  text-align: left;
+  font-style: italic;
+  text-transform: uppercase;
+}
+.label-inner:after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 100%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -18px;
+  background-color:var(--tlCol, var(--g-bar));
+  border-radius: 25px;
+}
+
+/* Year body cells get a faint midline (like your previous aesthetic) */
+.year-body::before,
+.gap-body::before {
+  content: "";
+  position: absolute;
+  left: -1px;
+  top: 50%;
+  width: calc(100% + 10px);
+  height: 1px;
+  background: var(--g-bar);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Keep your existing chip + collapse styles working inside .cell */
+
+
+/* === Timeline toggles (above grid) === */
+.toggles-container {
+  display:flex;
+  position:sticky;
+  left:0;
+  background:var(--background);
+  width:100%;
+  justify-content: space-between;
+  align-items: start;
+  padding: 1em 1em 0 1em;
+}
+.toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--g-bar);
+  background: var(--background);
+  position: sticky;
+  left: 0;
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--g-panel);
+  border: 1px solid var(--g-outline);
+  border-radius: 999px;
+  padding: 4px 10px 4px 8px;
+}
+
+.toggle input[type="checkbox"] {
+  accent-color: var(--tlCol, var(--g-bar));
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+}
+
+.toggle .swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--tlCol, var(--g-bar));
+  outline: 1px solid var(--g-bar);
+}
+
+.toggle .label {
+  font-size: 12px;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+
+/* ==============
+   7) EVENTS (CHIPS)
+   ============== */
+
+.event.chip {
+  --image-width:30px;
+  --image-width-half:calc(var(--image-width) / 2);
+
+  display: flex;
+  position:relative;
+  align-items: center;
+  gap: 1em;
+  border: 1px solid var(--tlCol, var(--g-bar));
+  background: var(--background);
+  border-radius: var(--radius-md);
+  min-width: var(--chip-min-w);
+  margin: 0 0 0 var(--image-width-half);
+  padding: 0px 0 0 var(--image-width-half);
+  z-index:2;
+  width: calc(100% - var(--image-width-half));
+}
+
+/* Optional image on left */
+.chip-img {
+  display: block;
+  width: var(--image-width);
+  height: var(--image-width);
+  object-fit: cover;
+  border-radius: 50%;
+  outline: 1px solid var(--tlCol, var(--g-bar));
+  background: var(--g-outline);
+  flex-shrink: 1;
+  position: absolute;
+  left: calc(var(--image-width-half) * -1);
+}
+
+/* Text content */
+.chip-content {
+  display: flex;
+  flex-direction: column;
+  padding: 0.5em 1em 0.5em 0.5em;
+  min-width: 0; /* enable truncation if needed */
+  width:100%;
+}
+.chip-title {
+  display:flex;
+  align-items: center;
+  justify-content: space-between;
+  gap:1em;
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 1.2;
+  color: var(--ink);
+}
+.chip-title span {
+  display: inline-block;
+  position: relative;
+  font-size: 0.8em;
+  font-weight:normal;
+  color: var(--muted);
+  font-style: italic;
+}
+.chip-desc {
+  font-size: 10px;
+  color: var(--muted);
+  line-height: 1.4em;
+  max-width:300px;
+}
+.chip-desc em {
+  display:inline-block;
+  color:color-mix(in srgb, var(--tlCol, var(--g-bar)) 100%, var(--ink) 30%);
+  padding:0px 0px 0px 0;
+  border-radius:4px;
+  margin:1em 3px 0 0;
+  text-transform: uppercase;
+  font-size: 0.8em;
+  line-height:1em;
+  top: -1.5px;
+  position: relative;
+}
+.chip-desc em:after {
+  content:":";
+}
+.chip-desc strong {
+  font-weight: normal;
+  text-decoration: underline;
+  text-decoration-color:color-mix(in srgb, var(--tlCol, var(--g-bar)) 100%, var(--ink) 30%);
+  background-color:color-mix(in srgb, var(--tlCol, var(--g-bar)) 5%, var(--background) 100%);
+}
+
+#desc-tooltip .chip-desc {
+  --tcol:var(--ink);
+  background-color:white;
+  max-width: 360px;
+  border:1px solid color-mix(in srgb, var(--background) 100%, var(--ink) 30%);
+  border-radius:3px;
+  padding:0.2em 1em 0.5em 1em;
+}
+#desc-tooltip .chip-desc * {
+  color:var(--ink);
+}
+
+.event.chip.no-img {
+  padding-left:0.1em;
+  margin:0;
+}
+.event.chip.no-desc {
+  
+}
+
+/* Gap marker between non-consecutive visible years */
+.event.collapse {
+  display: inline-flex;
+  position:relative;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  margin: auto;
+  border-radius: 999px;
+  border: 1px dashed var(--g-bar);
+  color: var(--muted);
+  background: var(--background);
+  font-weight: 700;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  z-index:2;
+}
+
+/* ==============
+   8) EDITOR / ADMIN
+   ============== */
+
+.panel.editor {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  background: rgba(0,0,0,.55);
+  backdrop-filter: blur(2px);
+}
+.panel.editor.hidden { display: none; }
+
+.editor[aria-hidden="false"] .editor-header,
+.editor[aria-hidden="false"] .editor-body {
+  pointer-events: auto;
+}
+
+/* Editor card */
+#editor .editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--g-outline);
+  background: var(--g-bar);
+}
+#editor .editor-body {
+  margin: 4vh auto;
+  width: min(1200px, 96vw);
+  height: 84vh;
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 0;
+  background: var(--background);
+  border: 1px solid var(--g-outline);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,.5);
+}
+
+/* Sidebar */
+#timeline-list.list {
+  width: 100%;
+  height: auto;
+  padding: 8px;
+  background: var(--g-panel);
+  color: var(--ink);
+  border: 0px solid var(--g-bar);
+  border-radius: 8px;
+}
+
+/* Custom listbox container */
+.listbox {
+  display: grid;
+  gap: .4rem;
+  /* max-height: 16rem;            similar to size="6" */
+  overflow: auto;
+  padding: 1em;
+  border: 0px solid var(--border, #ddd);
+  border-radius: .5rem;
+  background: transparent;
+}
+
+/* Individual option */
+.listbox .option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  padding: .5rem .7rem .5rem 1.5rem;
+  border-radius: .5rem;
+  cursor: pointer;
+  outline: none;
+  border: 1px solid transparent;
+  background: #fff;
+  transition: box-shadow .12s ease, background .12s ease, border-color .12s ease;
+}
+
+/* Colour swatch (from --tlCol) */
+.listbox .option::before {
+  content: "";
+  position: absolute;
+  left: .4rem;
+  width: .5rem;
+  height: 1.2rem;
+  border-radius: .25rem;
+  background: var(--tlCol, #8aa);
+  opacity: .9;
+}
+
+/* Default state tweak via data-state if you want different styling per state */
+.listbox .option[data-state="default"] {
+  /* Example: slightly tinted border */
+  border-color: color-mix(in oklab, var(--tlCol, #8aa) 25%, transparent);
+}
+
+/* Hover/focus */
+.listbox .option:hover,
+.listbox .option:focus {
+  background: #f3f6fa;
+  border-color: color-mix(in oklab, var(--tlCol, #8aa) 35%, #cfd6e0);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--tlCol, #8aa) 30%, transparent);
+}
+
+/* Active/selected */
+.listbox .option[aria-selected="true"] {
+  background: color-mix(in oklab, var(--tlCol, #8aa) 15%, #ffffff);
+  border-color: var(--tlCol, #8aa);
+  box-shadow: inset 0 0 0 1px var(--tlCol, #8aa);
+  font-weight: 600;
+}
+
+/* Keyboard focus ring (when selected) */
+.listbox .option[aria-selected="true"]:focus {
+  box-shadow:
+    inset 0 0 0 1px var(--tlCol, #8aa),
+    0 0 0 3px color-mix(in oklab, var(--tlCol, #8aa) 35%, transparent);
+}
+
+
+/* Timeline editor area */
+#timeline-editor {
+  padding: 0px;
+  overflow: auto;
+}
+.timeline-editor-head h3 {
+  margin: 0;
+}
+.timeline-editor-head {
+  display:flex;
+  justify-content: space-between;
+  align-items:center;
+  gap:1em 0.5em;
+  background:var(--g-outline);
+  padding:8px 12px;
+  border-bottom:1px solid var(--g-bar);
+  flex-wrap: wrap;
+  position:sticky;
+  top:0;
+  z-index:1;
+}
+.timeline-editor-body {
+  padding:1em;
+}
+
+#tl-title {
+  width: 100%;
+}
+#tl-color {
+  width:100px;
+  max-width: 120px;
+  background: var(--g-panel);
+  border: 1px solid var(--g-bar);
+  border-radius: 3px;
+  padding: 1px 3px;
+}
+
+label {
+  display: flex;
+  gap: 1em;
+  align-items: center;
+  font-size: 0.6em;
+  white-space: nowrap;
+}
+
+/* Events table */
+.events-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-top: 8px;
+  background: var(--g-panel);
+  border: 1px solid var(--g-bar);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.events-table th,
+.events-table td {
+  border-bottom: 1px solid var(--g-bar);
+  padding: 10px;
+  vertical-align: top;
+  text-align: left;
+}
+.events-table thead th {
+  position: relative;
+  z-index: 0;
+  background: var(--g-bar);
+  color: var(--ink);
+  font-weight: 700;
+}
+.events-table tr:last-child td {
+  border-bottom: none;
+}
+
+input[type="text"] {
+  --pad: 6px;
+  background: var(--background);
+  color: var(--ink);
+  border: 1px solid var(--g-bar);
+  border-radius: 6px;
+  padding: var(--pad);
+  width: 100%;
+}
+input.invalid {
+  border-color: #ff7b7b;
+  outline: 1px solid #ff7b7b;
+}
+
+textarea {
+  --pad: 6px;
+  background: var(--background);
+  color: var(--ink);
+  border: 1px solid var(--g-bar);
+  border-radius: 6px;
+  padding: var(--pad);
+  width: 300px;
+  font-family: inherit;
+}
+
+/* Image input + preview */
+.img-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.img-preview {
+  width: 30px;
+  height: 30px;
+  object-fit: cover;
+  border-radius: 6px;
+  background: var(--g-bar);
+  outline: 1px solid var(--g-bar);
+}
+
+/* Footer */
+.app-footer {
+  padding: 10px 16px 20px;
+  color: var(--muted);
+}
+
+/* ==============
+   9) SCROLLBARS (subtle)
+   ============== */
+.viewport::-webkit-scrollbar,
+#timeline-editor::-webkit-scrollbar {
+  height: 10px;
+  width: 10px;
+}
+.viewport::-webkit-scrollbar-thumb,
+#timeline-editor::-webkit-scrollbar-thumb {
+  background: var(--g-bar);
+  border-radius: 999px;
+}
+.viewport::-webkit-scrollbar-track,
+#timeline-editor::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+
+#timeline-list .option.dragging {
+  opacity: 0.6;
+}
+
+#timeline-list .option.drag-over {
+  outline: 2px dashed rgba(0,0,0,0.35);
+  outline-offset: 2px;
+}
+
+
+
+.sceneticks{
+  display: grid;
+  grid-template-columns: repeat(var(--tickCount), minmax(0, 1fr));
+  gap: .5rem;
+  margin-top: .5rem;
+  position: relative; /* for page-span overlay */
+}
+
+.scenetick-slot{
+  border-radius: .5rem;
+  padding: .35rem;
+}
+
+.scenetick-event{
+  display: grid;
+  grid-template-columns: 2.25rem 1fr;
+  gap: .5rem;
+  align-items: start;
+}
+.scenetick-event.noimage {
+  grid-template-columns: 1fr;
+}
+
+.tick-img{
+  width: 2.25rem;
+  height: 2.25rem;
+  object-fit: cover;
+  border-radius: .4rem;
+}
+
+.tick-title{
+  font-weight: 600;
+  line-height: 1.2;
+  font-size: .85rem;
+}
+
+.tick-desc{
+  font-size: .78rem;
+  opacity: .9;
+  margin-top: .15rem;
+}
+
+/* Page overlay */
+.page-span{
+  position: absolute;
+  top: -1.35rem;             /* sit above the tick rail */
+  height: 1.1rem;
+  border-radius: .5rem;
+  padding: 0 .45rem;
+  font-size: .75rem;
+  line-height: 1.1rem;
+  white-space: nowrap;
+
+  /* Use the grid as a measuring system via percentage math */
+  left: calc((var(--from) - 1) * (100% / var(--tickCount)));
+  width: calc((var(--to) - var(--from) + 1) * (100% / var(--tickCount)));
+}
+
+
+
+
+/* Story timeline blocks (separate from .event/.chip) */
+.story-year {
+  padding: .35rem;
+}
+
+.story-page {
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: .6rem;
+  padding: .5rem;
+  margin-bottom: .5rem;
+  width: 100%;
+}
+
+.story-page-head {
+  font-weight: 700;
+  font-size: .9rem;
+  margin-bottom: .25rem;
+}
+
+.story-page-desc {
+  font-size: .82rem;
+  line-height: 1.35;
+  opacity: .95;
+  margin-bottom: .4rem;
+}
+
+.story-ticks {
+  display: grid;
+  grid-template-columns: repeat(var(--tickCount), minmax(0, 1fr));
+  gap: .35rem;
+}
+
+.story-tick {
+  min-height: 1.1rem;
+  border-radius: .35rem;
+  border: 1px dashed rgba(255,255,255,.18);
+  background: transparent;
+}
+
+body[data-theme="light"] .story-tick {
+  border-color: rgba(0,0,0,.18);
+}
+
+.story-tick.on {
+  border-style: solid;
+  background: rgba(255,255,255,.12);
+}
+
+body[data-theme="light"] .story-tick.on {
+  background: rgba(0,0,0,.12);
+}

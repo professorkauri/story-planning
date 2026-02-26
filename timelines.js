@@ -854,7 +854,6 @@ window.TIMELINES_DEFAULT = {
         "title": "Mustard the Champion is defeated",
         "desc": "*Sword* \"Mustard is the former Fighting-type Gym Leader and is regarded as one of the strongest Champions in Galar’s history— reigning undefeated for **18 years.**\"",
         "image": ""
-<<<<<<< HEAD
       },
       {
         "year": "22ya",
@@ -867,8 +866,6 @@ window.TIMELINES_DEFAULT = {
         "title": "Leon becomes Champion (approx)",
         "desc": "**Assuming Leon is around 22 years old.**\n*Sword* Leon is known far and wide for taking part in the Gym Challenge at the tender age of **10 years old**—and even more so for claiming victory in the Champion Cup on his first attempt.",
         "image": ""
-=======
->>>>>>> b98477d589e46e08eb0e094887d0e37ceba62592
       }
     ]
   },
