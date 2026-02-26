@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="utf-8" />
-  <title>Pokemon Timelines</title>
+  <title>Timelines</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <!-- Reuse your existing styles; this file only provides structure. -->
   <link rel="stylesheet" href="story-styles.css" />
@@ -12,7 +12,7 @@
 <body data-theme="light">
   <header class="app-header">
     <div class="left">
-      <h1 class="app-title">Pokemon Timelines</h1>
+      <h1 class="app-title">Timelines</h1>
     </div>
     <div class="right controls">
       <button id="btn-theme" class="btn">Toggle Theme</button>
@@ -102,14 +102,14 @@
                     <th style="width:10rem">Year</th>
                     <th style="width:16rem">Title</th>
                     <th>Description</th>
-                    <th style="width:18rem">Image (slug/subpath/url)</th>
                     <th style="width:5rem"></th>
                   </tr>
                 </thead>
                 <tbody id="events-body"></tbody>
               </table>
               <div class="muted small">Year accepts <code>####</code> or <code>####bc</code> (e.g., <code>1994</code>,
-                <code>3000000bc</code>).</div>
+                <code>3000000bc</code>).
+              </div>
             </div>
           </div>
 
@@ -135,10 +135,8 @@
               <table class="events-table">
                 <thead>
                   <tr>
-                    <th style="width:6rem">Seq</th>
-                    <th style="width:14rem">Title</th>
-                    <th>Description</th>
-                    <th style="width:20rem">Map</th>
+                    <th style="width:26rem">Sequence</th>
+                    <th style="width:22rem">Map</th>
                     <th style="width:5rem"></th>
                   </tr>
                 </thead>
@@ -274,11 +272,11 @@
         st.id ||= 'st_' + Math.random().toString(36).slice(2, 8);
         st.title ||= '(Untitled Story Timeline)';
         st.sequences = Array.isArray(st.sequences) ? st.sequences : [];
+
         for (const seq of st.sequences) {
           seq.seq ||= 0; // numeric sort key
-          seq.title = String(seq.title || '');
-          seq.desc = String(seq.desc || '');
-          // text block that contains page mapping lines
+          seq.title = String(seq.title || ''); // keep if you still want a title for the sequence itself
+          // seq.desc is now deprecated/ignored (kept only for backwards compatibility if it exists)
           seq.map = String(seq.map || '');
         }
       }
@@ -298,15 +296,20 @@
     function parseSequenceMapBlocks(mapText) {
       const lines = String(mapText || '').replace(/\r\n/g, '\n').split('\n');
 
-      /** @type {Array<{page:string|null, refs:Array<{timelineName:string, token:string, category:string}>}>} */
+      /**
+       * Output blocks:
+       * {
+       *   scene: "01",
+       *   sceneTitle: "Optional title",
+       *   refs: [{ timelineName, token, category, pageCount }]
+       * }
+       */
       const blocks = [];
-
       let current = null;
 
       const pushCurrent = () => {
         if (!current) return;
-        // only keep if it has a page and at least 1 ref
-        if (current.page && current.refs.length) blocks.push(current);
+        if (current.scene && current.refs.length) blocks.push(current);
         current = null;
       };
 
@@ -314,34 +317,51 @@
         const line = rawLine.trim();
         if (!line) continue;
 
-        // Page number line: digits only
-        if (/^\d+$/.test(line)) {
-          // finish previous
-          pushCurrent();
-
-          // start new
-          current = { page: line.padStart(2, '0'), refs: [] };
-          continue;
+        // Scene header: "01" or "01: Title"
+        {
+          const m = line.match(/^(\d+)\s*(?::\s*(.+))?$/);
+          if (m) {
+            pushCurrent();
+            const scene = String(m[1] || '').padStart(2, '0');
+            const sceneTitle = String(m[2] || '').trim();
+            current = { scene, sceneTitle, refs: [] };
+            continue;
+          }
         }
 
-        // Ref line: "- TimelineName token [category...]"
+        // Ref line:
+        // "- Kalos 0ya.01"
+        // "- Kalos 0ya.01 Flashback"
+        // "- Kalos 0ya.01 Flashback (3)"
+        // "- Kalos 0ya.01 (3)"
         const m = line.match(/^-+\s*(.+?)\s+([^\s]+)\s*(.*)$/);
         if (!m) continue;
-
-        // If someone forgets to put a page number first, ignore refs until a page appears
         if (!current) continue;
 
         const timelineName = (m[1] || '').trim();
         const token = (m[2] || '').trim();
-        const category = (m[3] || '').trim();
+        let rest = (m[3] || '').trim();
 
         if (!timelineName || !token) continue;
-        current.refs.push({ timelineName, token, category });
+
+        // Pull "(N)" from the end if present
+        let pageCount = 1;
+        const pm = rest.match(/\((\d+)\)\s*$/);
+        if (pm) {
+          pageCount = parseInt(pm[1], 10);
+          if (!Number.isFinite(pageCount) || pageCount < 1) pageCount = 1;
+          rest = rest.replace(/\((\d+)\)\s*$/, '').trim();
+        }
+
+        const category = rest; // whatever remains is still treated as category text
+
+        current.refs.push({ timelineName, token, category, pageCount });
       }
 
       pushCurrent();
       return blocks;
     }
+
     /**
      * Resolve a story ref ("Kalos 0ya.02") into:
      *  { absYear, tick, timelineId? }
@@ -358,34 +378,82 @@
       return { absYear, tick: tick || 0, timelineId: tl.id };
     }
 
-    function renderStoryPageBlock(page, tickCount) {
+    function renderStoryPageBlock(page, yearTickCount) {
       const el = document.createElement('div');
       el.className = 'story-page';
 
+      el.style.setProperty('--fromTick', String(page.fromTick || 1));
+      el.style.setProperty('--toTick', String(page.toTick || 1));
+      el.style.setProperty('--yearTickCount', String(Math.max(0, yearTickCount | 0)));
+
+      if (Number.isFinite(page.fromTick) && Number.isFinite(page.toTick)) {
+        el.style.gridColumn = `${page.fromTick} / ${page.toTick + 1}`;
+      }
+
+      // Head: "01.02" + "(X pages)"
       const head = document.createElement('div');
       head.className = 'story-page-head';
-      head.textContent = page.label; // "01" or "01 (Flashback)"
+
+      const safeHead = escapeHtml(page.headText || '');
+      const totalPages = Number.isFinite(+page.totalPages) ? (+page.totalPages | 0) : 0;
+
+      head.innerHTML = totalPages > 0
+        ? `${safeHead} <span class="story-page-count">(${totalPages} pages)</span>`
+        : safeHead;
+
       el.appendChild(head);
 
-      if (page.descHtml) {
-        const desc = document.createElement('div');
-        desc.className = 'story-page-desc';
-        desc.innerHTML = page.descHtml;
-        el.appendChild(desc);
+      // Hover popup: "01.02 <Scene Title>"
+      if (page.hoverText) {
+        el.addEventListener('pointerenter', (e) => {
+          showDescTooltip(
+            `<div class="chip-desc">${escapeHtml(page.hoverText)}</div>`,
+            e.clientX,
+            e.clientY
+          );
+        });
+        el.addEventListener('pointermove', (e) => {
+          showDescTooltip(
+            `<div class="chip-desc">${escapeHtml(page.hoverText)}</div>`,
+            e.clientX,
+            e.clientY
+          );
+        });
+        el.addEventListener('pointerleave', hideDescTooltip);
       }
+
+      const fromTick = Math.max(1, page.fromTick | 0);
+      const toTick = Math.max(fromTick, page.toTick | 0);
+      const spanCount = (toTick - fromTick + 1) | 0;
+
+      const onSet = new Set((page.onTicks || []).map(n => n | 0).filter(n => n > 0));
+      const pagesByTick = page.pagesByTick instanceof Map ? page.pagesByTick : new Map();
 
       const rail = document.createElement('div');
       rail.className = 'story-ticks';
-      rail.style.setProperty('--tickCount', String(Math.max(0, tickCount | 0)));
+      rail.style.setProperty('--tickCount', String(Math.max(0, spanCount)));
 
-      // slots 1..N (gaps visible)
-      for (let t = 1; t <= (tickCount | 0); t++) {
+      for (let i = 1; i <= spanCount; i++) {
+        const absoluteTick = fromTick + (i - 1);
+
         const slot = document.createElement('div');
         slot.className = 'story-tick';
-        slot.dataset.tick = String(t);
+        slot.dataset.tick = String(absoluteTick);
 
-        // marker range
-        if (t >= page.fromTick && t <= page.toTick) slot.classList.add('on');
+        const isOn = onSet.has(absoluteTick);
+        if (isOn) slot.classList.add('on');
+
+        // If on, add tick-page bars for visual page count
+        if (isOn) {
+          const pc = pagesByTick.get(absoluteTick) | 0; // default 0 if missing
+          const pageBars = Math.max(0, pc);
+
+          for (let p = 0; p < pageBars; p++) {
+            const bar = document.createElement('div');
+            bar.className = 'tick-page';
+            slot.appendChild(bar);
+          }
+        }
 
         rail.appendChild(slot);
       }
@@ -394,18 +462,24 @@
       return el;
     }
 
-    function renderStoryYearCellPages(cell, pages, tickCount) {
-      // Render each page as its own block inside this year cell
-      // (You asked: "one block per page, with ticks inside that")
+    function renderStoryYearCellPages(cell, pages, yearTickCount) {
+      // One wrapper per year cell that represents the year-wide tick spacing
+      const collection = document.createElement('div');
+      collection.className = 'story-page-collection';
+      collection.style.setProperty('--tickCount', String(Math.max(0, yearTickCount | 0)));
+
+      // Render each page inside the collection
       for (const p of pages) {
-        cell.appendChild(renderStoryPageBlock(p, tickCount));
+        collection.appendChild(renderStoryPageBlock(p, yearTickCount));
       }
+
+      cell.appendChild(collection);
     }
 
     /**
-     * Build per-year story overlays to render as spans above tick rails.
-     * Returns: Map<absYear, Array<{fromTick,toTick,label}>>
-     */
+    * Build per-year story overlays to render as pages inside year cells.
+    * Returns: Map<absYear, Array<{fromTick,toTick,onTicks,label,descHtml,pageNum}>>
+    */
     function buildStoryPagesByYear(storyTimeline, maxTickByYear, ctx) {
       const out = new Map();
 
@@ -414,55 +488,66 @@
         .sort((a, b) => (a.seq || 0) - (b.seq || 0));
 
       for (const seq of sequences) {
-        // NEW: parse multiple page blocks inside the sequence map text
+        const seqNum = String(parseInt(seq.seq || 0, 10) || 0).padStart(2, '0');
         const blocks = parseSequenceMapBlocks(seq.map);
 
-        // Description: use ONLY seq.desc (not title)
-        const desc = String(seq.desc || '').trim();
-        const descHtml = desc ? markdownToHtml(desc) : '';
-
         for (const block of blocks) {
-          const pageNum = block.page || '??';
+          const sceneNum = block.scene || '??';
+          const sceneTitle = String(block.sceneTitle || '').trim();
 
-          // group refs by absYear (per page)
+          // group refs by absYear (per scene)
           const byYear = new Map();
 
           for (const r of block.refs) {
             try {
               const rr = resolveStoryRef(r, ctx);
               if (!byYear.has(rr.absYear)) byYear.set(rr.absYear, []);
-              byYear.get(rr.absYear).push({ ...rr, category: r.category || '' });
+              byYear.get(rr.absYear).push({
+                ...rr,
+                category: r.category || '',
+                pageCount: Number.isFinite(+r.pageCount) ? Math.max(1, (+r.pageCount | 0)) : 1
+              });
             } catch {
-              // ignore bad refs for now
+              // ignore bad refs
             }
           }
 
           for (const [absYear, list] of byYear.entries()) {
-            const ticks = list
-              .map(x => x.tick || 0)
-              .filter(t => t > 0)
-              .sort((a, b) => a - b);
+            const ticks = list.map(x => x.tick || 0).filter(t => t > 0);
+            const onTicks = Array.from(new Set(ticks)).sort((a, b) => a - b);
+            if (!onTicks.length) continue;
 
-            if (!ticks.length) continue;
+            const fromTick = onTicks[0];
+            const toTick = onTicks[onTicks.length - 1];
 
-            const fromTick = ticks[0];
-            const toTick = ticks[ticks.length - 1];
+            // Aggregate page counts per tick (if multiple refs hit same tick, sum them)
+            const pagesByTick = new Map();
+            let totalPages = 0;
 
-            // Category suffix appended to page number in brackets
-            const cat = (list.find(x => x.category && x.category.trim())?.category || '').trim();
-            const label = cat ? `${pageNum} (${cat})` : `${pageNum}`;
+            for (const item of list) {
+              const t = item.tick | 0;
+              if (t <= 0) continue;
+              const pc = item.pageCount | 0;
+              if (!pagesByTick.has(t)) pagesByTick.set(t, 0);
+              pagesByTick.set(t, (pagesByTick.get(t) | 0) + pc);
+              totalPages += pc;
+            }
 
-            const tickCount = maxTickByYear.get(absYear) || 0;
-            const clampedFrom = Math.max(1, Math.min(fromTick, tickCount || fromTick));
-            const clampedTo = Math.max(clampedFrom, Math.min(toTick, tickCount || toTick));
+            const headText = `${seqNum}.${sceneNum}`; // e.g. "01.02"
+            const hoverText = sceneTitle ? `${headText} ${sceneTitle}` : headText;
 
             if (!out.has(absYear)) out.set(absYear, []);
             out.get(absYear).push({
-              pageNum,
-              label,
-              descHtml,
-              fromTick: clampedFrom,
-              toTick: clampedTo
+              seqNum,
+              sceneNum,
+              sceneTitle,
+              headText,
+              hoverText,
+              fromTick,
+              toTick,
+              onTicks,
+              pagesByTick,
+              totalPages
             });
           }
         }
@@ -1170,13 +1255,6 @@
         })
       );
 
-      // Images
-      contentBar.appendChild(
-        mkSwitch('Images', state.showImages, (v) => {
-          state.showImages = v;
-          renderYearGrid();
-        })
-      );
     }
 
     function renderApp() {
@@ -1199,9 +1277,22 @@
       // Build pages per year
       const pagesByYear = buildStoryPagesByYear(storyTimeline, maxTickByYear, ctx);
 
+      // --- NEW: total pages across the whole story timeline ---
+      let totalPagesAll = 0;
+      for (const pages of pagesByYear.values()) {
+        for (const p of pages) {
+          const n = Number.isFinite(+p.totalPages) ? (+p.totalPages | 0) : 0;
+          totalPagesAll += Math.max(0, n);
+        }
+      }
+
       // Label cell
       const label = document.createElement('div');
       label.className = 'cell label-cell story-label';
+
+      // Used by CSS ::after
+      label.dataset.pages = String(totalPagesAll);
+
       const labelinner = document.createElement('div');
       labelinner.className = 'label-inner';
       labelinner.textContent = storyTimeline.title || '(Story Timeline)';
@@ -1239,6 +1330,7 @@
         grid.appendChild(cell);
       }
     }
+
     function renderYearGrid() {
       const grid = document.getElementById('grid');
       grid.innerHTML = '';
@@ -1410,7 +1502,9 @@
           baseEvent: containerBaseEntry ? containerBaseEntry.ev : null,
           tickEventsByN: bucket.ticksByN,
           tickCount,
-          missing: !containerBaseEntry
+          missing: !containerBaseEntry,
+          timelineTitle: timeline.title,
+          absYear: y
         });
 
         cell.appendChild(containerChip);
@@ -1426,16 +1520,10 @@
     }
     function renderSceneTickEventCard(ev) {
       const card = document.createElement('div');
-      card.className = 'scenetick-event';
+      card.className = 'scenetick-event noimage';
 
-      const hasImg = !!ev.image && state.showImages;
       const hasDesc = !!(ev.desc && String(ev.desc).trim()) && state.showDescriptions;
       const hasHiddenDesc = !!(ev.desc && String(ev.desc).trim()) && !state.showDescriptions;
-
-      // NEW: add .noimage class when there is no visible image
-      if (!hasImg) {
-        card.classList.add('noimage');
-      }
 
       if (hasHiddenDesc) {
         card.addEventListener('pointerenter', (e) => {
@@ -1453,16 +1541,6 @@
           );
         });
         card.addEventListener('pointerleave', hideDescTooltip);
-      }
-
-      if (hasImg) {
-        const img = document.createElement('img');
-        img.loading = 'lazy';
-        img.decoding = 'async';
-        img.alt = ev.title ? String(ev.title) : 'scene tick image';
-        img.src = resolveImageSrc(ev.image);
-        img.className = 'tick-img';
-        card.appendChild(img);
       }
 
       const body = document.createElement('div');
@@ -1484,39 +1562,31 @@
       return card;
     }
 
-    function renderYearContainerChip({ baseEvent, tickEventsByN, tickCount, missing }) {
+    function renderYearContainerChip({ baseEvent, tickEventsByN, tickCount, missing, timelineTitle, absYear }) {
       const chip = document.createElement('div');
-      chip.className = 'event chip year-container';
+      chip.className = 'event chip year-container no-img';
       if (missing) chip.classList.add('missing');
 
-      // Base event flags (container's own image/desc)
       const hasBase = !!baseEvent;
-      const baseHasImg = hasBase && !!baseEvent.image && state.showImages;
       const baseHasDesc = hasBase && !!(baseEvent.desc && String(baseEvent.desc).trim()) && state.showDescriptions;
       const baseHasHiddenDesc = hasBase && !!(baseEvent.desc && String(baseEvent.desc).trim()) && !state.showDescriptions;
 
       if (baseHasHiddenDesc) {
         chip.addEventListener('pointerenter', (e) => {
-          showDescTooltip(`<div class="chip-desc">${markdownToHtml(baseEvent.desc)}</div>`, e.clientX, e.clientY);
+          showDescTooltip(
+            `<div class="chip-desc">${markdownToHtml(baseEvent.desc)}</div>`,
+            e.clientX,
+            e.clientY
+          );
         });
         chip.addEventListener('pointermove', (e) => {
-          showDescTooltip(`<div class="chip-desc">${markdownToHtml(baseEvent.desc)}</div>`, e.clientX, e.clientY);
+          showDescTooltip(
+            `<div class="chip-desc">${markdownToHtml(baseEvent.desc)}</div>`,
+            e.clientX,
+            e.clientY
+          );
         });
         chip.addEventListener('pointerleave', hideDescTooltip);
-      }
-
-      chip.classList.toggle('no-img', !baseHasImg);
-      chip.classList.toggle('no-desc', !baseHasDesc);
-
-      // Base image
-      if (baseHasImg) {
-        const img = document.createElement('img');
-        img.loading = 'lazy';
-        img.decoding = 'async';
-        img.alt = baseEvent.title ? String(baseEvent.title) : 'event image';
-        img.src = resolveImageSrc(baseEvent.image);
-        img.className = 'chip-img';
-        chip.appendChild(img);
       }
 
       const content = document.createElement('div');
@@ -1524,9 +1594,15 @@
 
       const title = document.createElement('div');
       title.className = 'chip-title';
-      title.innerHTML = hasBase
-        ? formatTitleWithParens(baseEvent.title || '')
-        : '<span>(Missing year event)</span>';
+
+      if (hasBase) {
+        title.innerHTML = formatTitleWithParens(baseEvent.title || '');
+      } else {
+        const safeTl = escapeHtml(timelineTitle || '');
+        const safeYear = escapeHtml(formatYearSigned(absYear));
+        title.innerHTML = `${safeTl} ${safeYear} Events`;
+      }
+
       content.appendChild(title);
 
       if (baseHasDesc) {
@@ -1536,12 +1612,10 @@
         content.appendChild(desc);
       }
 
-      // Tick rail
       const rail = document.createElement('div');
       rail.className = 'sceneticks';
       rail.style.setProperty('--tickCount', String(Math.max(0, tickCount | 0)));
 
-      // Always render 1..tickCount slots (empty gaps visible)
       for (let t = 1; t <= (tickCount | 0); t++) {
         const slot = document.createElement('div');
         slot.className = 'scenetick-slot';
@@ -1563,39 +1637,27 @@
 
     function renderEventChip(ev) {
       const chip = document.createElement('div');
-      chip.className = 'event chip';
+      chip.className = 'event chip no-img';
 
-      // determine visibility flags up front
-      const hasImg = !!ev.image && state.showImages;
       const hasDesc = !!(ev.desc && String(ev.desc).trim()) && state.showDescriptions;
-
       const hasHiddenDesc = !!(ev.desc && String(ev.desc).trim()) && !state.showDescriptions;
 
       if (hasHiddenDesc) {
         chip.addEventListener('pointerenter', (e) => {
-          showDescTooltip(`<div class="chip-desc">${markdownToHtml(ev.desc)}</div>`, e.clientX, e.clientY);
+          showDescTooltip(
+            `<div class="chip-desc">${markdownToHtml(ev.desc)}</div>`,
+            e.clientX,
+            e.clientY
+          );
         });
         chip.addEventListener('pointermove', (e) => {
-          // keep it tracking the pointer
-          showDescTooltip(`<div class="chip-desc">${markdownToHtml(ev.desc)}</div>`, e.clientX, e.clientY);
+          showDescTooltip(
+            `<div class="chip-desc">${markdownToHtml(ev.desc)}</div>`,
+            e.clientX,
+            e.clientY
+          );
         });
         chip.addEventListener('pointerleave', hideDescTooltip);
-      }
-
-
-      // set modifier classes for styling
-      chip.classList.toggle('no-img', !hasImg);
-      chip.classList.toggle('no-desc', !hasDesc);
-
-      // Image
-      if (hasImg) {
-        const img = document.createElement('img');
-        img.loading = 'lazy';
-        img.decoding = 'async';
-        img.alt = ev.title ? String(ev.title) : 'event image';
-        img.src = resolveImageSrc(ev.image);
-        img.className = 'chip-img';
-        chip.appendChild(img);
       }
 
       const content = document.createElement('div');
@@ -1637,8 +1699,8 @@
     function renderEditorUI() {
       // Static handlers within the editor
       document.getElementById('btn-exit-edit').onclick = exitEditMode;
-      
-document.getElementById('btn-add-timeline').onclick = onAddTimeline;
+
+      document.getElementById('btn-add-timeline').onclick = onAddTimeline;
       document.getElementById('btn-dup-timeline').onclick = onDupTimeline;
 
       document.getElementById('btn-add-story-timeline').onclick = onAddStoryTimeline;
@@ -1649,16 +1711,16 @@ document.getElementById('btn-add-timeline').onclick = onAddTimeline;
         { idleText: 'Delete Timeline', confirmText: 'Confirm' }
       );
 
-      
-makeConfirmable(
-  document.getElementById('btn-del-story-timeline'),
-  () => onDelStoryTimeline(),
-  { idleText: 'Delete Story Timeline', confirmText: 'Confirm' }
-);
 
-document.getElementById('btn-add-sequence').onclick = onAddSequence;
+      makeConfirmable(
+        document.getElementById('btn-del-story-timeline'),
+        () => onDelStoryTimeline(),
+        { idleText: 'Delete Story Timeline', confirmText: 'Confirm' }
+      );
 
-document.getElementById('btn-add-event').onclick = onAddEvent;
+      document.getElementById('btn-add-sequence').onclick = onAddSequence;
+
+      document.getElementById('btn-add-event').onclick = onAddEvent;
 
       // Import/Download are now here
       const fileImport = document.getElementById('file-import-editor');
@@ -1715,30 +1777,50 @@ document.getElementById('btn-add-event').onclick = onAddEvent;
     function sortTimelineEvents(tl) {
       if (!tl || !Array.isArray(tl.events)) return;
 
-      const safeYear = (ev) => {
+      const ctx = { timelines: state.timelines, cache: new Map(), stack: [] };
+      const anchorYear = resolveTimelineAnchorYear(tl, ctx);
+
+      const safeAbsYearAndTick = (ev) => {
         try {
-          return { ok: true, year: parseYearToken(ev.year).year };
+          const raw = String(ev.year || '').trim();
+          if (!raw) return { ok: false, year: Number.POSITIVE_INFINITY, tick: Number.POSITIVE_INFINITY };
+
+          const { base, tick } = splitBaseAndTick(raw);
+          const absYear = parseYearToken(base, anchorYear, ctx).year;
+
+          return {
+            ok: true,
+            year: absYear,
+            tick: Number.isFinite(tick) ? tick : 0
+          };
         } catch {
-          return { ok: false, year: Number.POSITIVE_INFINITY };
+          return { ok: false, year: Number.POSITIVE_INFINITY, tick: Number.POSITIVE_INFINITY };
         }
       };
 
       tl.events = tl.events
         .map((ev, idx) => ({ ev, idx }))
         .sort((A, B) => {
-          const ay = safeYear(A.ev);
-          const by = safeYear(B.ev);
+          const a = safeAbsYearAndTick(A.ev);
+          const b = safeAbsYearAndTick(B.ev);
 
-          // 1) Year (invalid years sort last)
-          if (ay.year !== by.year) return ay.year - by.year;
+          // 1) Absolute year (invalid years sort last)
+          if (a.year !== b.year) return a.year - b.year;
 
-          // 2) Title (case-insensitive, empty titles last-ish)
+          // 2) Tick number within the same year (0 = base events)
+          if (a.tick !== b.tick) return a.tick - b.tick;
+
+          // 3) Title (case-insensitive; empty titles last-ish)
           const at = String(A.ev.title || '').trim().toLowerCase();
           const bt = String(B.ev.title || '').trim().toLowerCase();
 
+          const aEmpty = at === '';
+          const bEmpty = bt === '';
+          if (aEmpty !== bEmpty) return aEmpty ? 1 : -1;
+
           if (at !== bt) return at.localeCompare(bt);
 
-          // 3) Stable fallback to original order
+          // 4) Stable fallback to original order
           return A.idx - B.idx;
         })
         .map(x => x.ev);
@@ -1752,7 +1834,6 @@ document.getElementById('btn-add-event').onclick = onAddEvent;
         return;
       }
 
-
       const tl = getSelectedTimeline();
 
       const normalWrap = document.getElementById('timeline-editor-normal');
@@ -1760,10 +1841,11 @@ document.getElementById('btn-add-event').onclick = onAddEvent;
       if (normalWrap) { normalWrap.classList.remove('hidden'); normalWrap.setAttribute('aria-hidden', 'false'); }
       if (storyWrap) { storyWrap.classList.add('hidden'); storyWrap.setAttribute('aria-hidden', 'true'); }
 
-
       const titleEl = document.getElementById('tl-title');
       const yearEl = document.getElementById('tl-year');
       const descEl = document.getElementById('tl-desc');
+
+      // We’re removing images from admin – hide/disable if the element still exists in the DOM
       const imageEl = document.getElementById('tl-image');
 
       const colorEl = document.getElementById('tl-color');
@@ -1780,13 +1862,20 @@ document.getElementById('btn-add-event').onclick = onAddEvent;
         };
       }
 
+      // Hide timeline image field in admin (if still present)
+      if (imageEl) {
+        const label = imageEl.closest('label');
+        if (label) label.style.display = 'none';
+        imageEl.value = '';
+        imageEl.disabled = true;
+      }
+
       if (!tl) {
-        titleEl.value = '';
+        if (titleEl) titleEl.value = '';
         if (yearEl) yearEl.value = '';
         if (descEl) descEl.value = '';
-        if (imageEl) imageEl.value = '';
-        colorEl.value = '#cccccc';
-        tbody.innerHTML = '<tr><td colspan="5" class="muted">No timeline selected</td></tr>';
+        if (colorEl) colorEl.value = '#cccccc';
+        if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="muted">No timeline selected</td></tr>';
         return;
       }
 
@@ -1794,21 +1883,34 @@ document.getElementById('btn-add-event').onclick = onAddEvent;
       tl.year = (tl.year === undefined || tl.year === null || String(tl.year).trim() === '')
         ? '2000'
         : String(tl.year).trim();
-      tl.description = String(tl.description || '');
-      tl.image = String(tl.image || '');
 
-      titleEl.value = tl.title || '';
+      tl.description = String(tl.description || '');
+
+      // Keep tl.image in data for backwards compatibility, but admin no longer edits it
+      if (tl.image !== undefined) tl.image = String(tl.image || '');
+
+      tl.events = Array.isArray(tl.events) ? tl.events : [];
+      for (const ev of tl.events) {
+        ev.year = String(ev.year || '').trim();
+        ev.title = String(ev.title || '');
+        ev.desc = String(ev.desc || '');
+        // Keep ev.image in data for backwards compatibility, but admin no longer edits it
+        if (ev.image !== undefined) ev.image = String(ev.image || '');
+      }
+
+      if (titleEl) titleEl.value = tl.title || '';
       if (yearEl) yearEl.value = String(tl.year);
       if (descEl) descEl.value = tl.description;
-      if (imageEl) imageEl.value = tl.image;
-      colorEl.value = tl.color || '#cccccc';
+      if (colorEl) colorEl.value = tl.color || '#cccccc';
 
-      titleEl.oninput = debounce(() => {
-        tl.title = titleEl.value.trim();
-        renderTimelineList();
-        renderToggleBar();
-        renderYearGrid();
-      }, 150);
+      if (titleEl) {
+        titleEl.oninput = debounce(() => {
+          tl.title = titleEl.value.trim();
+          renderTimelineList();
+          renderToggleBar();
+          renderYearGrid();
+        }, 150);
+      }
 
       if (yearEl) {
         yearEl.oninput = debounce(() => {
@@ -1824,22 +1926,19 @@ document.getElementById('btn-add-event').onclick = onAddEvent;
         }, 150);
       }
 
-      if (imageEl) {
-        imageEl.oninput = debounce(() => {
-          tl.image = imageEl.value.trim();
+      if (colorEl) {
+        colorEl.oninput = debounce(() => {
+          tl.color = colorEl.value;
+          renderTimelineList();
+          renderToggleBar();
           renderYearGrid();
         }, 150);
       }
 
-      colorEl.oninput = debounce(() => {
-        tl.color = colorEl.value;
-        renderTimelineList();
-        renderToggleBar();
-        renderYearGrid();
-      }, 150);
-
-      // --- Events table (unchanged from your current code) ---
+      // --- Events table (NO image column) ---
+      if (!tbody) return;
       tbody.innerHTML = '';
+
       for (let i = 0; i < tl.events.length; i++) {
         const ev = tl.events[i];
 
@@ -1854,10 +1953,8 @@ document.getElementById('btn-add-event').onclick = onAddEvent;
         inYear.oninput = debounce(() => {
           ev.year = inYear.value.trim();
           try {
-            // IMPORTANT: validate against this timeline's anchor year
             const ctx = { timelines: state.timelines, cache: new Map(), stack: [] };
             const anchorYear = resolveTimelineAnchorYear(tl, ctx);
-
             const { base } = splitBaseAndTick(ev.year);
             parseYearToken(base, anchorYear, ctx);
             inYear.classList.remove('invalid');
@@ -1901,31 +1998,6 @@ document.getElementById('btn-add-event').onclick = onAddEvent;
         });
         tdDesc.appendChild(inDesc);
 
-        // Image
-        const tdImg = document.createElement('td');
-        const wrap = document.createElement('div');
-        wrap.className = 'img-cell';
-
-        const inImg = document.createElement('input');
-        inImg.type = 'text';
-        inImg.placeholder = 'slug.webp | book/slug.webp | https://…';
-        inImg.value = ev.image || '';
-        inImg.oninput = debounce(() => {
-          ev.image = inImg.value.trim();
-          imgPreview.src = resolveImageSrc(ev.image);
-          renderYearGrid();
-        }, 150);
-
-        const imgPreview = document.createElement('img');
-        imgPreview.className = 'img-preview';
-        imgPreview.loading = 'lazy';
-        imgPreview.alt = 'preview';
-        imgPreview.src = resolveImageSrc(ev.image);
-
-        wrap.appendChild(inImg);
-        wrap.appendChild(imgPreview);
-        tdImg.appendChild(wrap);
-
         // Delete
         const tdDel = document.createElement('td');
         const btnDel = document.createElement('button');
@@ -1941,243 +2013,241 @@ document.getElementById('btn-add-event').onclick = onAddEvent;
         tr.appendChild(tdYear);
         tr.appendChild(tdTitle);
         tr.appendChild(tdDesc);
-        tr.appendChild(tdImg);
         tr.appendChild(tdDel);
+
         tbody.appendChild(tr);
       }
 
       if (!tl.events.length) {
         const tr = document.createElement('tr');
         const td = document.createElement('td');
-        td.colSpan = 5;
+        td.colSpan = 4;
         td.className = 'muted';
         td.textContent = 'No events yet.';
         tr.appendChild(td);
         tbody.appendChild(tr);
       }
     }
+    function renderStoryTimelineEditor() {
+      const normalWrap = document.getElementById('timeline-editor-normal');
+      const storyWrap = document.getElementById('timeline-editor-story');
 
-    
-function renderStoryTimelineEditor() {
-  const normalWrap = document.getElementById('timeline-editor-normal');
-  const storyWrap = document.getElementById('timeline-editor-story');
+      if (normalWrap) { normalWrap.classList.add('hidden'); normalWrap.setAttribute('aria-hidden', 'true'); }
+      if (storyWrap) { storyWrap.classList.remove('hidden'); storyWrap.setAttribute('aria-hidden', 'false'); }
 
-  if (normalWrap) { normalWrap.classList.add('hidden'); normalWrap.setAttribute('aria-hidden', 'true'); }
-  if (storyWrap) { storyWrap.classList.remove('hidden'); storyWrap.setAttribute('aria-hidden', 'false'); }
+      const st = getSelectedStoryTimeline();
 
-  const st = getSelectedStoryTimeline();
+      const titleEl = document.getElementById('st-title');
+      const tbody = document.getElementById('sequences-body');
+      const addBtn = document.getElementById('btn-add-sequence');
+      const delBtn = document.getElementById('btn-del-story-timeline');
 
-  const titleEl = document.getElementById('st-title');
-  const tbody = document.getElementById('sequences-body');
-  const addBtn = document.getElementById('btn-add-sequence');
-  const delBtn = document.getElementById('btn-del-story-timeline');
+      if (addBtn) addBtn.disabled = !st;
+      if (delBtn) delBtn.disabled = !st;
 
-  if (addBtn) addBtn.disabled = !st;
-  if (delBtn) delBtn.disabled = !st;
+      if (!st) {
+        if (titleEl) titleEl.value = '';
+        if (tbody) tbody.innerHTML = '<tr><td colspan="3" class="muted">No story timeline selected</td></tr>';
+        return;
+      }
 
-  if (!st) {
-    if (titleEl) titleEl.value = '';
-    if (tbody) tbody.innerHTML = '<tr><td colspan="5" class="muted">No story timeline selected</td></tr>';
-    return;
-  }
+      st.title = String(st.title || '(Story)');
+      st.sequences = Array.isArray(st.sequences) ? st.sequences : [];
 
-  st.title = String(st.title || '(Story)');
-  st.sequences = Array.isArray(st.sequences) ? st.sequences : [];
+      if (titleEl) {
+        titleEl.value = st.title || '';
+        titleEl.oninput = debounce(() => {
+          st.title = titleEl.value.trim() || '(Story)';
+          renderStoryTimelineList();
+          renderToggleBar();
+          renderYearGrid();
+        }, 150);
+      }
 
-  if (titleEl) {
-    titleEl.value = st.title || '';
-    titleEl.oninput = debounce(() => {
-      st.title = titleEl.value.trim() || '(Story)';
+      st.sequences.sort((a, b) => (a.seq || 0) - (b.seq || 0));
+
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      for (let i = 0; i < st.sequences.length; i++) {
+        const seq = st.sequences[i];
+        seq.seq = Number.isFinite(+seq.seq) ? +seq.seq : 0;
+        seq.title = String(seq.title || '');
+        // seq.desc is deprecated/ignored
+        seq.map = String(seq.map || '');
+
+        const tr = document.createElement('tr');
+
+        // Column 1: Number + Title (no Description)
+        const tdMeta = document.createElement('td');
+
+        const rowNum = document.createElement('div');
+        rowNum.textContent = 'Number: ';
+        const inSeq = document.createElement('input');
+        inSeq.type = 'number';
+        inSeq.step = '1';
+        inSeq.value = String(seq.seq || 0);
+        inSeq.oninput = debounce(() => {
+          seq.seq = parseInt(inSeq.value || '0', 10) || 0;
+          renderStoryTimelineEditor();
+          renderYearGrid();
+        }, 150);
+        rowNum.appendChild(inSeq);
+
+        const rowTitle = document.createElement('div');
+        rowTitle.textContent = 'Title: ';
+        const inTitle = document.createElement('input');
+        inTitle.type = 'text';
+        inTitle.placeholder = 'Sequence title (optional)';
+        inTitle.value = seq.title || '';
+        inTitle.oninput = debounce(() => {
+          seq.title = inTitle.value;
+          renderYearGrid();
+        }, 150);
+        rowTitle.appendChild(inTitle);
+
+        tdMeta.appendChild(rowNum);
+        tdMeta.appendChild(rowTitle);
+
+        // Column 2: Map
+        const tdMap = document.createElement('td');
+        const inMap = document.createElement('textarea');
+        inMap.placeholder =
+          `01: The first things that happened.
+- Kalos 0ya.01
+- Kalos 0ya.02
+
+02: A later moment.
+- Kalos 0ya.03 Flashback`;
+        inMap.value = seq.map || '';
+        inMap.rows = Math.max(6, Math.min(20, (inMap.value.split('\n').length || 1)));
+        inMap.style.width = '340px';
+        inMap.style.height = '246px';
+        inMap.addEventListener('input', () => {
+          inMap.style.height = 'auto';
+          inMap.style.height = (inMap.scrollHeight) + 'px';
+        });
+        inMap.oninput = debounce(() => {
+          seq.map = inMap.value;
+          renderYearGrid();
+        }, 150);
+        requestAnimationFrame(() => {
+          inMap.style.height = 'auto';
+          inMap.style.height = (inMap.scrollHeight) + 'px';
+        });
+        tdMap.appendChild(inMap);
+
+        // Column 3: Delete
+        const tdDel = document.createElement('td');
+        const btnDel = document.createElement('button');
+        btnDel.className = 'btn danger';
+        btnDel.textContent = 'Delete';
+        makeConfirmable(btnDel, () => {
+          st.sequences.splice(i, 1);
+          renderStoryTimelineEditor();
+          renderYearGrid();
+        }, { idleText: 'Delete', confirmText: 'Confirm' });
+        tdDel.appendChild(btnDel);
+
+        tr.appendChild(tdMeta);
+        tr.appendChild(tdMap);
+        tr.appendChild(tdDel);
+        tbody.appendChild(tr);
+      }
+
+      if (!st.sequences.length) {
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.colSpan = 3;
+        td.className = 'muted';
+        td.textContent = 'No sequences yet.';
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+      }
+    }
+
+
+    function onAddStoryTimeline() {
+      const id = 'st_' + Math.random().toString(36).slice(2, 8);
+      const st = { id, title: 'New Story Timeline', sequences: [] };
+      state.storyTimelines.push(st);
+      state.selectedEditorKind = 'story';
+      state.selectedStoryTimelineId = id;
+      state.selectedTimelineId = null;
+
       renderStoryTimelineList();
       renderToggleBar();
       renderYearGrid();
-    }, 150);
-  }
+      renderTimelineEditor();
+    }
 
-  // keep sequences sorted by seq
-  st.sequences.sort((a, b) => (a.seq || 0) - (b.seq || 0));
+    function onDupStoryTimeline() {
+      const st = getSelectedStoryTimeline();
+      if (!st) return;
+      const copy = JSON.parse(JSON.stringify(st));
+      copy.id = 'st_' + Math.random().toString(36).slice(2, 8);
+      copy.title = (st.title || '(Story)') + ' (copy)';
+      copy.sequences = Array.isArray(copy.sequences) ? copy.sequences : [];
 
-  if (!tbody) return;
-  tbody.innerHTML = '';
+      state.storyTimelines.push(copy);
+      state.selectedEditorKind = 'story';
+      state.selectedStoryTimelineId = copy.id;
+      state.selectedTimelineId = null;
 
-  for (let i = 0; i < st.sequences.length; i++) {
-    const seq = st.sequences[i];
-    seq.seq = Number.isFinite(+seq.seq) ? +seq.seq : 0;
-    seq.title = String(seq.title || '');
-    seq.desc = String(seq.desc || '');
-    seq.map = String(seq.map || '');
+      renderStoryTimelineList();
+      renderToggleBar();
+      renderYearGrid();
+      renderTimelineEditor();
+    }
 
-    const tr = document.createElement('tr');
+    function onDelStoryTimeline() {
+      const st = getSelectedStoryTimeline();
+      if (!st) return;
 
-    // Seq
-    const tdSeq = document.createElement('td');
-    const inSeq = document.createElement('input');
-    inSeq.type = 'number';
-    inSeq.step = '1';
-    inSeq.value = String(seq.seq || 0);
-    inSeq.oninput = debounce(() => {
-      seq.seq = parseInt(inSeq.value || '0', 10) || 0;
+      const idx = state.storyTimelines.findIndex(x => x.id === st.id);
+      if (idx >= 0) state.storyTimelines.splice(idx, 1);
+
+      if (state.storyTimelines.length) {
+        state.selectedEditorKind = 'story';
+        state.selectedStoryTimelineId = state.storyTimelines[0].id;
+        state.selectedTimelineId = null;
+      } else if (state.timelines.length) {
+        state.selectedEditorKind = 'timeline';
+        state.selectedTimelineId = state.timelines[0].id;
+        state.selectedStoryTimelineId = null;
+      } else {
+        state.selectedEditorKind = 'timeline';
+        state.selectedTimelineId = null;
+        state.selectedStoryTimelineId = null;
+      }
+
+      renderStoryTimelineList();
+      renderToggleBar();
+      renderYearGrid();
+      renderTimelineEditor();
+    }
+
+    function onAddSequence() {
+      const st = getSelectedStoryTimeline();
+      if (!st) return;
+
+      st.sequences = Array.isArray(st.sequences) ? st.sequences : [];
+      const nextSeq =
+        st.sequences.length
+          ? Math.max(...st.sequences.map(s => +s.seq || 0)) + 1
+          : 1;
+
+      st.sequences.push({
+        seq: nextSeq,
+        title: '',
+        map: ''
+      });
+
       renderStoryTimelineEditor();
       renderYearGrid();
-    }, 150);
-    tdSeq.appendChild(inSeq);
+    }
 
-    // Title
-    const tdTitle = document.createElement('td');
-    const inTitle = document.createElement('input');
-    inTitle.type = 'text';
-    inTitle.placeholder = 'Sequence title';
-    inTitle.value = seq.title || '';
-    inTitle.oninput = debounce(() => {
-      seq.title = inTitle.value;
-      renderYearGrid();
-    }, 150);
-    tdTitle.appendChild(inTitle);
-
-    // Desc
-    const tdDesc = document.createElement('td');
-    const inDesc = document.createElement('textarea');
-    inDesc.placeholder = 'Description (Markdown supported)';
-    inDesc.value = seq.desc || '';
-    inDesc.rows = Math.max(3, Math.min(10, (inDesc.value.split('\n').length || 1)));
-    inDesc.style.width = '300px';
-    inDesc.addEventListener('input', () => {
-      inDesc.style.height = 'auto';
-      inDesc.style.height = (inDesc.scrollHeight) + 'px';
-    });
-    inDesc.oninput = debounce(() => {
-      seq.desc = inDesc.value;
-      renderYearGrid();
-    }, 150);
-    requestAnimationFrame(() => {
-      inDesc.style.height = 'auto';
-      inDesc.style.height = (inDesc.scrollHeight) + 'px';
-    });
-    tdDesc.appendChild(inDesc);
-
-    // Map
-    const tdMap = document.createElement('td');
-    const inMap = document.createElement('textarea');
-    inMap.placeholder = '01\n- Kalos 0ya.01\n- Kalos 0ya.02';
-    inMap.value = seq.map || '';
-    inMap.rows = Math.max(6, Math.min(20, (inMap.value.split('\n').length || 1)));
-    inMap.style.width = '340px';
-    inMap.addEventListener('input', () => {
-      inMap.style.height = 'auto';
-      inMap.style.height = (inMap.scrollHeight) + 'px';
-    });
-    inMap.oninput = debounce(() => {
-      seq.map = inMap.value;
-      renderYearGrid();
-    }, 150);
-    requestAnimationFrame(() => {
-      inMap.style.height = 'auto';
-      inMap.style.height = (inMap.scrollHeight) + 'px';
-    });
-    tdMap.appendChild(inMap);
-
-    // Delete
-    const tdDel = document.createElement('td');
-    const btnDel = document.createElement('button');
-    btnDel.className = 'btn danger';
-    btnDel.textContent = 'Delete';
-    makeConfirmable(btnDel, () => {
-      st.sequences.splice(i, 1);
-      renderStoryTimelineEditor();
-      renderYearGrid();
-    }, { idleText: 'Delete', confirmText: 'Confirm' });
-    tdDel.appendChild(btnDel);
-
-    tr.appendChild(tdSeq);
-    tr.appendChild(tdTitle);
-    tr.appendChild(tdDesc);
-    tr.appendChild(tdMap);
-    tr.appendChild(tdDel);
-    tbody.appendChild(tr);
-  }
-
-  if (!st.sequences.length) {
-    const tr = document.createElement('tr');
-    const td = document.createElement('td');
-    td.colSpan = 5;
-    td.className = 'muted';
-    td.textContent = 'No sequences yet.';
-    tr.appendChild(td);
-    tbody.appendChild(tr);
-  }
-}
-
-
-function onAddStoryTimeline() {
-  const id = 'st_' + Math.random().toString(36).slice(2, 8);
-  const st = { id, title: 'New Story Timeline', sequences: [] };
-  state.storyTimelines.push(st);
-  state.selectedEditorKind = 'story';
-  state.selectedStoryTimelineId = id;
-  state.selectedTimelineId = null;
-
-  renderStoryTimelineList();
-  renderToggleBar();
-  renderYearGrid();
-  renderTimelineEditor();
-}
-
-function onDupStoryTimeline() {
-  const st = getSelectedStoryTimeline();
-  if (!st) return;
-  const copy = JSON.parse(JSON.stringify(st));
-  copy.id = 'st_' + Math.random().toString(36).slice(2, 8);
-  copy.title = (st.title || '(Story)') + ' (copy)';
-  copy.sequences = Array.isArray(copy.sequences) ? copy.sequences : [];
-
-  state.storyTimelines.push(copy);
-  state.selectedEditorKind = 'story';
-  state.selectedStoryTimelineId = copy.id;
-  state.selectedTimelineId = null;
-
-  renderStoryTimelineList();
-  renderToggleBar();
-  renderYearGrid();
-  renderTimelineEditor();
-}
-
-function onDelStoryTimeline() {
-  const st = getSelectedStoryTimeline();
-  if (!st) return;
-
-  const idx = state.storyTimelines.findIndex(x => x.id === st.id);
-  if (idx >= 0) state.storyTimelines.splice(idx, 1);
-
-  if (state.storyTimelines.length) {
-    state.selectedEditorKind = 'story';
-    state.selectedStoryTimelineId = state.storyTimelines[0].id;
-    state.selectedTimelineId = null;
-  } else if (state.timelines.length) {
-    state.selectedEditorKind = 'timeline';
-    state.selectedTimelineId = state.timelines[0].id;
-    state.selectedStoryTimelineId = null;
-  } else {
-    state.selectedEditorKind = 'timeline';
-    state.selectedTimelineId = null;
-    state.selectedStoryTimelineId = null;
-  }
-
-  renderStoryTimelineList();
-  renderToggleBar();
-  renderYearGrid();
-  renderTimelineEditor();
-}
-
-function onAddSequence() {
-  const st = getSelectedStoryTimeline();
-  if (!st) return;
-  st.sequences = Array.isArray(st.sequences) ? st.sequences : [];
-  st.sequences.push({ seq: (st.sequences.length ? Math.max(...st.sequences.map(s => +s.seq || 0)) + 1 : 1), title: '', desc: '', map: '' });
-  renderStoryTimelineEditor();
-  renderYearGrid();
-}
-
-function onAddTimeline() {
+    function onAddTimeline() {
       const id = 'tl_' + Math.random().toString(36).slice(2, 8);
       const tl = { id, title: 'New Timeline', color: '#8aa', year: 2000, description: '', image: '', events: [] };
       state.timelines.push(tl);

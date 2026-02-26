@@ -10,51 +10,9 @@
     "image": "games/x.webp",
     "events": [
       {
-        "year": "0ya",
-        "title": "Zygarde saves Lysandre, then splits between Kalos and Alola",
-        "desc": "*Legends Arceus* \"Zygarde saved me. It worked to protect all living creatures in the area from the light raining down—the deadly light of the ultimate weapon. In doing so, Zygarde exhausted its own power.\"",
-        "image": "pkmn/718.webp"
-      },
-      {
-        "year": "2015",
-        "title": "2015",
-        "desc": "",
-        "image": "pkmn/717.webp"
-      },
-      {
-        "year": "2016",
-        "title": "2016",
-        "desc": "",
-        "image": ""
-      },
-      {
-        "year": "2017",
-        "title": "2017",
-        "desc": "",
-        "image": ""
-      },
-      {
-        "year": "2018",
-        "title": "2018",
-        "desc": "",
-        "image": "pkmn/716.webp"
-      },
-      {
-        "year": "0ya.01",
-        "title": "Scene Tick 01",
-        "desc": "We Meet the Hero",
-        "image": ""
-      },
-      {
         "year": "1ya.01",
         "title": "Scene Tick 1",
         "desc": "Scene tick with no group.",
-        "image": ""
-      },
-      {
-        "year": "0ya.02",
-        "title": "Scene Tick 2",
-        "desc": "This is where something goes wrong.",
         "image": ""
       },
       {
@@ -67,6 +25,24 @@
         "year": "1ya.03",
         "title": "Scene Tick 3",
         "desc": "The Last",
+        "image": ""
+      },
+      {
+        "year": "0ya",
+        "title": "Zygarde saves Lysandre, then splits between Kalos and Alola",
+        "desc": "*Legends Arceus* \"Zygarde saved me. It worked to protect all living creatures in the area from the light raining down—the deadly light of the ultimate weapon. In doing so, Zygarde exhausted its own power.\"",
+        "image": "pkmn/718.webp"
+      },
+      {
+        "year": "0ya.01",
+        "title": "Scene Tick 01",
+        "desc": "We Meet the Hero",
+        "image": ""
+      },
+      {
+        "year": "0ya.02",
+        "title": "Scene Tick 2",
+        "desc": "This is where something goes wrong.",
         "image": ""
       },
       {
@@ -94,10 +70,34 @@
         "image": ""
       },
       {
+        "year": "2015",
+        "title": "2015",
+        "desc": "",
+        "image": "pkmn/717.webp"
+      },
+      {
         "year": "2015.01",
         "title": "Scene Tick in another year",
         "desc": "another test.",
         "image": ""
+      },
+      {
+        "year": "2016",
+        "title": "2016",
+        "desc": "",
+        "image": ""
+      },
+      {
+        "year": "2017",
+        "title": "2017",
+        "desc": "",
+        "image": ""
+      },
+      {
+        "year": "2018",
+        "title": "2018",
+        "desc": "",
+        "image": "pkmn/716.webp"
       }
     ]
   },
@@ -139,7 +139,7 @@
         "seq": 1,
         "title": "The Beginning",
         "desc": "Something happens, and then something else happens.",
-        "map": "01\n- Kalos 0ya.01\n- Kalos 0ya.02\n02\n- Kalos 0ya.04\n- Kalos 0ya.05\n03\n- Kalos 2012.02 Flashback\n04\n- Kalos 2015.01\n05\n- Kalos 2016.01\n"
+        "map": "01: The first things that happens\n- Kalos 0ya.01 (3)\n- Kalos 0ya.02 (1)\n- Kalos 0ya.04 (4)\n02: Then - Oh no!\n- Kalos 0ya.05\n- Kalos 0ya.06\n03\n- Kalos 2012.02 Flashback\n04\n- Kalos 2015.01\n05: Flashback\n- Kalos 0ya.03\n- Kalos 0ya.05\n06\n- Kalos 2016.01\n07\n- Kalos 0ya.02 (1)\n- Kalos 0ya.03 (4)\n"
       }
     ]
   }
