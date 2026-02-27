@@ -158,18 +158,6 @@
     <section class="viewport">
       <div id="grid" class="year-grid" role="grid" aria-label="Year timelines grid"></div>
     </section>
-
-    <section class="explanation">
-      <h2>About This Timeline</h2>
-      <p>This tool helps you visualize multiple timelines of events, such as the various regions and story arcs
-        within the Pokémon universe. You can add timelines, define their anchor years, and populate them with events.
-        The grid view allows you to see how these timelines align chronologically.</p>
-      <p>Timelines anchor dates can be connected to other timelines. For example, "3aKANTO" means 3 years after the
-        KANTO timeline's anchor year.</p>
-      <p>Events within a timeline can be given an explicit year (eg: 1996 or 2000bc), or a "years ago" date (eg: 50ya)
-        which places the event relative to the timeline's anchor year when the YA date is less than 1000, and places it
-        relative to the year 2000 if the YA date is 1000 or more.</p>
-    </section>
   </main>
 
   <!-- Your data file as a classic script (global) -->
@@ -378,9 +366,14 @@
       return { absYear, tick: tick || 0, timelineId: tl.id };
     }
 
-    function renderStoryPageBlock(page, yearTickCount) {
+    function renderStoryPageBlock(page, yearTickCount, storyId, absYear) {
       const el = document.createElement('div');
       el.className = 'story-page';
+
+      el.dataset.storyId = storyId;
+      el.dataset.seq = String(parseInt(page.seqNum || '0', 10) || 0);
+      el.dataset.scene = String(parseInt(page.sceneNum || '0', 10) || 0);
+      el.dataset.absYear = String(absYear | 0);
 
       el.style.setProperty('--fromTick', String(page.fromTick || 1));
       el.style.setProperty('--toTick', String(page.toTick || 1));
@@ -390,38 +383,65 @@
         el.style.gridColumn = `${page.fromTick} / ${page.toTick + 1}`;
       }
 
-      // Head: "01.02" + "(X pages)"
+      // Head
       const head = document.createElement('div');
       head.className = 'story-page-head';
 
-      const safeHead = escapeHtml(page.headText || '');
-      const totalPages = Number.isFinite(+page.totalPages) ? (+page.totalPages | 0) : 0;
+      // Nav buttons (shown on hover via CSS)
+      const btnPrev = document.createElement('button');
+      btnPrev.type = 'button';
+      btnPrev.className = 'story-head-nav story-head-nav-prev';
+      btnPrev.setAttribute('aria-label', 'Previous story tick');
+      btnPrev.textContent = '🠜';
+      btnPrev.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        gotoAdjacentStoryTickGroup(storyId, -1, el);
+      };
 
-      head.innerHTML = totalPages > 0
-        ? `${safeHead} <span class="story-page-count">(${totalPages} pages)</span>`
-        : safeHead;
+      const btnNext = document.createElement('button');
+      btnNext.type = 'button';
+      btnNext.className = 'story-head-nav story-head-nav-next';
+      btnNext.setAttribute('aria-label', 'Next story tick');
+      btnNext.textContent = '🠞';
+      btnNext.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        gotoAdjacentStoryTickGroup(storyId, +1, el);
+      };
+
+      // Head text
+      const headText = document.createElement('span');
+      headText.className = 'story-head-text';
+      headText.textContent = page.headText || '';
+
+      head.appendChild(headText);
+      head.appendChild(btnPrev);
+      head.appendChild(btnNext);
+
+      // Page count span
+      const totalPages = Number.isFinite(+page.totalPages) ? (+page.totalPages | 0) : 0;
+      if (totalPages > 0) {
+        const count = document.createElement('span');
+        count.className = 'story-page-count';
+        count.textContent = `(${totalPages} pages)`;
+        head.appendChild(count);
+      }
 
       el.appendChild(head);
 
-      // Hover popup: "01.02 <Scene Title>"
+      // Hover tooltip remains on the page block
       if (page.hoverText) {
         el.addEventListener('pointerenter', (e) => {
-          showDescTooltip(
-            `<div class="chip-desc">${escapeHtml(page.hoverText)}</div>`,
-            e.clientX,
-            e.clientY
-          );
+          showDescTooltip(`<div class="chip-desc">${escapeHtml(page.hoverText)}</div>`, e.clientX, e.clientY);
         });
         el.addEventListener('pointermove', (e) => {
-          showDescTooltip(
-            `<div class="chip-desc">${escapeHtml(page.hoverText)}</div>`,
-            e.clientX,
-            e.clientY
-          );
+          showDescTooltip(`<div class="chip-desc">${escapeHtml(page.hoverText)}</div>`, e.clientX, e.clientY);
         });
         el.addEventListener('pointerleave', hideDescTooltip);
       }
 
+      // Ticks rail
       const fromTick = Math.max(1, page.fromTick | 0);
       const toTick = Math.max(fromTick, page.toTick | 0);
       const spanCount = (toTick - fromTick + 1) | 0;
@@ -431,7 +451,24 @@
 
       const rail = document.createElement('div');
       rail.className = 'story-ticks';
+      rail.dataset.storyId = storyId;
+      rail.dataset.seq = String(parseInt(page.seqNum || '0', 10) || 0);
+      rail.dataset.scene = String(parseInt(page.sceneNum || '0', 10) || 0);
+      rail.dataset.absYear = String(absYear | 0);
+      rail.dataset.fromTick = String(fromTick | 0);
+      rail.dataset.toTick = String(toTick | 0);
       rail.style.setProperty('--tickCount', String(Math.max(0, spanCount)));
+
+      // ✅ Delegated click handler – guarantees clicks work even on child elements
+      rail.addEventListener('click', (e) => {
+        const tickEl = e.target.closest('.story-page');
+        if (!tickEl) return;
+        if (tickEl.dataset.storyId !== storyId) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+        scrollToStoryTickGroup(storyId, rail);
+      });
 
       for (let i = 1; i <= spanCount; i++) {
         const absoluteTick = fromTick + (i - 1);
@@ -440,15 +477,20 @@
         slot.className = 'story-tick';
         slot.dataset.tick = String(absoluteTick);
 
+        // Ordering metadata for global navigation
+        slot.dataset.storyId = storyId;
+        slot.dataset.seq = String(parseInt(page.seqNum || '0', 10) || 0);
+        slot.dataset.scene = String(parseInt(page.sceneNum || '0', 10) || 0);
+        slot.dataset.absYear = String(absYear | 0);
+        slot.dataset.absTick = String(absoluteTick | 0);
+
         const isOn = onSet.has(absoluteTick);
         if (isOn) slot.classList.add('on');
 
-        // If on, add tick-page bars for visual page count
+        // Tick-page bars
         if (isOn) {
-          const pc = pagesByTick.get(absoluteTick) | 0; // default 0 if missing
-          const pageBars = Math.max(0, pc);
-
-          for (let p = 0; p < pageBars; p++) {
+          const pc = pagesByTick.get(absoluteTick) | 0;
+          for (let p = 0; p < Math.max(0, pc); p++) {
             const bar = document.createElement('div');
             bar.className = 'tick-page';
             slot.appendChild(bar);
@@ -462,15 +504,13 @@
       return el;
     }
 
-    function renderStoryYearCellPages(cell, pages, yearTickCount) {
-      // One wrapper per year cell that represents the year-wide tick spacing
+    function renderStoryYearCellPages(cell, pages, yearTickCount, storyId, absYear) {
       const collection = document.createElement('div');
       collection.className = 'story-page-collection';
       collection.style.setProperty('--tickCount', String(Math.max(0, yearTickCount | 0)));
 
-      // Render each page inside the collection
       for (const p of pages) {
-        collection.appendChild(renderStoryPageBlock(p, yearTickCount));
+        collection.appendChild(renderStoryPageBlock(p, yearTickCount, storyId, absYear));
       }
 
       cell.appendChild(collection);
@@ -556,6 +596,96 @@
       return out;
     }
 
+    function getOrderedStoryTickGroups(storyId) {
+      const groups = Array.from(document.querySelectorAll(`.story-ticks[data-story-id="${storyId}"]`));
+
+      // Order by: sequence -> scene -> absYear -> fromTick
+      groups.sort((a, b) => {
+        const aSeq = parseInt(a.dataset.seq || '0', 10) || 0;
+        const bSeq = parseInt(b.dataset.seq || '0', 10) || 0;
+        if (aSeq !== bSeq) return aSeq - bSeq;
+
+        const aScene = parseInt(a.dataset.scene || '0', 10) || 0;
+        const bScene = parseInt(b.dataset.scene || '0', 10) || 0;
+        if (aScene !== bScene) return aScene - bScene;
+
+        const aYear = parseInt(a.dataset.absYear || '0', 10) || 0;
+        const bYear = parseInt(b.dataset.absYear || '0', 10) || 0;
+        if (aYear !== bYear) return aYear - bYear;
+
+        const aFrom = parseInt(a.dataset.fromTick || '0', 10) || 0;
+        const bFrom = parseInt(b.dataset.fromTick || '0', 10) || 0;
+        return aFrom - bFrom;
+      });
+
+      // Only keep groups that actually contain at least one "on" tick
+      return groups.filter(g => g.querySelector('.story-tick.on'));
+    }
+
+    function clearStoryTickGroupActive(storyId) {
+      document
+        .querySelectorAll(`.story-ticks[data-story-id="${storyId}"][data-active]`)
+        .forEach(el => el.removeAttribute('data-active'));
+    }
+
+    function setStoryTickGroupActive(storyId, groupEl) {
+      if (!groupEl) return;
+
+      const ordered = getOrderedStoryTickGroups(storyId);
+      const idx = ordered.indexOf(groupEl);
+      if (idx < 0) return;
+
+      clearStoryTickGroupActive(storyId);
+
+      groupEl.dataset.active = 'current';
+      if (ordered[idx - 1]) ordered[idx - 1].dataset.active = 'previous';
+      if (ordered[idx + 1]) ordered[idx + 1].dataset.active = 'next';
+    }
+
+    function scrollToStoryTickGroup(storyId, groupEl) {
+      if (!groupEl) return;
+
+      setStoryTickGroupActive(storyId, groupEl);
+
+      groupEl.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+        inline: 'center'
+      });
+    }
+
+    function gotoAdjacentStoryTickGroup(storyId, direction, fallbackPageEl = null) {
+      const ordered = getOrderedStoryTickGroups(storyId);
+      if (!ordered.length) return;
+
+      const current = document.querySelector(`.story-ticks[data-story-id="${storyId}"][data-active="current"]`);
+      let idx = current ? ordered.indexOf(current) : -1;
+
+      // If none active, try the first group inside this page
+      if (idx < 0 && fallbackPageEl) {
+        const inPage = fallbackPageEl.querySelector(`.story-ticks[data-story-id="${storyId}"]`);
+        if (inPage) idx = ordered.indexOf(inPage);
+      }
+
+      if (idx < 0) idx = 0;
+
+      const nextIdx = Math.max(0, Math.min(ordered.length - 1, idx + direction));
+      scrollToStoryTickGroup(storyId, ordered[nextIdx]);
+    }
+
+    function renderTimelineSeparatorRow(grid, columns) {
+      const labelCell = document.createElement('div');
+      labelCell.className = 'cell label-cell timeline-separator';
+      labelCell.textContent = ''; // keep blank
+      grid.appendChild(labelCell);
+
+      for (let i = 1; i < columns.length; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell timeline-separator';
+        grid.appendChild(cell);
+      }
+    }
+
     /**********************
      * Utility / Parsing  *
      **********************/
@@ -592,6 +722,228 @@
       }
 
       return maxTickByYear;
+    }
+
+    function ensureBookOutlineModal() {
+      let backdrop = document.getElementById('book-outline-backdrop');
+      if (backdrop) return backdrop;
+
+      backdrop = document.createElement('div');
+      backdrop.id = 'book-outline-backdrop';
+      backdrop.className = 'modal-backdrop';
+      backdrop.style.display = 'none';
+
+      backdrop.innerHTML = `
+    <div class="modal" role="dialog" aria-modal="true" aria-label="Book outline">
+      <div class="modal-header">
+        <h2 id="book-outline-title"></h2>
+        <button class="modal-close" type="button" aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body" id="book-outline-body"></div>
+    </div>
+  `;
+
+      backdrop.addEventListener('click', (e) => {
+        if (e.target === backdrop) closeBookOutline();
+      });
+
+      const closeBtn = backdrop.querySelector('.modal-close');
+      closeBtn.addEventListener('click', closeBookOutline);
+
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeBookOutline();
+      });
+
+      document.body.appendChild(backdrop);
+      return backdrop;
+    }
+
+    function openBookOutline(storyTimelineId) {
+      const st = (state.storyTimelines || []).find(x => x.id === storyTimelineId);
+      if (!st) return;
+
+      const backdrop = ensureBookOutlineModal();
+      const titleEl = backdrop.querySelector('#book-outline-title');
+      const bodyEl = backdrop.querySelector('#book-outline-body');
+
+      // 🔹 Calculate total pages for entire book
+      const ctx = { timelines: state.timelines, cache: new Map(), stack: [] };
+      let totalPages = 0;
+
+      const sequences = (st.sequences || []).slice();
+      for (const seq of sequences) {
+        const blocks = parseSequenceMapBlocks(seq.map);
+        for (const block of blocks) {
+          for (const r of (block.refs || [])) {
+            const pc = Number.isFinite(+r.pageCount)
+              ? Math.max(1, (+r.pageCount | 0))
+              : 1;
+            totalPages += pc;
+          }
+        }
+      }
+
+      const safeTitle = escapeHtml(st.title || '(Story Timeline)');
+      const pagesText = totalPages ? `(${totalPages} pages)` : '';
+
+      titleEl.innerHTML = `
+    ${safeTitle}
+    <span class="outline-book-pages">${escapeHtml(pagesText)}</span>
+  `;
+
+      bodyEl.innerHTML = buildBookOutlineHtml(st);
+
+      backdrop.style.display = 'flex';
+    }
+
+    function closeBookOutline() {
+      const backdrop = document.getElementById('book-outline-backdrop');
+      if (!backdrop) return;
+      backdrop.style.display = 'none';
+    }
+
+    function buildBookOutlineHtml(storyTimeline) {
+      const ctx = { timelines: state.timelines, cache: new Map(), stack: [] };
+
+      // Normalise + sort sequences
+      const sequences = (storyTimeline.sequences || [])
+        .slice()
+        .sort((a, b) => (a.seq || 0) - (b.seq || 0));
+
+      // Helpers
+      const pad2 = (n) => String(parseInt(n, 10) || 0).padStart(2, '0');
+
+      const findEventByAbsYearTick = (timeline, absYear, tick) => {
+        const tlCtx = { timelines: state.timelines, cache: new Map(), stack: [] };
+        const anchorYear = resolveTimelineAnchorYear(timeline, tlCtx);
+
+        // Find all events matching absYear + tick
+        const matches = [];
+        for (const ev of (timeline.events || [])) {
+          try {
+            const { base, tick: t } = splitBaseAndTick(ev.year);
+            if (!base) continue;
+            const y = parseYearToken(base, anchorYear, tlCtx).year;
+            if (y === absYear && (t || 0) === (tick || 0)) {
+              matches.push(ev);
+            }
+          } catch {
+            // ignore
+          }
+        }
+        return matches;
+      };
+
+      let html = '';
+
+      for (const seq of sequences) {
+        const seqNum = pad2(seq.seq);
+        const seqTitle = String(seq.title || '').trim();
+        const seqTitleText = seqTitle || '(Untitled Sequence)';
+
+        html += `
+  <div class="outline-seq">
+    <h3>
+      <span class="outline-seq-num">${escapeHtml(seqNum)}</span>
+      ${escapeHtml(seqTitleText)}
+    </h3>
+`;
+
+        const blocks = parseSequenceMapBlocks(seq.map);
+
+        for (const block of blocks) {
+          const sceneNum = pad2(block.scene);
+          const sceneTitleText = String(block.sceneTitle || '').trim() || '(Untitled Scene)';
+
+          // Resolve refs → group by (absYear, tick, timeline)
+          const resolved = [];
+          for (const r of (block.refs || [])) {
+            try {
+              const rr = resolveStoryRef(r, ctx);
+              const tl = state.timelines.find(t => t.id === rr.timelineId);
+              if (!tl) continue;
+              resolved.push({
+                timeline: tl,
+                absYear: rr.absYear,
+                tick: rr.tick || 0,
+                pageCount: Number.isFinite(+r.pageCount) ? Math.max(1, (+r.pageCount | 0)) : 1
+              });
+            } catch {
+              // ignore bad refs
+            }
+          }
+
+          // Total pages for the scene (sum of page counts in the block)
+          const totalPages = resolved.reduce((acc, x) => acc + (x.pageCount || 0), 0);
+          const pagesText = totalPages ? `(${totalPages} pages)` : '';
+
+          html += `
+<div class="outline-scene">
+  <div class="outline-scene-title">
+    <span class="outline-scene-seq">${escapeHtml(seqNum)}</span>
+    <span class="outline-scene-num">${escapeHtml(sceneNum)}</span>
+    ${escapeHtml(sceneTitleText)}
+    <span class="muted">${escapeHtml(pagesText)}</span>
+  </div>
+`;
+
+          // Group by timeline title (keep stable order by appearance)
+          const tlOrder = [];
+          const byTl = new Map();
+          for (const item of resolved) {
+            const key = item.timeline.id;
+            if (!byTl.has(key)) {
+              byTl.set(key, []);
+              tlOrder.push(key);
+            }
+            byTl.get(key).push(item);
+          }
+
+          for (const tlId of tlOrder) {
+            const items = byTl.get(tlId) || [];
+            const tl = items[0]?.timeline;
+            if (!tl) continue;
+
+            const tlColor = tl.color || '#888';
+
+            html += `<div class="outline-tl" style="--tlCol:${escapeHtml(tlColor)}">`;
+            html += `<div class="outline-tl-title">${escapeHtml(tl.title || '(Timeline)')}</div>`;
+
+            // For each ref, list matching event(s) at that absYear+tick
+            for (const it of items) {
+              const evs = findEventByAbsYearTick(tl, it.absYear, it.tick);
+
+              // If multiple events exist at the same tick, list them all
+              if (!evs.length) {
+                html += `
+              <div class="outline-ev">
+                <div class="ev-title">${escapeHtml('(No event found for this tick)')}</div>
+              </div>
+            `;
+                continue;
+              }
+
+              for (const ev of evs) {
+                const title = String(ev.title || '').trim() || '(Untitled Event)';
+                const desc = String(ev.desc || '').trim();
+
+                html += `<div class="outline-ev">`;
+                html += `<div class="ev-title">${escapeHtml(title)}</div>`;
+                if (desc) html += `<div class="ev-desc">${markdownToHtml(desc)}</div>`;
+                html += `</div>`;
+              }
+            }
+
+            html += `</div>`; // .outline-tl
+          }
+
+          html += `</div>`; // .outline-scene
+        }
+
+        html += `</div>`; // .outline-seq
+      }
+
+      return html || `<div class="muted">No outline data found.</div>`;
     }
 
 
@@ -642,28 +994,28 @@
         (typeof state !== 'undefined' ? state.timelines : []) ||
         [];
 
-      // 1) Plain numeric / BC / YA: 1999 | 300bc | 20ya
+      const anchor = Number.isFinite(+baseYear) ? +baseYear : 2000;
+
+      // 1) Plain numeric / BC / Relative: 1999 | 300bc | 10yb | 10ya
       {
-        const m = s.toLowerCase().match(/^(\d+)(bc|ya)?$/);
+        const m = s.toLowerCase().match(/^(\d+)(bc|yb|ya)?$/);
         if (m) {
           const n = parseInt(m[1], 10);
           if (Number.isNaN(n)) throw new Error('Invalid year number: ' + str);
 
           const suffix = m[2] || '';
 
-          // baseYear is the timeline's anchor year for events (passed in by the caller)
-          const anchor = Number.isFinite(+baseYear) ? +baseYear : 2000;
-
           let year;
           if (suffix === 'bc') {
             year = -n;
+          } else if (suffix === 'yb') {
+            // NEW: years before the timeline anchor
+            year = anchor - n;
           } else if (suffix === 'ya') {
-            // NEW RULE:
-            // - If YA < 1000: interpret relative to the event's timeline anchor year (baseYear/anchor)
-            // - Otherwise: interpret relative to the fixed year 2000
-            const yaBase = n < 1000 ? anchor : 2000;
-            year = yaBase - n;
+            // NEW: years after the timeline anchor
+            year = anchor + n;
           } else {
+            // Absolute year
             year = n;
           }
 
@@ -672,7 +1024,6 @@
       }
 
       // 2) "After another anchor": 5aKANTO  (years after timeline "Kanto" anchor year)
-      // Allow letters/numbers/spaces/hyphens/underscores in name (everything after the 'a').
       {
         const m = s.match(/^(\d+)\s*a\s*(.+)$/i);
         if (m) {
@@ -683,7 +1034,6 @@
           const ref = getTimelineByName(name, timelines);
           if (!ref) throw new Error(`Unknown anchor timeline "${name}" in token: ${str}`);
 
-          // Resolve referenced timeline anchor year (supports chaining)
           const localCtx = ctx || { timelines, cache: new Map(), stack: [] };
           const refAnchorYear = resolveTimelineAnchorYear(ref, localCtx);
 
@@ -1298,6 +1648,9 @@
       labelinner.textContent = storyTimeline.title || '(Story Timeline)';
       label.appendChild(labelinner);
       grid.appendChild(label);
+      label.style.cursor = 'pointer';
+      label.title = 'Click to view book outline';
+      label.addEventListener('click', () => openBookOutline(storyTimeline.id));
 
       // Cells
       for (let i = 1; i < columns.length; i++) {
@@ -1326,7 +1679,7 @@
           continue;
         }
 
-        renderStoryYearCellPages(cell, pages, tickCount);
+        renderStoryYearCellPages(cell, pages, tickCount, storyTimeline.id, y);
         grid.appendChild(cell);
       }
     }
@@ -1375,6 +1728,10 @@
       const visibleStoryTimelines = state.storyTimelines.filter(st => !state.hiddenStoryTimelineIds.has(st.id));
       for (const st of visibleStoryTimelines) {
         renderStoryTimelineRow(grid, st, columns, maxTickByYear);
+      }
+
+      if (state.storyTimelines?.length && state.timelines?.length) {
+        renderTimelineSeparatorRow(grid, columns);
       }
 
       // body rows ONLY for visible timelines
@@ -1477,8 +1834,10 @@
         const hasTicks = bucket.ticksByN.size > 0;
 
         if (!hasTicks) {
-          // Normal behaviour: render all base events as chips
-          for (const be of bucket.baseEvents) cell.appendChild(renderEventChip(be.ev));
+          // Base event(s) exist but there are no ticks in this year → mark as empty
+          for (const be of bucket.baseEvents) {
+            cell.appendChild(renderEventChip(be.ev, { empty: true }));
+          }
           grid.appendChild(cell);
           continue;
         }
@@ -1509,10 +1868,20 @@
 
         cell.appendChild(containerChip);
 
+        // Build a set of base tokens that actually have ticks (e.g. "0ya", "1ya")
+        const tickBaseSet = new Set();
+        for (const arr of bucket.ticksByN.values()) {
+          for (const entry of (arr || [])) {
+            if (entry?.base) tickBaseSet.add(entry.base);
+          }
+        }
+
         // Render extra base events (excluding the one used as container)
+        // If a base event’s token isn't used by any ticks, mark it as empty
         for (const be of bucket.baseEvents) {
           if (containerBaseEntry && be === containerBaseEntry) continue;
-          cell.appendChild(renderEventChip(be.ev));
+          const isEmpty = !tickBaseSet.has(be.base);
+          cell.appendChild(renderEventChip(be.ev, { empty: isEmpty }));
         }
 
         grid.appendChild(cell);
@@ -1564,10 +1933,24 @@
 
     function renderYearContainerChip({ baseEvent, tickEventsByN, tickCount, missing, timelineTitle, absYear }) {
       const chip = document.createElement('div');
-      chip.className = 'event chip year-container no-img';
-      if (missing) chip.classList.add('missing');
+      chip.className = 'event chip year-container';
 
       const hasBase = !!baseEvent;
+
+      // ✅ NEW: mark base event chips as empty if there are NO tick events
+      let hasAnyTickEvents = false;
+      if (tickEventsByN instanceof Map) {
+        for (const arr of tickEventsByN.values()) {
+          if (Array.isArray(arr) && arr.length > 0) {
+            hasAnyTickEvents = true;
+            break;
+          }
+        }
+      }
+      if (hasBase && !hasAnyTickEvents) {
+        chip.classList.add('empty');
+      }
+
       const baseHasDesc = hasBase && !!(baseEvent.desc && String(baseEvent.desc).trim()) && state.showDescriptions;
       const baseHasHiddenDesc = hasBase && !!(baseEvent.desc && String(baseEvent.desc).trim()) && !state.showDescriptions;
 
@@ -1635,9 +2018,11 @@
     }
 
 
-    function renderEventChip(ev) {
+    function renderEventChip(ev, opts = {}) {
       const chip = document.createElement('div');
-      chip.className = 'event chip no-img';
+      chip.className = 'event chip';
+
+      if (opts.empty) chip.classList.add('empty');
 
       const hasDesc = !!(ev.desc && String(ev.desc).trim()) && state.showDescriptions;
       const hasHiddenDesc = !!(ev.desc && String(ev.desc).trim()) && !state.showDescriptions;
@@ -1948,7 +2333,7 @@
         const tdYear = document.createElement('td');
         const inYear = document.createElement('input');
         inYear.type = 'text';
-        inYear.placeholder = '1994 | 3000000bc | 20ya';
+        inYear.placeholder = '1994 | 300bc | 20ya | 20yb';
         inYear.value = ev.year || '';
         inYear.oninput = debounce(() => {
           ev.year = inYear.value.trim();

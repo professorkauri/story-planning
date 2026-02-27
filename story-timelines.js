@@ -2,129 +2,127 @@
       window.TIMELINES_DEFAULT = {
         timelines: [
   {
-    "id": "tl_0qr13e",
+    "id": "tl_kalos",
     "title": "Kalos",
     "color": "#43d0c0",
     "year": "2013",
-    "description": "X, Y",
-    "image": "games/x.webp",
+    "description": "Lumiose City",
+    "image": "",
     "events": [
       {
-        "year": "1ya.01",
-        "title": "Scene Tick 1",
-        "desc": "Scene tick with no group.",
-        "image": ""
-      },
-      {
-        "year": "1ya.02",
-        "title": "Scene Tick 2",
-        "desc": "Another",
-        "image": ""
-      },
-      {
-        "year": "1ya.03",
-        "title": "Scene Tick 3",
-        "desc": "The Last",
-        "image": ""
-      },
-      {
         "year": "0ya",
-        "title": "Zygarde saves Lysandre, then splits between Kalos and Alola",
-        "desc": "*Legends Arceus* \"Zygarde saved me. It worked to protect all living creatures in the area from the light raining down—the deadly light of the ultimate weapon. In doing so, Zygarde exhausted its own power.\"",
-        "image": "pkmn/718.webp"
+        "title": "Arrival year",
+        "desc": "The year the story begins in Lumiose.",
+        "image": ""
       },
       {
         "year": "0ya.01",
-        "title": "Scene Tick 01",
-        "desc": "We Meet the Hero",
+        "title": "Market District Encounter",
+        "desc": "A crowded street corner becomes a turning point.",
         "image": ""
       },
       {
         "year": "0ya.02",
-        "title": "Scene Tick 2",
-        "desc": "This is where something goes wrong.",
+        "title": "First Signs",
+        "desc": "Something feels off – the details do not match what you were told.",
         "image": ""
       },
       {
         "year": "0ya.03",
-        "title": "Scene Tick 3",
-        "desc": "",
+        "title": "Police Station",
+        "desc": "The official version of events does not match what you saw.",
         "image": ""
       },
       {
         "year": "0ya.04",
-        "title": "Scene Tick 4",
-        "desc": "",
+        "title": "Rooftop Reflection",
+        "desc": "You either walk away or commit.",
         "image": ""
       },
       {
-        "year": "0ya.05",
-        "title": "Scene Tick 5",
-        "desc": "",
+        "year": "1ya.01",
+        "title": "Old Metro Entrance",
+        "desc": "Something sealed off years ago has been opened.",
         "image": ""
       },
       {
-        "year": "0ya.06",
-        "title": "Scene Tick 6",
-        "desc": "",
+        "year": "1ya.02",
+        "title": "Hospital Visit",
+        "desc": "Consequences catch up quickly.",
         "image": ""
       },
       {
-        "year": "2015",
-        "title": "2015",
-        "desc": "",
-        "image": "pkmn/717.webp"
-      },
-      {
-        "year": "2015.01",
-        "title": "Scene Tick in another year",
-        "desc": "another test.",
+        "year": "2ya.01",
+        "title": "Power Outage",
+        "desc": "The city changes in a single night.",
         "image": ""
-      },
-      {
-        "year": "2016",
-        "title": "2016",
-        "desc": "",
-        "image": ""
-      },
-      {
-        "year": "2017",
-        "title": "2017",
-        "desc": "",
-        "image": ""
-      },
-      {
-        "year": "2018",
-        "title": "2018",
-        "desc": "",
-        "image": "pkmn/716.webp"
       }
     ]
   },
   {
-    "id": "tl_c0sa25",
-    "title": "Kalos (copy)",
-    "color": "#43d0c0",
+    "id": "tl_villains",
+    "title": "Villains",
+    "color": "#ff6b6b",
     "year": "2013",
-    "description": "X, Y",
-    "image": "games/x.webp",
+    "description": "Opposition thread",
+    "image": "",
     "events": [
       {
-        "year": "0ya.04",
-        "title": "Scene Tick 4",
-        "desc": "",
+        "year": "3yb",
+        "title": "Founding",
+        "desc": "Villain Organisation founded",
         "image": ""
       },
       {
-        "year": "0ya.05",
-        "title": "Scene Tick 5",
-        "desc": "",
+        "year": "0ya.02",
+        "title": "First Contact",
+        "desc": "The organisation makes a quiet introduction.",
         "image": ""
       },
       {
-        "year": "0ya.06",
-        "title": "Scene Tick 6",
-        "desc": "",
+        "year": "0ya.03",
+        "title": "Pressure Applied",
+        "desc": "A warning is delivered in a way that feels polite – and dangerous.",
+        "image": ""
+      },
+      {
+        "year": "1ya.01",
+        "title": "A Mark Left Behind",
+        "desc": "A symbol is placed where you cannot ignore it.",
+        "image": ""
+      },
+      {
+        "year": "2ya.01",
+        "title": "The Interruption",
+        "desc": "A meeting is disrupted at the exact wrong moment.",
+        "image": ""
+      }
+    ]
+  },
+  {
+    "id": "tl_allies",
+    "title": "Allies",
+    "color": "#8b5cf6",
+    "year": "2013",
+    "description": "Supporting cast",
+    "image": "",
+    "events": [
+      {
+        "year": "0ya.01",
+        "title": "A Helpful Stranger",
+        "desc": "An unexpected ally steps in – and asks for something in return.",
+        "image": ""
+      },
+      {
+        "year": "1ya.02",
+        "title": "The Injury",
+        "desc": "An ally is hurt – and it shifts what you are willing to do next.",
+        "image": ""
+      },
+      {
+        "year": "2ya.01",
+        "title": "Communications Fail",
+        "desc": "Plans fall apart when the simplest tools stop working.",
         "image": ""
       }
     ]
@@ -132,14 +130,26 @@
 ],
         storyTimelines: [
   {
-    "id": "st_main",
-    "title": "Book 1",
+    "id": "st_book1",
+    "title": "The Lumiose Thread",
     "sequences": [
       {
         "seq": 1,
-        "title": "The Beginning",
-        "desc": "Something happens, and then something else happens.",
-        "map": "01: The first things that happens\n- Kalos 0ya.01 (3)\n- Kalos 0ya.02 (1)\n- Kalos 0ya.04 (4)\n02: Then - Oh no!\n- Kalos 0ya.05\n- Kalos 0ya.06\n03\n- Kalos 2012.02 Flashback\n04\n- Kalos 2015.01\n05: Flashback\n- Kalos 0ya.03\n- Kalos 0ya.05\n06\n- Kalos 2016.01\n07\n- Kalos 0ya.02 (1)\n- Kalos 0ya.03 (4)\n"
+        "title": "Arrival in Lumiose",
+        "desc": "",
+        "map": "01: The first things that happened\n- Kalos 0ya.01 (3)\n- Allies 0ya.01 (2)\n- Kalos 0ya.02 (2)\n- Villains 0ya.02 (2)\n\n02: A problem you can’t ignore\n- Kalos 0ya.03 (3)\n- Villains 0ya.03 (1)\n\n03: The decision\n- Kalos 0ya.04 (2)\n"
+      },
+      {
+        "seq": 2,
+        "title": "Pulling at the Knot",
+        "desc": "",
+        "map": "01: The thread tightens\n- Kalos 1ya.01 (4)\n- Villains 1ya.01 (2)\n\n02: The cost of knowing\n- Kalos 1ya.02 (3)\n- Allies 1ya.02 (2)\n"
+      },
+      {
+        "seq": 3,
+        "title": "The Break",
+        "desc": "",
+        "map": "01: Everything shifts\n- Kalos 2ya.01 (3)\n- Allies 2ya.01 (2)\n- Villains 2ya.01 (2)\n"
       }
     ]
   }
