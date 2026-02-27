@@ -697,6 +697,13 @@ small, .small { font-size: 12px; color: var(--muted); }
     0 0 0 3px color-mix(in oklab, var(--tlCol, #8aa) 35%, transparent);
 }
 
+.option .tl-id {
+  margin-left: auto;
+  font-size: 0.75rem;
+  opacity: 0.6;
+  font-family: monospace;
+}
+
 
 /* Timeline editor area */
 #timeline-editor-normal,
@@ -1293,5 +1300,3 @@ textarea {
   margin-top: 2px;
   font-size:0.8em;
 }
-
-

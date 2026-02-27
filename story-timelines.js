@@ -2,192 +2,182 @@
 window.TIMELINES_DEFAULT = {
   timelines: [
   {
-    "id": "tl_kalos",
-    "title": "Kalos",
+    "id": "TCY",
+    "title": "Tracey",
     "color": "#43d0c0",
-    "year": "2013",
-    "description": "Lumiose City",
+    "year": "0ya",
+    "description": "Backstory, bonding, and first surge",
     "events": [
       {
-        "year": "0ya",
-        "title": "Arrival year",
-        "desc": "The year the story begins in Lumiose."
+        "year": "0yb.01",
+        "title": "A strange hobby takes hold",
+        "desc": "Tracey becomes obsessed with old ruins and unusual gems – collecting anything that feels out of place."
       },
       {
-        "year": "2yb",
-        "title": "Metro maintenance sealed",
-        "desc": "A section of the old metro is quietly sealed after an internal safety review."
+        "year": "0yb.02",
+        "title": "Ruins expedition",
+        "desc": "She explores a remote ruin site that seems intentionally built at high altitude, closer to cloud cover."
       },
       {
-        "year": "1yb",
-        "title": "CCTV upgrades approved",
-        "desc": "New surveillance coverage is approved for key districts – with some blind spots left in place."
+        "year": "0yb.03",
+        "title": "Poacher’s trap discovered",
+        "desc": "Tracey finds a rare Storm-type, red-panda-like creature caught in a trap set by poachers."
       },
       {
-        "year": "0ya.01",
-        "title": "Market District Encounter",
-        "desc": "A crowded street corner becomes a turning point."
+        "year": "0yb.04",
+        "title": "The fall",
+        "desc": "While trying to free it, the ground gives way – Tracey and the creature plunge into a deep hole together."
       },
       {
-        "year": "0ya.02",
-        "title": "First Signs",
-        "desc": "Something feels off – the details do not match what you were told."
+        "year": "0yb.05",
+        "title": "Gems ignite",
+        "desc": "Pressed together in the fall, the gems Tracey carries begin to glow – something responds to proximity, fear, and intent."
       },
       {
-        "year": "0ya.03",
-        "title": "Police Station",
-        "desc": "The official version of events does not match what you saw."
+        "year": "0yb.06",
+        "title": "Waking with the gem",
+        "desc": "Tracey wakes to find one gem embedded in her chest. The creature is bonded to her – and the bond feels mutual, not forced."
       },
       {
-        "year": "0ya.05",
-        "title": "Rooftop Reflection",
-        "desc": "You either walk away or commit."
+        "year": "0yb.07",
+        "title": "First words understood",
+        "desc": "The creature speaks: “Oh my goodness they survived! Didn’t think a human could handle a crash like that.” Tracey replies instinctively – and realises, in shock, she understood it."
       },
       {
-        "year": "1ya.01",
-        "title": "Old Metro Entrance",
-        "desc": "Something sealed off years ago has been opened."
+        "year": "0yb.08",
+        "title": "Bonded speech becomes normal",
+        "desc": "Tracey learns the ability is literal – she can understand what her bonded creatures are saying, as if language has been unlocked."
       },
       {
-        "year": "1ya.02",
-        "title": "Hospital Visit",
-        "desc": "Consequences catch up quickly."
+        "year": "0yb.09",
+        "title": "Learning what the creature is",
+        "desc": "Tracey discovers the creature is rare in this region, prefers high altitudes, and lives in hard-to-access wilderness pockets atop hills and ruins."
       },
       {
-        "year": "1ya",
-        "title": "Mayor’s office briefing",
-        "desc": "A closed-door briefing reframes the incident as a PR issue, not a safety issue."
+        "year": "0yb.10",
+        "title": "Why it is hunted",
+        "desc": "She learns it is poached for magical fur – garments made from it billow as if caught in wind, even in still air."
       },
       {
-        "year": "2ya.01",
-        "title": "Power Outage",
-        "desc": "The city changes in a single night."
+        "year": "0yb.11",
+        "title": "First confrontation",
+        "desc": "Tracey runs into a lower leader from an underhanded science group. They notice the glow beneath her clothing and assume it is a standard keystone pendant."
       },
       {
-        "year": "2ya",
-        "title": "Restoration contracts signed",
-        "desc": "Emergency restoration contracts are signed before the public hears the full story."
+        "year": "0yb.12",
+        "title": "Attempted grab",
+        "desc": "The leader tries to seize the ‘pendant’ to cut off her summoning power. The struggle tears Tracey’s shirt and exposes the embedded gem."
       },
       {
-        "year": "0ya.04",
-        "title": "Item pickpocketed from bag",
-        "desc": "Tracey loses the Master Ball from her bag by a sneaky street thief."
+        "year": "0yb.13",
+        "title": "Two-way surge",
+        "desc": "In rage and determination, Tracey’s gem amplifies her physical strength and her bonded creature’s power – a two-way energy transfer unlike normal keystone use."
+      },
+      {
+        "year": "0yb.14",
+        "title": "Aftershock",
+        "desc": "When the adrenaline fades, Tracey is left drained. The encounter marks her as different – powerful – and now a target."
       }
     ]
   },
   {
-    "id": "tl_villains",
-    "title": "Villains",
+    "id": "ANC",
+    "title": "Ancient",
+    "color": "#8b5cf6",
+    "year": "0ya",
+    "description": "Gems, harmony, and collapse",
+    "events": [
+      {
+        "year": "10000yb",
+        "title": "Ruins are built for proximity",
+        "desc": "A civilisation builds high-altitude ruins with deliberate placement – designed to live near rare creatures and the world’s magic."
+      },
+      {
+        "year": "10000yb.01",
+        "title": "Harmony philosophy",
+        "desc": "They study gems and creature bonds as a shared system, aiming to live in balance with nature. Legendary beasts may have been revered."
+      },
+      {
+        "year": "10000yb.02",
+        "title": "A faction breaks away",
+        "desc": "Internal conflict erupts when a faction seeks control – bonding armies of creatures via gems rather than partnership."
+      },
+      {
+        "year": "10000yb.03",
+        "title": "Imperfect bonding method",
+        "desc": "The control method ‘works’ partially, but it harms creatures emotionally and traumatically, while placing extreme strain on the controller."
+      },
+      {
+        "year": "10000yb.04",
+        "title": "Power at a cost",
+        "desc": "The imperfect method dramatically boosts creature power, accelerating the faction’s ambition – and the civilisation’s fracture."
+      },
+      {
+        "year": "10000yb.05",
+        "title": "Collapse",
+        "desc": "The civilisation falls before the method can be stabilised or fully harnessed. Their knowledge survives only as fragments in ruins and artefacts."
+      }
+    ]
+  },
+  {
+    "id": "BBG",
+    "title": "Scientists",
     "color": "#ff6b6b",
-    "year": "2013",
-    "description": "Opposition thread",
+    "year": "0ya",
+    "description": "Rediscovery, pursuit, and ignorance of Tracey (for now)",
     "events": [
       {
         "year": "3yb",
-        "title": "Founding",
-        "desc": "The organisation is founded and begins recruiting quietly."
+        "title": "Fragments recovered",
+        "desc": "Underhanded research groups recover pieces of ancient notes and artefacts – enough to replicate parts of the imperfect method."
       },
       {
         "year": "2yb",
-        "title": "First Lumiose foothold",
-        "desc": "A legitimate front business is established near the city centre."
+        "title": "Prototype bonding attempts",
+        "desc": "They attempt bonding using incomplete theory. Results are unstable – stronger creatures, severe backlash, and obvious harm."
       },
       {
         "year": "1yb",
-        "title": "Asset positioned",
-        "desc": "A key asset is moved into place and kept dormant until needed."
+        "title": "Goal crystallises",
+        "desc": "The groups pivot from experimentation to engineering – aiming to perfect the method and control the bond safely for the user (not the creature)."
       },
       {
-        "year": "0ya.02",
-        "title": "First Contact",
-        "desc": "The organisation makes a quiet introduction."
+        "year": "0yb.01",
+        "title": "Search patterns established",
+        "desc": "They begin monitoring for gem-like signatures and rare creature activity around old ruins – following the same logic as the ancient builders."
       },
       {
-        "year": "0ya.03",
-        "title": "Pressure Applied",
-        "desc": "A warning is delivered in a way that feels polite – and dangerous."
+        "year": "0yb.02",
+        "title": "Mistaken identification",
+        "desc": "A lower leader spots Tracey’s glow and assumes it is a standard keystone pendant – acting with confidence rather than caution."
       },
       {
-        "year": "0ya",
-        "title": "Supply chain re-routed",
-        "desc": "Distribution routes are altered so evidence can disappear without anyone noticing."
-      },
-      {
-        "year": "1ya.01",
-        "title": "A Mark Left Behind",
-        "desc": "A symbol is placed where you cannot ignore it."
-      },
-      {
-        "year": "2ya.01",
-        "title": "The Interruption",
-        "desc": "A meeting is disrupted at the exact wrong moment."
-      },
-      {
-        "year": "2ya",
-        "title": "Scapegoat selected",
-        "desc": "An internal scapegoat is prepared, in case the operation draws attention."
-      }
-    ]
-  },
-  {
-    "id": "tl_allies",
-    "title": "Allies",
-    "color": "#8b5cf6",
-    "year": "2013",
-    "description": "Supporting cast",
-    "events": [
-      {
-        "year": "2yb",
-        "title": "Old promise",
-        "desc": "A promise made years earlier creates an obligation that can’t be ignored."
-      },
-      {
-        "year": "0ya.01",
-        "title": "A Helpful Stranger",
-        "desc": "An unexpected ally steps in – and asks for something in return."
-      },
-      {
-        "year": "0ya",
-        "title": "Private notes begun",
-        "desc": "A private log starts – small observations that will matter much later."
-      },
-      {
-        "year": "1ya.02",
-        "title": "The Injury",
-        "desc": "An ally is hurt – and it shifts what you are willing to do next."
-      },
-      {
-        "year": "2ya.01",
-        "title": "Communications Fail",
-        "desc": "Plans fall apart when the simplest tools stop working."
-      },
-      {
-        "year": "2ya",
-        "title": "A message left unsent",
-        "desc": "A drafted message is never sent – the decision will echo later."
+        "year": "0yb.03",
+        "title": "A new target is created",
+        "desc": "The confrontation reveals an embedded gem and a two-way transfer effect. Even without knowing Tracey’s full story, the group now has a reason to pursue her."
       }
     ]
   }
 ],
   storyTimelines: [
   {
-    "id": "st_book1",
-    "title": "The Lumiose Thread",
+    "id": "st_tracey_arc",
+    "title": "Book 1",
     "sequences": [
       {
         "seq": 1,
-        "title": "Arrival in Lumiose",
-        "map": "01: The first things that happened\n- Kalos 0ya.01 (3)\n- Allies 0ya.01 (2)\n- Kalos 0ya.02 (2)\n- Villains 0ya.02 (2)\n\n02: A problem you can’t ignore\n- Kalos 0ya.03 (3)\n- Villains 0ya.03 (1)\n\n03: The decision\n- Kalos 0ya.05 (2)\n"
+        "title": "The Bond",
+        "map": "01: The fall and the waking\n- 0yb.01 (3)\n- 0yb.02 (3)\n- 0yb.03 (2)\n- 0yb.04 (3)\n02: The first conversation\n- 0yb.07 (4)\n- 0yb.08 (2)\n03: What the creature is – and why it matters\n- 0yb.10 (3)\n- 0yb.11 (3)\n"
       },
       {
         "seq": 2,
-        "title": "Pulling at the Knot",
-        "map": "01: The thread tightens\n- Kalos 1ya.01 (4)\n- Villains 1ya.01 (2)\n\n02: The cost of knowing\n- Kalos 1ya.02 (3)\n- Allies 1ya.02 (2)\n"
+        "title": "The Echo of the Past",
+        "map": "01: Why the ruins exist\n- 10000yb.01 (3)\n02: The mistake that broke everything\n- 10000yb.02 (3)\n- 10000yb.03 (4)\n- 10000yb.04 (3)\n- 10000yb.05 (2)\n"
       },
       {
         "seq": 3,
-        "title": "The Break",
-        "map": "01: Everything shifts\n- Kalos 2ya.01 (3)\n- Allies 2ya.01 (2)\n- Villains 2ya.01 (2)\n"
+        "title": "Marked",
+        "map": "01: They reach for the wrong thing\n- 0ya.02 (2)\n- 0ya.01 (3)\n02: The surge\n- 0ya.05 (4)\n03: The hunt begins\n- 0yb.03 (3)\n"
       }
     ]
   }

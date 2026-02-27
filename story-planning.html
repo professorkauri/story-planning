@@ -73,6 +73,9 @@
                   <label>Title
                     <input id="tl-title" type="text" placeholder="Timeline title" />
                   </label>
+                  <label>ID
+                    <input id="tl-id" type="text" placeholder="tl_tracey (no spaces)" />
+                  </label>
 
                   <label>Anchor Year
                     <input id="tl-year" type="text" step="1" placeholder="2000 | 5aKANTO" />
@@ -205,13 +208,43 @@
       return state.timelines.findIndex(t => t.id === id);
     }
 
-    function normalizeTimelineKey(name) {
-      return String(name || '').trim().toLowerCase();
+    function normalizeTimelineKey(key) {
+      return String(key || '').trim().toLowerCase();
     }
 
-    function getTimelineByName(name, timelines) {
-      const key = normalizeTimelineKey(name);
-      return (timelines || []).find(t => normalizeTimelineKey(t.title) === key) || null;
+    // ✅ Option 2: prefer matching by ID (case-insensitive); fall back to title for backwards compatibility.
+    function getTimelineByKey(key, timelines) {
+      const k = normalizeTimelineKey(key);
+      if (!k) return null;
+
+      const list = (timelines || []);
+      return (
+        list.find(t => normalizeTimelineKey(t.id) === k) ||
+        list.find(t => normalizeTimelineKey(t.title) === k) ||
+        null
+      );
+    }
+
+    // ✅ Update IDs safely inside state (keeps selection + hidden toggles intact)
+    function updateTimelineId(oldId, newId) {
+      const o = String(oldId || '').trim();
+      const n = String(newId || '').trim();
+
+      if (!o || !n || o === n) return;
+      if (state.timelines.some(t => t.id === n)) {
+        throw new Error(`Timeline ID already exists: "${n}"`);
+      }
+
+      // selection
+      if (state.selectedTimelineId === o) state.selectedTimelineId = n;
+
+      // hidden sets
+      if (state.hiddenTimelineIds.has(o)) {
+        state.hiddenTimelineIds.delete(o);
+        state.hiddenTimelineIds.add(n);
+      }
+
+      // (We do NOT auto-rewrite story map text – you’ll update those refs manually.)
     }
 
     /**
@@ -289,7 +322,7 @@
        * {
        *   scene: "01",
        *   sceneTitle: "Optional title",
-       *   refs: [{ timelineName, token, category, pageCount }]
+       *   refs: [{ token, category, pageCount }]
        * }
        */
       const blocks = [];
@@ -317,20 +350,19 @@
           }
         }
 
-        // Ref line:
-        // "- Kalos 0ya.01"
-        // "- Kalos 0ya.01 Flashback"
-        // "- Kalos 0ya.01 Flashback (3)"
-        // "- Kalos 0ya.01 (3)"
-        const m = line.match(/^-+\s*(.+?)\s+([^\s]+)\s*(.*)$/);
+        // Ref line (year+tick only):
+        // "- 0yb.01"
+        // "- 0yb.01 Flashback"
+        // "- 0yb.01 Flashback (3)"
+        // "- 0yb.01 (3)"
+        const m = line.match(/^-+\s*([^\s]+)\s*(.*)$/);
         if (!m) continue;
         if (!current) continue;
 
-        const timelineName = (m[1] || '').trim();
-        const token = (m[2] || '').trim();
-        let rest = (m[3] || '').trim();
+        const token = (m[1] || '').trim();
+        let rest = (m[2] || '').trim();
 
-        if (!timelineName || !token) continue;
+        if (!token) continue;
 
         // Pull "(N)" from the end if present
         let pageCount = 1;
@@ -342,8 +374,7 @@
         }
 
         const category = rest; // whatever remains is still treated as category text
-
-        current.refs.push({ timelineName, token, category, pageCount });
+        current.refs.push({ token, category, pageCount });
       }
 
       pushCurrent();
@@ -355,15 +386,15 @@
      *  { absYear, tick, timelineId? }
      */
     function resolveStoryRef(ref, ctx) {
-      const timelines = ctx?.timelines || state.timelines || [];
-      const tl = getTimelineByName(ref.timelineName, timelines);
-      if (!tl) throw new Error(`Story ref timeline not found: "${ref.timelineName}"`);
-
-      const anchorYear = resolveTimelineAnchorYear(tl, ctx);
+      // With year+tick only, the ref is just a token like "0yb.01" or "1964.03"
       const { base, tick } = splitBaseAndTick(ref.token);
-      const absYear = parseYearToken(base, anchorYear, ctx).year;
 
-      return { absYear, tick: tick || 0, timelineId: tl.id };
+      // Story refs are interpreted relative to a single shared base year.
+      // Your timelines currently resolve "0ya" as 2000, so this stays consistent.
+      const baseYear = 2000;
+
+      const absYear = parseYearToken(base, baseYear, ctx).year;
+      return { absYear, tick: tick || 0 };
     }
 
     function renderStoryPageBlock(page, yearTickCount, storyId, absYear) {
@@ -805,33 +836,51 @@
     function buildBookOutlineHtml(storyTimeline) {
       const ctx = { timelines: state.timelines, cache: new Map(), stack: [] };
 
-      // Normalise + sort sequences
       const sequences = (storyTimeline.sequences || [])
         .slice()
         .sort((a, b) => (a.seq || 0) - (b.seq || 0));
 
-      // Helpers
       const pad2 = (n) => String(parseInt(n, 10) || 0).padStart(2, '0');
 
-      const findEventByAbsYearTick = (timeline, absYear, tick) => {
-        const tlCtx = { timelines: state.timelines, cache: new Map(), stack: [] };
-        const anchorYear = resolveTimelineAnchorYear(timeline, tlCtx);
+      // Cache anchor years per timeline (speed)
+      const anchorCache = new Map(); // timelineId -> anchorYear
+      const getAnchorYear = (timeline) => {
+        if (!timeline) return 2000;
+        if (anchorCache.has(timeline.id)) return anchorCache.get(timeline.id);
 
-        // Find all events matching absYear + tick
-        const matches = [];
-        for (const ev of (timeline.events || [])) {
-          try {
-            const { base, tick: t } = splitBaseAndTick(ev.year);
-            if (!base) continue;
-            const y = parseYearToken(base, anchorYear, tlCtx).year;
-            if (y === absYear && (t || 0) === (tick || 0)) {
-              matches.push(ev);
+        const tlCtx = { timelines: state.timelines, cache: new Map(), stack: [] };
+        const y = resolveTimelineAnchorYear(timeline, tlCtx);
+
+        anchorCache.set(timeline.id, y);
+        return y;
+      };
+
+      // Find ALL events across ALL timelines matching a specific (absYear, tick)
+      const findAllEventsByAbsYearTick = (absYear, tick) => {
+        const out = []; // { timeline, ev }
+        const t = (tick | 0);
+        if (t <= 0) return out;
+
+        for (const tl of (state.timelines || [])) {
+          if (!tl) continue;
+          const anchorYear = getAnchorYear(tl);
+
+          for (const ev of (tl.events || [])) {
+            try {
+              const { base, tick: evTick } = splitBaseAndTick(ev.year);
+              if (!base) continue;
+
+              const y = parseYearToken(base, anchorYear, { timelines: state.timelines, cache: new Map(), stack: [] }).year;
+              if (y === (absYear | 0) && ((evTick || 0) === t)) {
+                out.push({ timeline: tl, ev });
+              }
+            } catch {
+              // ignore bad tokens
             }
-          } catch {
-            // ignore
           }
         }
-        return matches;
+
+        return out;
       };
 
       let html = '';
@@ -855,15 +904,12 @@
           const sceneNum = pad2(block.scene);
           const sceneTitleText = String(block.sceneTitle || '').trim() || '(Untitled Scene)';
 
-          // Resolve refs → group by (absYear, tick, timeline)
+          // Resolve refs → list of (absYear, tick) targets
           const resolved = [];
           for (const r of (block.refs || [])) {
             try {
               const rr = resolveStoryRef(r, ctx);
-              const tl = state.timelines.find(t => t.id === rr.timelineId);
-              if (!tl) continue;
               resolved.push({
-                timeline: tl,
                 absYear: rr.absYear,
                 tick: rr.tick || 0,
                 pageCount: Number.isFinite(+r.pageCount) ? Math.max(1, (+r.pageCount | 0)) : 1
@@ -887,21 +933,47 @@
   </div>
 `;
 
-          // Group by timeline title (keep stable order by appearance)
+          // Build unique targets (absYear+tick)
+          const uniqueTargets = new Map(); // key -> { absYear, tick }
+          for (const it of resolved) {
+            const a = it.absYear | 0;
+            const t = it.tick | 0;
+            if (t <= 0) continue;
+            const key = `${a}::${t}`;
+            if (!uniqueTargets.has(key)) uniqueTargets.set(key, { absYear: a, tick: t });
+          }
+
+          // Collect expanded events
+          const expandedPairs = []; // { timeline, ev }
+          for (const target of uniqueTargets.values()) {
+            expandedPairs.push(...findAllEventsByAbsYearTick(target.absYear, target.tick));
+          }
+
+          // Group by timeline in state.timelines order
+          const byTl = new Map(); // tlId -> { tl, events: [] }
+          for (const pair of expandedPairs) {
+            const tl = pair.timeline;
+            if (!tl) continue;
+            if (!byTl.has(tl.id)) byTl.set(tl.id, { tl, events: [] });
+            byTl.get(tl.id).events.push(pair.ev);
+          }
+
+          // Render timelines in global timeline order (stable + predictable)
           const tlOrder = [];
-          const byTl = new Map();
-          for (const item of resolved) {
-            const key = item.timeline.id;
-            if (!byTl.has(key)) {
-              byTl.set(key, []);
-              tlOrder.push(key);
-            }
-            byTl.get(key).push(item);
+          for (const tl of (state.timelines || [])) {
+            if (!tl) continue;
+            if (byTl.has(tl.id)) tlOrder.push(tl.id);
+          }
+
+          // If nothing matched, show a gentle empty state
+          if (!tlOrder.length) {
+            html += `<div class="muted small">(No events found for these tick(s))</div>`;
           }
 
           for (const tlId of tlOrder) {
-            const items = byTl.get(tlId) || [];
-            const tl = items[0]?.timeline;
+            const bucket = byTl.get(tlId);
+            const tl = bucket?.tl;
+            const evs = bucket?.events || [];
             if (!tl) continue;
 
             const tlColor = tl.color || '#888';
@@ -909,29 +981,14 @@
             html += `<div class="outline-tl" style="--tlCol:${escapeHtml(tlColor)}">`;
             html += `<div class="outline-tl-title">${escapeHtml(tl.title || '(Timeline)')}</div>`;
 
-            // For each ref, list matching event(s) at that absYear+tick
-            for (const it of items) {
-              const evs = findEventByAbsYearTick(tl, it.absYear, it.tick);
+            for (const ev of evs) {
+              const title = String(ev.title || '').trim() || '(Untitled Event)';
+              const desc = String(ev.desc || '').trim();
 
-              // If multiple events exist at the same tick, list them all
-              if (!evs.length) {
-                html += `
-              <div class="outline-ev">
-                <div class="ev-title">${escapeHtml('(No event found for this tick)')}</div>
-              </div>
-            `;
-                continue;
-              }
-
-              for (const ev of evs) {
-                const title = String(ev.title || '').trim() || '(Untitled Event)';
-                const desc = String(ev.desc || '').trim();
-
-                html += `<div class="outline-ev">`;
-                html += `<div class="ev-title">${escapeHtml(title)}</div>`;
-                if (desc) html += `<div class="ev-desc">${markdownToHtml(desc)}</div>`;
-                html += `</div>`;
-              }
+              html += `<div class="outline-ev">`;
+              html += `<div class="ev-title">${escapeHtml(title)}</div>`;
+              if (desc) html += `<div class="ev-desc">${markdownToHtml(desc)}</div>`;
+              html += `</div>`;
             }
 
             html += `</div>`; // .outline-tl
@@ -945,7 +1002,6 @@
 
       return html || `<div class="muted">No outline data found.</div>`;
     }
-
 
 
     // Add this helper (or replace your existing one if present)
@@ -1261,7 +1317,20 @@
         opt.setAttribute('tabindex', isSelected ? '0' : '-1');
         opt.setAttribute('data-state', 'default');
         opt.style.setProperty('--tlCol', tl.color || '#8aa');
-        opt.textContent = tl.title || '(Untitled)';
+
+        // Clear default textContent
+        opt.textContent = '';
+
+        const titleSpan = document.createElement('span');
+        titleSpan.className = 'tl-title';
+        titleSpan.textContent = tl.title || '(Untitled)';
+
+        const idSpan = document.createElement('span');
+        idSpan.className = 'tl-id';
+        idSpan.textContent = tl.id || '';
+
+        opt.appendChild(titleSpan);
+        opt.appendChild(idSpan);
 
         // Click + keyboard behaviour (your existing behaviour)
         opt.addEventListener('click', () => selectTimeline(tl.id));
@@ -2224,6 +2293,7 @@
       if (storyWrap) { storyWrap.classList.add('hidden'); storyWrap.setAttribute('aria-hidden', 'true'); }
 
       const titleEl = document.getElementById('tl-title');
+      const idEl = document.getElementById('tl-id');
       const yearEl = document.getElementById('tl-year');
       const descEl = document.getElementById('tl-desc');
 
@@ -2254,6 +2324,7 @@
 
       if (!tl) {
         if (titleEl) titleEl.value = '';
+        if (idEl) idEl.value = '';
         if (yearEl) yearEl.value = '';
         if (descEl) descEl.value = '';
         if (colorEl) colorEl.value = '#cccccc';
@@ -2292,6 +2363,35 @@
           renderToggleBar();
           renderYearGrid();
         }, 150);
+      }
+
+      if (idEl) idEl.value = tl.id || '';
+      if (idEl) {
+        idEl.oninput = debounce(() => {
+          const nextRaw = String(idEl.value || '').trim();
+          if (!nextRaw) return;
+
+          // gentle sanitise (spaces -> underscores)
+          const next = nextRaw.replace(/\s+/g, '_');
+
+          try {
+            const oldId = tl.id;
+            updateTimelineId(oldId, next);
+            tl.id = next;
+
+            // keep UI + toggles consistent
+            renderTimelineList();
+            renderToggleBar();
+            renderYearGrid();
+          } catch (err) {
+            idEl.classList.add('invalid');
+            console.error(err);
+            return;
+          }
+
+          idEl.classList.remove('invalid');
+          idEl.value = tl.id;
+        }, 200);
       }
 
       if (yearEl) {
